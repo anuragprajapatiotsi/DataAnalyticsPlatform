@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import "@/styles/auth.css";
 
 import { Providers } from "@/app/providers";
 
@@ -16,8 +15,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Data Analytics Auth",
-  description: "Production-ready authentication module with Next.js App Router",
+  title: "OpenMetadata-style SaaS Dashboard",
+  description: "Modern enterprise dashboard built with Next.js and shadcn/ui",
 };
 
 export default function RootLayout({

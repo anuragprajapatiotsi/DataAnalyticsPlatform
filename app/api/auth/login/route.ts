@@ -4,6 +4,7 @@ import {
   backendAuthRequest,
   parseErrorMessage,
   setAuthCookiesFromPayload,
+  type BackendSessionPayload,
 } from "@/services/server/auth-proxy";
 
 export async function POST(request: Request) {
@@ -18,11 +19,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ message }, { status: response.status });
   }
 
-  const payload = (await response.json()) as {
-    user?: { id: string; email: string; name?: string };
-    accessToken?: string;
-    refreshToken?: string;
-  };
+  const payload = (await response.json()) as BackendSessionPayload;
 
   await setAuthCookiesFromPayload(payload);
 

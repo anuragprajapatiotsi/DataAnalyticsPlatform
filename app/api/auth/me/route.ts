@@ -6,6 +6,7 @@ import {
   getRefreshTokenFromCookie,
   parseErrorMessage,
   setAuthCookiesFromPayload,
+  type BackendSessionPayload,
 } from "@/services/server/auth-proxy";
 
 async function fetchCurrentUser(accessToken: string) {
@@ -23,9 +24,7 @@ export async function GET() {
   if (accessToken) {
     const meResponse = await fetchCurrentUser(accessToken);
     if (meResponse.ok) {
-      const payload = (await meResponse.json()) as {
-        user?: { id: string; email: string; name?: string };
-      };
+      const payload = (await meResponse.json()) as BackendSessionPayload;
       return NextResponse.json({ user: payload.user ?? null }, { status: 200 });
     }
   }
@@ -45,12 +44,12 @@ export async function GET() {
     return NextResponse.json({ message }, { status: 401 });
   }
 
-  const refreshPayload = (await refreshResponse.json()) as {
-    user?: { id: string; email: string; name?: string };
-    accessToken?: string;
-    refreshToken?: string;
-  };
+  const refreshPayload =
+    (await refreshResponse.json()) as BackendSessionPayload;
 
   await setAuthCookiesFromPayload(refreshPayload);
-  return NextResponse.json({ user: refreshPayload.user ?? null }, { status: 200 });
+  return NextResponse.json(
+    { user: refreshPayload.user ?? null },
+    { status: 200 },
+  );
 }

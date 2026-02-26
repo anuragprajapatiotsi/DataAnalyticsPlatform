@@ -1,60 +1,38 @@
+import { api } from "@/services/api";
 import type {
   AuthMessageResponse,
   LoginRequest,
+  LoginResponse,
   SessionResponse,
   SignupRequest,
 } from "@/services/api/types";
 
-type ApiErrorPayload = {
-  message?: string;
-};
-
-async function request<T>(url: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(url, {
-    ...init,
-    headers: {
-      "Content-Type": "application/json",
-      ...(init?.headers ?? {}),
-    },
-  });
-
-  if (!response.ok) {
-    const payload = (await response.json().catch(() => null)) as
-      | ApiErrorPayload
-      | null;
-    throw new Error(payload?.message ?? "Unexpected authentication error.");
-  }
-
-  return (await response.json()) as T;
-}
-
 export const authApi = {
-  login(payload: LoginRequest) {
-    return request<SessionResponse>("/api/auth/login", {
-      method: "POST",
-      body: JSON.stringify(payload),
+  async login(payload: LoginRequest) {
+    const response = await api.post<LoginResponse>("/auth/login?name=primary", {
+      login: payload.email, // Using email as login as per form/types
+      password: payload.password,
     });
+    return response.data;
   },
-  signup(payload: SignupRequest) {
-    return request<SessionResponse>("/api/auth/signup", {
-      method: "POST",
-      body: JSON.stringify(payload),
-    });
+  async signup(payload: SignupRequest) {
+    const response = await api.post<SessionResponse>("/auth/signup", payload);
+    return response.data;
   },
-  refresh() {
-    return request<SessionResponse>("/api/auth/refresh", {
-      method: "POST",
-    });
+  async refresh() {
+    const response = await api.post<LoginResponse>(
+      "/auth/refresh?name=primary",
+    );
+    return response.data;
   },
-  me() {
-    return request<SessionResponse>("/api/auth/me", {
-      method: "GET",
-      cache: "no-store",
-    });
+  async me() {
+    const response = await api.get<SessionResponse>("/auth/me?name=primary");
+    return response.data;
   },
-  logout() {
-    return request<AuthMessageResponse>("/api/auth/logout", {
-      method: "POST",
-    });
+  async logout() {
+    const response = await api.post<AuthMessageResponse>(
+      "/auth/logout?name=primary",
+    );
+    return response.data;
   },
 };

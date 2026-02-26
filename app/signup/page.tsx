@@ -11,7 +11,7 @@ export default function SignupPage() {
   const { signup, errorMessage, isLoading } = useAuth();
 
   return (
-    <div className="auth-shell">
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 px-4 py-8">
       <AuthForm
         title="Create account"
         description="Start your analytics workspace."

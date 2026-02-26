@@ -7,8 +7,8 @@ const REFRESH_COOKIE = "refreshToken";
 const ACCESS_MAX_AGE = 60 * 15;
 const REFRESH_MAX_AGE = 60 * 60 * 24 * 7;
 
-type BackendSessionPayload = {
-  user?: AuthUser;
+export type BackendSessionPayload = {
+  user?: Partial<AuthUser>;
   accessToken?: string;
   refreshToken?: string;
 };
@@ -37,13 +37,15 @@ export async function backendAuthRequest(
 }
 
 export async function parseErrorMessage(response: Response): Promise<string> {
-  const payload = (await response.json().catch(() => null)) as
-    | AuthBackendError
-    | null;
+  const payload = (await response
+    .json()
+    .catch(() => null)) as AuthBackendError | null;
   return payload?.message ?? "Authentication request failed.";
 }
 
-export async function setAuthCookiesFromPayload(payload: BackendSessionPayload) {
+export async function setAuthCookiesFromPayload(
+  payload: BackendSessionPayload,
+) {
   const cookieStore = await cookies();
   const isProduction = process.env.NODE_ENV === "production";
 
