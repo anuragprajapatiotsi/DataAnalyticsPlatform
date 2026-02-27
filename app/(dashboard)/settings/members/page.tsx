@@ -13,15 +13,22 @@ import { AccessSelectionCards } from "@/components/settings/AccessSelectionCards
 import { OrganizationInfoCard } from "@/components/settings/OrganizationInfoCard";
 import { OrganizationDescriptionCard } from "@/components/settings/OrganizationDescriptionCard";
 import { TeamsSubGroupContent } from "@/components/settings/TeamsSubGroupContent";
+import { OrganizationsContent } from "@/components/settings/OrganizationsContent";
 import { UsersHeader } from "@/components/settings/UsersHeader";
 import { UsersTable } from "@/components/settings/UsersTable";
 import { AdminControlCards } from "@/components/settings/AdminControlCards";
 
 export default function AccessManagementPage() {
-  const [activeTab, setActiveTab] = useState("teams");
+  const [activeTab, setActiveTab] = useState("organization");
 
   const renderContent = () => {
     switch (activeTab) {
+      case "organization":
+        return (
+          <div className="animate-in fade-in duration-300">
+            <OrganizationsContent />
+          </div>
+        );
       case "teams":
         return (
           <div className="animate-in fade-in duration-300">
@@ -49,7 +56,7 @@ export default function AccessManagementPage() {
   };
 
   return (
-    <div className="h-full overflow-y-auto bg-white p-8 custom-scrollbar">
+    <div className="h-full overflow-y-auto p-6 pb-20 custom-scrollbar animate-in fade-in duration-500">
       <div className="mx-auto max-w-6xl">
         <div className="mb-10">
           <Breadcrumb>
@@ -66,6 +73,7 @@ export default function AccessManagementPage() {
               <BreadcrumbSeparator />
               <BreadcrumbItem>
                 <BreadcrumbPage>
+                  {activeTab === "organization" && "Organization"}
                   {activeTab === "teams" && "Teams"}
                   {activeTab === "users" && "Users"}
                   {activeTab === "admin" && "Admins"}

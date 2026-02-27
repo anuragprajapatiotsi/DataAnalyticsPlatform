@@ -63,6 +63,12 @@ export function AccessSelectionCards({
 }: AccessSelectionCardsProps) {
   const sections = [
     {
+      id: "organization",
+      title: "Organization",
+      description: "Manage your enterprise organization details and settings.",
+      icon: Users2,
+    },
+    {
       id: "teams",
       title: "Teams",
       description: "Represent your entire organizational structure with ease.",

@@ -38,12 +38,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isMounted, setIsMounted] = useState(false);
-  const [token, setToken] = useState<string | null>(null);
+  const [token, setToken] = useState<string | null>(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("token");
+    }
+    return null;
+  });
 
   useEffect(() => {
     setIsMounted(true);
-    const storedToken = localStorage.getItem("token");
-    setToken(storedToken);
 
     // Listen for background token updates from axios interceptors
     const handleTokenUpdate = () => {

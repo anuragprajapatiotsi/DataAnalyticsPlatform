@@ -37,6 +37,18 @@ api.interceptors.request.use(
       return config;
     }
 
+    // If a refresh is already in progress, wait for it
+    if (isRefreshing) {
+      return new Promise((resolve, reject) => {
+        failedQueue.push({ resolve, reject });
+      })
+        .then((token) => {
+          config.headers.Authorization = `Bearer ${token}`;
+          return config;
+        })
+        .catch((err) => Promise.reject(err));
+    }
+
     let token = localStorage.getItem("token");
     const expiry = localStorage.getItem("token_expiry");
 
@@ -47,8 +59,10 @@ api.interceptors.request.use(
       const expiryTime = Number(expiry);
       const isNearExpiry = expiryTime - now < 60000;
 
-      if (isNearExpiry && !isRefreshing) {
+      if (isNearExpiry) {
         isRefreshing = true;
+
+        // Start refresh flow
         try {
           const response = await axios.post(
             `${API_BASE_URL}/auth/refresh?name=primary`,
@@ -74,7 +88,6 @@ api.interceptors.request.use(
           processQueue(null, access_token);
         } catch (refreshError) {
           processQueue(refreshError, null);
-          // If refresh fails, we'll let the request proceed and likely hit a 401
         } finally {
           isRefreshing = false;
         }
@@ -96,24 +109,24 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
+    // Handle 401 Unauthorized
     if (error.response?.status === 401 && !originalRequest._retry) {
+      // If the refresh request itself failed, logout
       if (originalRequest.url?.includes("/auth/refresh")) {
-        // If refresh itself failed with 401, logout
         handleGloballyLogout();
         return Promise.reject(error);
       }
 
+      // If already refreshing, queue this request
       if (isRefreshing) {
-        return new Promise(function (resolve, reject) {
+        return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject });
         })
           .then((token) => {
-            originalRequest.headers["Authorization"] = "Bearer " + token;
+            originalRequest.headers.Authorization = `Bearer ${token}`;
             return api(originalRequest);
           })
-          .catch((err) => {
-            return Promise.reject(err);
-          });
+          .catch((err) => Promise.reject(err));
       }
 
       originalRequest._retry = true;
@@ -146,7 +159,9 @@ api.interceptors.response.use(
         window.dispatchEvent(new Event("auth-token-updated"));
 
         processQueue(null, access_token);
-        originalRequest.headers["Authorization"] = "Bearer " + access_token;
+
+        // Retry original request
+        originalRequest.headers.Authorization = `Bearer ${access_token}`;
         return api(originalRequest);
       } catch (refreshError) {
         processQueue(refreshError, null);

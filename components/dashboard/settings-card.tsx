@@ -26,18 +26,18 @@ export function SettingsCard({
     <div className="group flex cursor-pointer flex-row items-start gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-all duration-300 hover:shadow-md hover:border-slate-300 h-full">
       <div
         className={cn(
-          "flex h-11 w-11 shrink-0 items-center justify-center rounded-xl transition-all duration-300 group-hover:scale-105",
+          "flex h-12 w-12 shrink-0 items-center justify-center rounded-xl transition-all duration-300 group-hover:scale-105",
           iconBgClass,
           iconColorClass,
         )}
       >
-        <Icon className="h-5 w-5" />
+        <Icon className="h-6 w-6" />
       </div>
-      <div className="space-y-1.5 pt-0.5">
-        <h3 className="text-[15px] font-semibold text-slate-900 group-hover:text-blue-600 transition-colors">
+      <div className="space-y-1 pt-0.5">
+        <h3 className="text-base font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
           {title}
         </h3>
-        <p className="max-w-[240px] text-[13px] leading-relaxed text-slate-500 font-medium">
+        <p className="max-w-[200px] text-sm leading-relaxed text-slate-500 font-medium">
           {description}
         </p>
       </div>

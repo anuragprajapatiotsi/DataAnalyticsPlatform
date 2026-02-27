@@ -19,6 +19,13 @@ import {
   CheckCircle,
   AlertCircle,
   HelpCircle,
+  Compass,
+  GitBranch,
+  Home,
+  Lightbulb,
+  Radar,
+  ShieldCheck,
+  Sparkles,
   type LucideIcon,
 } from "lucide-react";
 
@@ -43,6 +50,13 @@ export const iconMap: Record<string, LucideIcon> = {
   check: CheckCircle,
   alert: AlertCircle,
   help: HelpCircle,
+  explore: Compass,
+  lineage: GitBranch,
+  home: Home,
+  insights: Lightbulb,
+  observability: Radar,
+  govern: ShieldCheck,
+  domains: Sparkles,
 };
 
 export function getIcon(iconName: string): LucideIcon {

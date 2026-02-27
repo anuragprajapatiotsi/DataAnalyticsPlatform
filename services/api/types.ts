@@ -50,3 +50,40 @@ export interface SettingsItem {
   has_children: boolean;
   sort_order: number;
 }
+export interface NavItem {
+  id: string;
+  slug: string;
+  display_name: string;
+  icon: string;
+  nav_url: string | null;
+  sort_order: number;
+  has_children: boolean;
+  children?: NavItem[];
+}
+
+export interface Organization {
+  id: string;
+  name: string;
+  slug: string;
+  description: string;
+  contact_email: string;
+  owner_id: string;
+  is_active: boolean;
+  is_default: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateOrgRequest {
+  name: string;
+  description: string;
+  contact_email: string;
+}
+
+export interface UpdateOrgRequest {
+  name: string;
+  description: string;
+  contact_email: string;
+  owner_id: string;
+  is_active: boolean;
+}
