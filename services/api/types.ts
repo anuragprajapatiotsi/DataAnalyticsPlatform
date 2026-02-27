@@ -38,3 +38,15 @@ export type SignupRequest = {
 export type AuthMessageResponse = {
   message: string;
 };
+
+export interface SettingsItem {
+  id: string;
+  display_label: string;
+  description: string;
+  icon: string;
+  node_type: "category" | "leaf";
+  slug: string;
+  nav_url: string | null;
+  has_children: boolean;
+  sort_order: number;
+}

@@ -1,0 +1,11 @@
+import { api } from "@/services/api";
+import type { SettingsItem } from "@/services/api/types";
+
+export const settingsApi = {
+  async getSettings(parent: string = "settings") {
+    const response = await api.get<SettingsItem[]>(
+      `/settings/tree?parent=${parent}&name=primary`,
+    );
+    return response.data;
+  },
+};
