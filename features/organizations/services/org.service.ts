@@ -1,11 +1,11 @@
-import { api } from "@/services/api";
+import { api } from "@/shared/api/axios";
 import type {
   Organization,
   CreateOrgRequest,
   UpdateOrgRequest,
 } from "@/services/api/types";
 
-export const orgsApi = {
+export const orgService = {
   async getOrgs() {
     const response = await api.get<Organization[]>("/orgs");
     return response.data;

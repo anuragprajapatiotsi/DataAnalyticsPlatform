@@ -1,7 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import React from "react";
 import {
   Plus,
   Search,
@@ -10,14 +9,10 @@ import {
   CheckCircle2,
   XCircle,
   ShieldCheck,
-  Building2,
   Mail,
-  Calendar,
+  Building2,
 } from "lucide-react";
-import { message, Popconfirm, Button } from "antd";
-
-import { orgsApi } from "@/services/api/orgs";
-import { OrgModal } from "@/components/settings/org-modal";
+import { Popconfirm, Button } from "antd";
 import {
   Table,
   TableBody,
@@ -28,48 +23,27 @@ import {
 } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import type { Organization } from "@/services/api/types";
 
-export function OrganizationsContent() {
-  const queryClient = useQueryClient();
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingOrg, setEditingOrg] = useState<any>(null);
-  const [searchQuery, setSearchQuery] = useState("");
+interface OrganizationsTableProps {
+  organizations: Organization[];
+  isLoading: boolean;
+  searchQuery: string;
+  onSearchChange: (value: string) => void;
+  onCreateClick: () => void;
+  onEditClick: (org: Organization) => void;
+  onDeleteConfirm: (id: string) => void;
+}
 
-  const { data: orgs = [], isLoading } = useQuery({
-    queryKey: ["orgs"],
-    queryFn: () => orgsApi.getOrgs(),
-  });
-
-  const deleteMutation = useMutation({
-    mutationFn: (id: string) => orgsApi.deleteOrg(id),
-    onSuccess: () => {
-      message.success("Organization deleted successfully");
-      queryClient.invalidateQueries({ queryKey: ["orgs"] });
-    },
-    onError: (error: any) => {
-      message.error(
-        error.response?.data?.message || "Failed to delete organization",
-      );
-    },
-  });
-
-  const handleCreate = () => {
-    setEditingOrg(null);
-    setIsModalOpen(true);
-  };
-
-  const handleEdit = (org: any) => {
-    setEditingOrg(org);
-    setIsModalOpen(true);
-  };
-
-  const filteredOrgs = orgs.filter(
-    (org) =>
-      org.is_active &&
-      (org.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        org.contact_email.toLowerCase().includes(searchQuery.toLowerCase())),
-  );
-
+export function OrganizationsTable({
+  organizations,
+  isLoading,
+  searchQuery,
+  onSearchChange,
+  onCreateClick,
+  onEditClick,
+  onDeleteConfirm,
+}: OrganizationsTableProps) {
   return (
     <div className="flex flex-col gap-6 animate-in fade-in duration-500">
       <div className="flex items-center justify-between">
@@ -84,7 +58,7 @@ export function OrganizationsContent() {
         <Button
           type="primary"
           icon={<Plus className="h-4 w-4" />}
-          onClick={handleCreate}
+          onClick={onCreateClick}
           className="bg-blue-600 hover:bg-blue-700 flex items-center gap-2 rounded-lg"
         >
           Add Organization
@@ -97,7 +71,7 @@ export function OrganizationsContent() {
           <Input
             placeholder="Search organizations..."
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e) => onSearchChange(e.target.value)}
             className="w-[320px] h-10 pl-10 rounded-lg border-slate-200 shadow-none focus-visible:ring-1 focus-visible:ring-blue-500"
           />
         </div>
@@ -128,23 +102,29 @@ export function OrganizationsContent() {
             {isLoading ? (
               <TableRow>
                 <TableCell
-                  colSpan={4}
+                  colSpan={5}
                   className="h-32 text-center text-slate-500"
                 >
-                  Loading...
+                  <div className="flex items-center justify-center gap-2">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600" />
+                    <span>Loading...</span>
+                  </div>
                 </TableCell>
               </TableRow>
-            ) : filteredOrgs.length === 0 ? (
+            ) : organizations.length === 0 ? (
               <TableRow>
                 <TableCell
-                  colSpan={4}
+                  colSpan={5}
                   className="h-32 text-center text-slate-500"
                 >
-                  No organizations found
+                  <div className="flex flex-col items-center gap-1">
+                    <Building2 className="h-8 w-8 text-slate-300" />
+                    <span>No organizations found</span>
+                  </div>
                 </TableCell>
               </TableRow>
             ) : (
-              filteredOrgs.map((org) => (
+              organizations.map((org) => (
                 <TableRow
                   key={org.id}
                   className="hover:bg-slate-50/50 transition-colors group"
@@ -198,13 +178,13 @@ export function OrganizationsContent() {
                       <Button
                         type="text"
                         icon={<Edit2 className="h-4 w-4" />}
-                        onClick={() => handleEdit(org)}
+                        onClick={() => onEditClick(org)}
                         className="text-slate-400 hover:text-blue-600"
                       />
                       <Popconfirm
                         title="Delete Organization"
-                        description="Are you sure?"
-                        onConfirm={() => deleteMutation.mutate(org.id)}
+                        description="Are you sure you want to delete this organization?"
+                        onConfirm={() => onDeleteConfirm(org.id)}
                         okText="Yes"
                         cancelText="No"
                       >
@@ -223,12 +203,6 @@ export function OrganizationsContent() {
           </TableBody>
         </Table>
       </div>
-
-      <OrgModal
-        open={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        org={editingOrg}
-      />
     </div>
   );
 }

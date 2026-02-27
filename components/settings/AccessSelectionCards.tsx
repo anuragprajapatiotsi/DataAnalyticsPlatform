@@ -52,15 +52,17 @@ function SelectionCard({
   );
 }
 
+import { useRouter } from "next/navigation";
+
 interface AccessSelectionCardsProps {
   activeSection: string;
-  onSectionChange: (section: string) => void;
 }
 
 export function AccessSelectionCards({
   activeSection,
-  onSectionChange,
 }: AccessSelectionCardsProps) {
+  const router = useRouter();
+
   const sections = [
     {
       id: "organization",
@@ -90,6 +92,12 @@ export function AccessSelectionCards({
     },
   ];
 
+  const handleNavigation = (id: string) => {
+    const path =
+      id === "organization" ? "organizations" : id === "admin" ? "admins" : id;
+    router.push(`/settings/organization-team-user-management/${path}`);
+  };
+
   return (
     <div className="grid grid-cols-1 gap-6 md:grid-cols-3 mb-10">
       {sections.map((section) => (
@@ -99,7 +107,7 @@ export function AccessSelectionCards({
           description={section.description}
           icon={section.icon}
           active={activeSection === section.id}
-          onClick={() => onSectionChange(section.id)}
+          onClick={() => handleNavigation(section.id)}
         />
       ))}
     </div>

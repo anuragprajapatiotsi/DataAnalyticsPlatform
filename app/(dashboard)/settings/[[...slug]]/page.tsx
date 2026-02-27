@@ -29,8 +29,13 @@ export default function SettingsCatchAllPage() {
       );
       router.push(newPath);
     } else if (item.node_type === "leaf" && item.nav_url) {
-      // For leaf nodes, navigate to their literal nav_url (like /settings/members)
-      router.push(item.nav_url);
+      // For leaf nodes, navigate to their literal nav_url
+      // Special case for members to follow hierarchical structure
+      const targetUrl =
+        item.nav_url === "/settings/members"
+          ? "/settings/organization-team-user-management/organizations"
+          : item.nav_url;
+      router.push(targetUrl);
     }
   };
 

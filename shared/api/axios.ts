@@ -27,73 +27,27 @@ const processQueue = (error: any, token: string | null = null) => {
   failedQueue = [];
 };
 
-// Request interceptor to attach token and handle proactive refresh
+// Global logout helper
+export const handleLogout = () => {
+  if (typeof window !== "undefined") {
+    localStorage.removeItem("token");
+    localStorage.removeItem("token_expiry");
+    localStorage.removeItem("user");
+    window.location.href = "/login";
+  }
+};
+
+// Request interceptor to attach token
 api.interceptors.request.use(
   async (config) => {
     if (typeof window === "undefined") return config;
 
-    // Do not intercept the refresh request itself to avoid infinite loops
+    // Do not intercept refresh requests
     if (config.url?.includes("/auth/refresh")) {
       return config;
     }
 
-    // If a refresh is already in progress, wait for it
-    if (isRefreshing) {
-      return new Promise((resolve, reject) => {
-        failedQueue.push({ resolve, reject });
-      })
-        .then((token) => {
-          config.headers.Authorization = `Bearer ${token}`;
-          return config;
-        })
-        .catch((err) => Promise.reject(err));
-    }
-
-    let token = localStorage.getItem("token");
-    const expiry = localStorage.getItem("token_expiry");
-
-    // Proactive Refresh logic:
-    // Check if token exists and is about to expire (less than 60 seconds)
-    if (token && expiry) {
-      const now = Date.now();
-      const expiryTime = Number(expiry);
-      const isNearExpiry = expiryTime - now < 60000;
-
-      if (isNearExpiry) {
-        isRefreshing = true;
-
-        // Start refresh flow
-        try {
-          const response = await axios.post(
-            `${API_BASE_URL}/auth/refresh?name=primary`,
-            {},
-            {
-              headers: {
-                Authorization: `Bearer ${token}`,
-                Accept: "application/json",
-              },
-            },
-          );
-
-          const { access_token, expires_in } = response.data;
-          token = access_token;
-
-          localStorage.setItem("token", access_token);
-          const newExpiryTime = Date.now() + expires_in * 1000;
-          localStorage.setItem("token_expiry", newExpiryTime.toString());
-
-          // Trigger a global event to notify AuthContext
-          window.dispatchEvent(new Event("auth-token-updated"));
-
-          processQueue(null, access_token);
-        } catch (refreshError) {
-          processQueue(refreshError, null);
-        } finally {
-          isRefreshing = false;
-        }
-      }
-    }
-
+    const token = localStorage.getItem("token");
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -113,7 +67,7 @@ api.interceptors.response.use(
     if (error.response?.status === 401 && !originalRequest._retry) {
       // If the refresh request itself failed, logout
       if (originalRequest.url?.includes("/auth/refresh")) {
-        handleGloballyLogout();
+        handleLogout();
         return Promise.reject(error);
       }
 
@@ -134,7 +88,7 @@ api.interceptors.response.use(
 
       const currentToken = localStorage.getItem("token");
       if (!currentToken) {
-        handleGloballyLogout();
+        handleLogout();
         return Promise.reject(error);
       }
 
@@ -155,7 +109,7 @@ api.interceptors.response.use(
         const expiryTime = Date.now() + expires_in * 1000;
         localStorage.setItem("token_expiry", expiryTime.toString());
 
-        // Notify AuthContext
+        // Notify app of token update
         window.dispatchEvent(new Event("auth-token-updated"));
 
         processQueue(null, access_token);
@@ -165,7 +119,7 @@ api.interceptors.response.use(
         return api(originalRequest);
       } catch (refreshError) {
         processQueue(refreshError, null);
-        handleGloballyLogout();
+        handleLogout();
         return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;
@@ -175,11 +129,3 @@ api.interceptors.response.use(
     return Promise.reject(error);
   },
 );
-
-function handleGloballyLogout() {
-  if (typeof window !== "undefined") {
-    localStorage.removeItem("token");
-    localStorage.removeItem("token_expiry");
-    window.location.href = "/login";
-  }
-}
