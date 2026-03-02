@@ -24,6 +24,8 @@ export default function TeamDetailsPage({ params }: PageProps) {
   const { user } = useAuthContext();
   const isAdmin = !!(user?.is_admin || user?.is_global_admin);
 
+  const [activeTab, setActiveTab] = useState<TeamTabKey>("users");
+
   const {
     team,
     members,
@@ -34,9 +36,17 @@ export default function TeamDetailsPage({ params }: PageProps) {
     isError,
     addMember,
     removeMember,
-  } = useTeamDetails(id);
-
-  const [activeTab, setActiveTab] = useState<TeamTabKey>("users");
+    addRole,
+    removeRole,
+    addPolicy,
+    removePolicy,
+    updateTeam,
+    isPending,
+    isLoadingMembers,
+    isLoadingRoles,
+    isLoadingPolicies,
+    isLoadingAssets,
+  } = useTeamDetails(id, activeTab);
 
   // Check if current user is a member of the team
   const isMember = members.some((m) => m.id === user?.id);
@@ -60,10 +70,21 @@ export default function TeamDetailsPage({ params }: PageProps) {
     );
   }
 
-  const handleUpdateDescription = (description: string) => {
-    // In a real app, this would call a mutation
-    message.success("Description updated successfully (mock)");
-    console.log("Updating description to:", description);
+  const handleUpdateDescription = async (description: string) => {
+    await updateTeam({ description });
+  };
+
+  const handleAddMembers = async (userIds: string[]) => {
+    // Adding in parallel for speed, though serial loop is safer for message order
+    await Promise.all(userIds.map((uid) => addMember(uid)));
+  };
+
+  const handleAddRoles = async (roleIds: string[]) => {
+    await Promise.all(roleIds.map((rid) => addRole(rid)));
+  };
+
+  const handleAddPolicies = async (policyIds: string[]) => {
+    await Promise.all(policyIds.map((pid) => addPolicy(pid)));
   };
 
   const renderTabContent = () => {
@@ -73,21 +94,21 @@ export default function TeamDetailsPage({ params }: PageProps) {
           <TeamMembersTable
             members={members}
             isAdmin={isAdmin}
-            onAddMember={() => message.info("Add Member modal would open here")}
+            onAddMember={handleAddMembers}
             onRemoveMember={removeMember}
+            isLoading={isLoadingMembers || isPending}
           />
         );
       case "assets":
-        return <TeamAssetsList assets={assets} />;
+        return <TeamAssetsList assets={assets} isLoading={isLoadingAssets} />;
       case "roles":
         return (
           <TeamDetailsRoles
             roles={roles}
             isAdmin={isAdmin}
-            onAssignRole={() =>
-              message.info("Assign Role modal would open here")
-            }
-            onRemoveRole={(id) => message.info(`Removing role ${id}`)}
+            onAssignRoles={handleAddRoles}
+            onRemoveRole={removeRole}
+            isLoading={isLoadingRoles || isPending}
           />
         );
       case "policies":
@@ -95,10 +116,9 @@ export default function TeamDetailsPage({ params }: PageProps) {
           <TeamDetailsPolicies
             policies={policies}
             isAdmin={isAdmin}
-            onAttachPolicy={() =>
-              message.info("Attach Policy modal would open here")
-            }
-            onDetachPolicy={(id) => message.info(`Detaching policy ${id}`)}
+            onAttachPolicies={handleAddPolicies}
+            onDetachPolicy={removePolicy}
+            isLoading={isLoadingPolicies || isPending}
           />
         );
       default:
@@ -112,9 +132,9 @@ export default function TeamDetailsPage({ params }: PageProps) {
         team={team}
         isAdmin={isAdmin}
         isMember={isMember}
-        onEdit={() => message.info("Edit Team modal would open here")}
-        onDelete={() => message.info("Deleting team...")}
-        onJoin={() => message.info("Joining team...")}
+        onEdit={() => message.info("Feature coming soon")}
+        onDelete={() => message.info("Feature coming soon")}
+        onJoin={() => addMember(user?.id!)}
       />
 
       <TeamDetailsInfo
@@ -128,10 +148,10 @@ export default function TeamDetailsPage({ params }: PageProps) {
         onTabChange={setActiveTab}
         isAdmin={isAdmin}
         counts={{
-          users: members.length,
-          assets: assets.length,
-          roles: roles.length,
-          policies: policies.length,
+          users: members?.length || 0,
+          assets: assets?.length || 0,
+          roles: roles?.length || 0,
+          policies: policies?.length || 0,
         }}
       />
 

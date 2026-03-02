@@ -57,20 +57,17 @@ function SidebarItem({
   const isActive = isRouteActive(item);
   const Icon = getIcon(item.icon);
 
-  const handleClick = (e: React.MouseEvent) => {
-    if (hasChildren && !collapsed) {
-      e.preventDefault();
-      e.stopPropagation();
-      toggleMenu(item.slug);
-    }
-    if (item.nav_url) {
-      router.push(item.nav_url);
-    }
-  };
-
   const content = (
-    <div
-      onClick={handleClick}
+    <Link
+      href={item.nav_url || "#"}
+      onClick={(e) => {
+        if (hasChildren && !collapsed) {
+          toggleMenu(item.slug);
+          if (!item.nav_url) {
+            e.preventDefault();
+          }
+        }
+      }}
       onMouseEnter={(e) => onMouseEnter(e, item)}
       onMouseLeave={onMouseLeave}
       className={cn(
@@ -105,7 +102,7 @@ function SidebarItem({
           )}
         </>
       )}
-    </div>
+    </Link>
   );
 
   return (

@@ -9,6 +9,7 @@ import {
   Lock,
   ChevronRight,
 } from "lucide-react";
+import { Button, Empty, Badge, Popconfirm, Tooltip, message } from "antd";
 import {
   Table,
   TableBody,
@@ -17,24 +18,53 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Button, Empty, Badge, Popconfirm, Tooltip } from "antd";
 import type { Role } from "../../types";
+import { ManagementSelectionModal } from "./ManagementSelectionModal";
+import { teamService } from "../../services/team.service";
+import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
 
 interface TeamDetailsRolesProps {
   roles: Role[];
   isAdmin: boolean;
-  onAssignRole: () => void;
-  onRemoveRole: (id: string) => void;
+  onAssignRoles: (roleIds: string[]) => Promise<void>;
+  onRemoveRole: (roleId: string) => void;
   isLoading?: boolean;
 }
 
 export function TeamDetailsRoles({
   roles,
   isAdmin,
-  onAssignRole,
+  onAssignRoles,
   onRemoveRole,
   isLoading,
 }: TeamDetailsRolesProps) {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // Fetch all available roles for the selection modal
+  const { data: availableRoles = [], isLoading: isLoadingAvailable } = useQuery(
+    {
+      queryKey: ["available-roles"],
+      queryFn: () => teamService.getAvailableRoles(),
+      enabled: isModalOpen,
+    },
+  );
+
+  // Filter out roles already assigned to the team
+  const assignedRoleIds = new Set(roles.map((r) => r.id));
+  const trulyAvailableRoles = availableRoles.filter(
+    (r) => !assignedRoleIds.has(r.id),
+  );
+
+  const handleAssignSubmit = async (roleIds: string[]) => {
+    try {
+      await onAssignRoles(roleIds);
+      setIsModalOpen(false);
+    } catch (error) {
+      // Error handled by hook
+    }
+  };
+
   return (
     <div className="flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
       <div className="flex items-center justify-between">
@@ -43,25 +73,25 @@ export function TeamDetailsRoles({
           <Button
             type="primary"
             icon={<Plus className="h-4 w-4" />}
-            onClick={onAssignRole}
-            className="bg-blue-600 hover:bg-blue-700 h-10 px-6 rounded-lg font-semibold shadow-sm flex items-center gap-2"
+            onClick={() => setIsModalOpen(true)}
+            className="bg-blue-600 hover:bg-blue-700 h-11 px-8 rounded-xl font-bold shadow-lg flex items-center gap-2 transform transition-transform active:scale-95"
           >
-            Assign Role
+            Add Role
           </Button>
         )}
       </div>
 
-      <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+      <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
         <Table>
           <TableHeader className="bg-slate-50/50">
             <TableRow>
-              <TableHead className="w-[300px] text-[13px] font-bold text-slate-500 uppercase py-4 px-6">
+              <TableHead className="w-[300px] text-[12px] font-bold text-slate-400 uppercase tracking-wider py-5 px-8">
                 Role Name
               </TableHead>
-              <TableHead className="text-[13px] font-bold text-slate-500 uppercase py-4 px-6">
+              <TableHead className="text-[12px] font-bold text-slate-400 uppercase tracking-wider py-5 px-8">
                 Description
               </TableHead>
-              <TableHead className="text-right text-[13px] font-bold text-slate-500 uppercase py-4 px-6">
+              <TableHead className="text-right text-[12px] font-bold text-slate-400 uppercase tracking-wider py-5 px-8">
                 Actions
               </TableHead>
             </TableRow>
@@ -69,11 +99,11 @@ export function TeamDetailsRoles({
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell
-                  colSpan={3}
-                  className="h-32 text-center text-slate-500"
-                >
-                  Loading roles...
+                <TableCell colSpan={3} className="h-32 text-center">
+                  <div className="flex items-center justify-center gap-3 text-slate-500 font-medium">
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600" />
+                    <span>Fetching roles...</span>
+                  </div>
                 </TableCell>
               </TableRow>
             ) : roles.length === 0 ? (
@@ -83,10 +113,10 @@ export function TeamDetailsRoles({
                     image={Empty.PRESENTED_IMAGE_SIMPLE}
                     description={
                       <div className="flex flex-col gap-1">
-                        <span className="text-slate-500 font-medium">
-                          No roles assigned to this team
+                        <span className="text-slate-500 font-bold text-lg">
+                          No roles assigned
                         </span>
-                        <span className="text-slate-400 text-[13px]">
+                        <span className="text-slate-400 text-[14px] font-medium">
                           Assign roles to define what this team can do.
                         </span>
                       </div>
@@ -98,29 +128,30 @@ export function TeamDetailsRoles({
               roles.map((role) => (
                 <TableRow
                   key={role.id}
-                  className="hover:bg-slate-50/50 transition-colors group"
+                  className="hover:bg-slate-50/30 transition-colors group"
                 >
-                  <TableCell className="px-6 py-4">
-                    <div className="flex items-center gap-3">
-                      <div className="h-8 w-8 rounded-lg bg-indigo-50 flex items-center justify-center">
-                        <Shield className="h-4 w-4 text-indigo-600" />
+                  <TableCell className="px-8 py-5">
+                    <div className="flex items-center gap-4">
+                      <div className="h-10 w-10 rounded-xl bg-indigo-50 flex items-center justify-center shadow-sm border border-indigo-100">
+                        <Shield className="h-5 w-5 text-indigo-600" />
                       </div>
-                      <span className="font-bold text-slate-900 text-[14px]">
+                      <span className="font-bold text-slate-900 text-[15px]">
                         {role.display_name}
                       </span>
                     </div>
                   </TableCell>
-                  <TableCell className="px-6 py-4 text-slate-500 text-[14px]">
+                  <TableCell className="px-8 py-5 text-slate-500 text-[14px] font-medium">
                     {role.description || "No description provided."}
                   </TableCell>
-                  <TableCell className="px-6 py-4 text-right">
-                    <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <TableCell className="px-8 py-5 text-right">
+                    <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-all transform translate-x-2 group-hover:translate-x-0">
                       <Tooltip title="View Permissions">
                         <Button
                           type="text"
                           icon={
                             <ChevronRight className="h-4 w-4 text-slate-400" />
                           }
+                          className="hover:bg-slate-100 rounded-lg"
                         />
                       </Tooltip>
                       {isAdmin && (
@@ -135,6 +166,7 @@ export function TeamDetailsRoles({
                             type="text"
                             danger
                             icon={<Trash2 className="h-4 w-4" />}
+                            className="hover:bg-red-50 rounded-lg"
                           />
                         </Popconfirm>
                       )}
@@ -146,6 +178,17 @@ export function TeamDetailsRoles({
           </TableBody>
         </Table>
       </div>
+
+      <ManagementSelectionModal
+        title="Assign Roles to Team"
+        open={isModalOpen}
+        onCancel={() => setIsModalOpen(false)}
+        onConfirm={handleAssignSubmit}
+        items={trulyAvailableRoles}
+        isLoading={isLoadingAvailable}
+        placeholder="Search roles by name or description..."
+        itemType="role"
+      />
     </div>
   );
 }

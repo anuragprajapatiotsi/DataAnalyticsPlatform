@@ -66,4 +66,39 @@ export const teamService = {
     const response = await api.get<TeamAsset[]>(`/teams/${id}/assets`);
     return response.data;
   },
+
+  async addRole(teamId: string, roleId: string) {
+    const response = await api.post(`/teams/${teamId}/roles/${roleId}`);
+    return response.data;
+  },
+
+  async removeRole(teamId: string, roleId: string) {
+    const response = await api.delete(`/teams/${teamId}/roles/${roleId}`);
+    return response.data;
+  },
+
+  async addPolicy(teamId: string, policyId: string) {
+    const response = await api.post(`/teams/${teamId}/policies/${policyId}`);
+    return response.data;
+  },
+
+  async removePolicy(teamId: string, policyId: string) {
+    const response = await api.delete(`/teams/${teamId}/policies/${policyId}`);
+    return response.data;
+  },
+
+  async getAvailableUsers() {
+    const response = await api.get<any[]>("/users?limit=1000"); // Standard users endpoint
+    return response.data;
+  },
+
+  async getAvailableRoles() {
+    const response = await api.get<Role[]>("/roles");
+    return response.data;
+  },
+
+  async getAvailablePolicies() {
+    const response = await api.get<Policy[]>("/policies?limit=1000");
+    return response.data;
+  },
 };

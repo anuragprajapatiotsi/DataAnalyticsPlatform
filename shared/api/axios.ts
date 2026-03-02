@@ -33,7 +33,8 @@ export const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("token_expiry");
     localStorage.removeItem("user");
-    window.location.href = "/login";
+    // Dispatch event so AuthProvider can handle soft redirect
+    window.dispatchEvent(new Event("auth-logout"));
   }
 };
 

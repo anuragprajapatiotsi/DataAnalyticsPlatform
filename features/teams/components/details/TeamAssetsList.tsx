@@ -48,20 +48,20 @@ export function TeamAssetsList({ assets, isLoading }: TeamAssetsListProps) {
         <h2 className="text-[18px] font-bold text-slate-900 m-0">Assets</h2>
       </div>
 
-      <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+      <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
         <Table>
           <TableHeader className="bg-slate-50/50">
             <TableRow>
-              <TableHead className="w-[300px] text-[13px] font-bold text-slate-500 uppercase py-4 px-6">
+              <TableHead className="w-[300px] text-[12px] font-bold text-slate-400 uppercase tracking-wider py-5 px-8">
                 Name
               </TableHead>
-              <TableHead className="text-[13px] font-bold text-slate-500 uppercase py-4 px-6">
+              <TableHead className="text-[12px] font-bold text-slate-400 uppercase tracking-wider py-5 px-8">
                 Type
               </TableHead>
-              <TableHead className="text-[13px] font-bold text-slate-500 uppercase py-4 px-6">
+              <TableHead className="text-[12px] font-bold text-slate-400 uppercase tracking-wider py-5 px-8">
                 Owner
               </TableHead>
-              <TableHead className="text-right text-[13px] font-bold text-slate-500 uppercase py-4 px-6">
+              <TableHead className="text-right text-[12px] font-bold text-slate-400 uppercase tracking-wider py-5 px-8">
                 Actions
               </TableHead>
             </TableRow>
@@ -69,11 +69,11 @@ export function TeamAssetsList({ assets, isLoading }: TeamAssetsListProps) {
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell
-                  colSpan={4}
-                  className="h-32 text-center text-slate-500"
-                >
-                  Loading assets...
+                <TableCell colSpan={4} className="h-32 text-center">
+                  <div className="flex items-center justify-center gap-3 text-slate-500 font-medium">
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600" />
+                    <span>Fetching assets...</span>
+                  </div>
                 </TableCell>
               </TableRow>
             ) : assets.length === 0 ? (

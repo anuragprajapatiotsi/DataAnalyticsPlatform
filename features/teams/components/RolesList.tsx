@@ -11,21 +11,23 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
+import { useQuery } from "@tanstack/react-query";
+import { teamService } from "../services/team.service";
+import { Skeleton, Empty } from "antd";
+
 export function RolesList() {
-  const roles = [
-    {
-      id: "1",
-      name: "DataConsumer",
-      display_name: "Data Consumer",
-      description: "Users with this role can only consume data.",
-    },
-    {
-      id: "2",
-      name: "DataSteward",
-      display_name: "Data Steward",
-      description: "Users with this role can manage metadata.",
-    },
-  ];
+  const { data: roles = [], isLoading } = useQuery({
+    queryKey: ["roles"],
+    queryFn: () => teamService.getAvailableRoles(),
+  });
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col gap-6 p-4">
+        <Skeleton active paragraph={{ rows: 4 }} />
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-6 animate-in fade-in duration-500">
@@ -52,24 +54,32 @@ export function RolesList() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {roles.map((role) => (
-              <TableRow key={role.id} className="hover:bg-slate-50/50">
-                <TableCell className="px-6 py-4">
-                  <div className="flex items-center gap-2">
-                    <Shield className="h-4 w-4 text-blue-500" />
-                    <span className="font-semibold text-slate-800">
-                      {role.display_name}
-                    </span>
-                  </div>
-                </TableCell>
-                <TableCell className="px-6 py-4 text-slate-500">
-                  {role.description}
-                </TableCell>
-                <TableCell className="px-6 py-4 text-right">
-                  <Lock className="h-4 w-4 text-slate-300 ml-auto" />
+            {roles.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={3} className="h-64 text-center">
+                  <Empty description="No roles found" />
                 </TableCell>
               </TableRow>
-            ))}
+            ) : (
+              roles.map((role) => (
+                <TableRow key={role.id} className="hover:bg-slate-50/50">
+                  <TableCell className="px-6 py-4">
+                    <div className="flex items-center gap-2">
+                      <Shield className="h-4 w-4 text-blue-500" />
+                      <span className="font-semibold text-slate-800">
+                        {role.display_name}
+                      </span>
+                    </div>
+                  </TableCell>
+                  <TableCell className="px-6 py-4 text-slate-500">
+                    {role.description}
+                  </TableCell>
+                  <TableCell className="px-6 py-4 text-right">
+                    <Lock className="h-4 w-4 text-slate-300 ml-auto" />
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
           </TableBody>
         </Table>
       </div>

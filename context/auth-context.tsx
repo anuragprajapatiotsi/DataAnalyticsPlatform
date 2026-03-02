@@ -54,8 +54,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
 
     window.addEventListener("auth-token-updated", handleTokenUpdate);
+    window.addEventListener("auth-logout", handleLogoutCleanup);
     return () => {
       window.removeEventListener("auth-token-updated", handleTokenUpdate);
+      window.removeEventListener("auth-logout", handleLogoutCleanup);
     };
   }, []);
 

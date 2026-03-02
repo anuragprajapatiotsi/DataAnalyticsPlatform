@@ -11,6 +11,7 @@ import {
   Edit2,
   Users as UsersIcon,
 } from "lucide-react";
+import { Button, Empty, Badge, Popconfirm, Tooltip, message } from "antd";
 import {
   Table,
   TableBody,
@@ -19,13 +20,16 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Button, Empty, Badge, Popconfirm, Tooltip } from "antd";
 import type { Policy } from "../../types";
+import { ManagementSelectionModal } from "./ManagementSelectionModal";
+import { teamService } from "../../services/team.service";
+import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
 
 interface TeamDetailsPoliciesProps {
   policies: Policy[];
   isAdmin: boolean;
-  onAttachPolicy: () => void;
+  onAttachPolicies: (policyIds: string[]) => Promise<void>;
   onDetachPolicy: (id: string) => void;
   isLoading?: boolean;
 }
@@ -50,7 +54,7 @@ const PermissionBadge = ({ type }: { type: string }) => {
 
   return (
     <Badge
-      className={`${style.color} flex items-center gap-1.5 px-2 py-0.5 border text-[11px] font-bold capitalize`}
+      className={`${style.color} flex items-center gap-1.5 px-2.5 py-0.5 border text-[10px] font-bold uppercase tracking-wider rounded-md`}
     >
       {style.icon}
       {type}
@@ -61,10 +65,35 @@ const PermissionBadge = ({ type }: { type: string }) => {
 export function TeamDetailsPolicies({
   policies,
   isAdmin,
-  onAttachPolicy,
+  onAttachPolicies,
   onDetachPolicy,
   isLoading,
 }: TeamDetailsPoliciesProps) {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // Fetch available policies for the selection modal
+  const { data: availablePolicies = [], isLoading: isLoadingAvailable } =
+    useQuery({
+      queryKey: ["available-policies"],
+      queryFn: () => teamService.getAvailablePolicies(),
+      enabled: isModalOpen,
+    });
+
+  // Filter out policies already attached
+  const attachedPolicyIds = new Set(policies.map((p) => p.id));
+  const trulyAvailablePolicies = availablePolicies.filter(
+    (p) => !attachedPolicyIds.has(p.id),
+  );
+
+  const handleAttachSubmit = async (policyIds: string[]) => {
+    try {
+      await onAttachPolicies(policyIds);
+      setIsModalOpen(false);
+    } catch (error) {
+      // Error handled by hook
+    }
+  };
+
   return (
     <div className="flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
       <div className="flex items-center justify-between">
@@ -73,25 +102,25 @@ export function TeamDetailsPolicies({
           <Button
             type="primary"
             icon={<Plus className="h-4 w-4" />}
-            onClick={onAttachPolicy}
-            className="bg-blue-600 hover:bg-blue-700 h-10 px-6 rounded-lg font-semibold shadow-sm flex items-center gap-2"
+            onClick={() => setIsModalOpen(true)}
+            className="bg-blue-600 hover:bg-blue-700 h-11 px-8 rounded-xl font-bold shadow-lg flex items-center gap-2 transform transition-transform active:scale-95"
           >
-            Attach Policy
+            Add Policy
           </Button>
         )}
       </div>
 
-      <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+      <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
         <Table>
           <TableHeader className="bg-slate-50/50">
             <TableRow>
-              <TableHead className="w-[300px] text-[13px] font-bold text-slate-500 uppercase py-4 px-6">
+              <TableHead className="w-[300px] text-[12px] font-bold text-slate-400 uppercase tracking-wider py-5 px-8">
                 Policy Name
               </TableHead>
-              <TableHead className="text-[13px] font-bold text-slate-500 uppercase py-4 px-6">
+              <TableHead className="text-[12px] font-bold text-slate-400 uppercase tracking-wider py-5 px-8">
                 Permissions
               </TableHead>
-              <TableHead className="text-right text-[13px] font-bold text-slate-500 uppercase py-4 px-6">
+              <TableHead className="text-right text-[12px] font-bold text-slate-400 uppercase tracking-wider py-5 px-8">
                 Actions
               </TableHead>
             </TableRow>
@@ -99,11 +128,11 @@ export function TeamDetailsPolicies({
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell
-                  colSpan={3}
-                  className="h-32 text-center text-slate-500"
-                >
-                  Loading policies...
+                <TableCell colSpan={3} className="h-32 text-center">
+                  <div className="flex items-center justify-center gap-3 text-slate-500 font-medium">
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600" />
+                    <span>Fetching policies...</span>
+                  </div>
                 </TableCell>
               </TableRow>
             ) : policies.length === 0 ? (
@@ -113,12 +142,11 @@ export function TeamDetailsPolicies({
                     image={Empty.PRESENTED_IMAGE_SIMPLE}
                     description={
                       <div className="flex flex-col gap-1">
-                        <span className="text-slate-500 font-medium">
-                          No policies attached to this team
+                        <span className="text-slate-500 font-bold text-lg">
+                          No policies attached
                         </span>
-                        <span className="text-slate-400 text-[13px]">
-                          Attach policies to govern data access for team
-                          members.
+                        <span className="text-slate-400 text-[14px] font-medium">
+                          Attach policies to govern data access for this team.
                         </span>
                       </div>
                     }
@@ -129,40 +157,41 @@ export function TeamDetailsPolicies({
               policies.map((policy) => (
                 <TableRow
                   key={policy.id}
-                  className="hover:bg-slate-50/50 transition-colors group"
+                  className="hover:bg-slate-50/30 transition-colors group"
                 >
-                  <TableCell className="px-6 py-4">
-                    <div className="flex items-center gap-3">
-                      <div className="h-8 w-8 rounded-lg bg-emerald-50 flex items-center justify-center">
-                        <ShieldCheck className="h-4 w-4 text-emerald-600" />
+                  <TableCell className="px-8 py-5">
+                    <div className="flex items-center gap-4">
+                      <div className="h-10 w-10 rounded-xl bg-emerald-50 flex items-center justify-center shadow-sm border border-emerald-100">
+                        <ShieldCheck className="h-5 w-5 text-emerald-600" />
                       </div>
                       <div className="flex flex-col">
-                        <span className="font-bold text-slate-900 text-[14px]">
+                        <span className="font-bold text-slate-900 text-[15px]">
                           {policy.name}
                         </span>
                         {policy.description && (
-                          <span className="text-[12px] text-slate-400 line-clamp-1">
+                          <span className="text-[12px] text-slate-400 font-medium line-clamp-1">
                             {policy.description}
                           </span>
                         )}
                       </div>
                     </div>
                   </TableCell>
-                  <TableCell className="px-6 py-4">
-                    <div className="flex items-center gap-2 flex-wrap">
+                  <TableCell className="px-8 py-5">
+                    <div className="flex items-center gap-2 flex-wrap text-slate-600 text-[14px] font-medium">
                       <PermissionBadge type="view" />
                       <PermissionBadge type="edit" />
                       <PermissionBadge type="manage" />
                     </div>
                   </TableCell>
-                  <TableCell className="px-6 py-4 text-right">
-                    <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <TableCell className="px-8 py-5 text-right">
+                    <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-all transform translate-x-2 group-hover:translate-x-0">
                       <Tooltip title="View Policy Details">
                         <Button
                           type="text"
                           icon={
                             <ChevronRight className="h-4 w-4 text-slate-400" />
                           }
+                          className="hover:bg-slate-100 rounded-lg"
                         />
                       </Tooltip>
                       {isAdmin && (
@@ -177,6 +206,7 @@ export function TeamDetailsPolicies({
                             type="text"
                             danger
                             icon={<Trash2 className="h-4 w-4" />}
+                            className="hover:bg-red-50 rounded-lg"
                           />
                         </Popconfirm>
                       )}
@@ -188,6 +218,17 @@ export function TeamDetailsPolicies({
           </TableBody>
         </Table>
       </div>
+
+      <ManagementSelectionModal
+        title="Attach Policies to Team"
+        open={isModalOpen}
+        onCancel={() => setIsModalOpen(false)}
+        onConfirm={handleAttachSubmit}
+        items={trulyAvailablePolicies}
+        isLoading={isLoadingAvailable}
+        placeholder="Search policies by name or description..."
+        itemType="policy"
+      />
     </div>
   );
 }

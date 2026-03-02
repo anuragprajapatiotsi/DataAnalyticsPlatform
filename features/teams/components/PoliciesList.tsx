@@ -12,19 +12,23 @@ import {
 } from "@/components/ui/table";
 import { Button } from "antd";
 
+import { useQuery } from "@tanstack/react-query";
+import { teamService } from "../services/team.service";
+import { Skeleton, Empty } from "antd";
+
 export function PoliciesList() {
-  const policies = [
-    {
-      id: "1",
-      name: "OrganizationPolicy",
-      description: "Standard policy for all organization members.",
-    },
-    {
-      id: "2",
-      name: "TeamPolicy",
-      description: "Default policy for new teams.",
-    },
-  ];
+  const { data: policies = [], isLoading } = useQuery({
+    queryKey: ["policies"],
+    queryFn: () => teamService.getAvailablePolicies(),
+  });
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col gap-6 p-4">
+        <Skeleton active paragraph={{ rows: 4 }} />
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-6 animate-in fade-in duration-500">
@@ -53,27 +57,37 @@ export function PoliciesList() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {policies.map((policy) => (
-              <TableRow key={policy.id} className="hover:bg-slate-50/50">
-                <TableCell className="px-6 py-4">
-                  <div className="flex items-center gap-2">
-                    <FileText className="h-4 w-4 text-emerald-500" />
-                    <span className="font-semibold text-slate-800">
-                      {policy.name}
-                    </span>
-                  </div>
-                </TableCell>
-                <TableCell className="px-6 py-4 text-slate-500">
-                  {policy.description}
-                </TableCell>
-                <TableCell className="px-6 py-4 text-right">
-                  <Button
-                    type="text"
-                    icon={<MoreHorizontal className="h-4 w-4 text-slate-400" />}
-                  />
+            {policies.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={3} className="h-64 text-center">
+                  <Empty description="No policies found" />
                 </TableCell>
               </TableRow>
-            ))}
+            ) : (
+              policies.map((policy) => (
+                <TableRow key={policy.id} className="hover:bg-slate-50/50">
+                  <TableCell className="px-6 py-4">
+                    <div className="flex items-center gap-2">
+                      <FileText className="h-4 w-4 text-emerald-500" />
+                      <span className="font-semibold text-slate-800">
+                        {policy.name}
+                      </span>
+                    </div>
+                  </TableCell>
+                  <TableCell className="px-6 py-4 text-slate-500">
+                    {policy.description}
+                  </TableCell>
+                  <TableCell className="px-6 py-4 text-right">
+                    <Button
+                      type="text"
+                      icon={
+                        <MoreHorizontal className="h-4 w-4 text-slate-400" />
+                      }
+                    />
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
           </TableBody>
         </Table>
       </div>

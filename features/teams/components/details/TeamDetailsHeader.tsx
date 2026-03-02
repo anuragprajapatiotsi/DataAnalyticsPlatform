@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Link from "next/link";
 import {
   ChevronRight,
   Edit2,
@@ -67,8 +68,10 @@ export function TeamDetailsHeader({
       <Breadcrumb>
         <BreadcrumbList>
           <BreadcrumbItem>
-            <BreadcrumbLink href="/settings/organization-team-user-management/teams">
-              Teams
+            <BreadcrumbLink asChild>
+              <Link href="/settings/organization-team-user-management/teams">
+                Teams
+              </Link>
             </BreadcrumbLink>
           </BreadcrumbItem>
           <BreadcrumbSeparator />
