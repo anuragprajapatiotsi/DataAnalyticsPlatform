@@ -37,16 +37,16 @@ export function Topbar() {
       </div>
 
       <div className="flex items-center gap-3">
-        <CustomSelect
+        {/* <CustomSelect
           options={languages}
           value="en"
           className="h-9 min-w-32 rounded-lg"
-        />
+        /> */}
 
-        <button className="relative flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50">
+        {/* <button className="relative flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50">
           <Bell className="h-4 w-4" />
           <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-blue-600" />
-        </button>
+        </button> */}
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>

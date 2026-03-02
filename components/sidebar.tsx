@@ -214,7 +214,7 @@ export function Sidebar() {
   return (
     <aside
       className={cn(
-        "hidden shrink-0 h-screen sticky top-0 overflow-y-auto custom-scrollbar border-r border-slate-200 bg-slate-100/90 py-6 transition-all duration-300 ease-in-out lg:flex lg:flex-col",
+        "hidden shrink-0 border-r border-slate-200 bg-slate-100/90 py-6 transition-all duration-300 ease-in-out lg:flex lg:flex-col",
         collapsed ? "w-[72px] px-3" : "w-[260px] px-4",
       )}
     >
@@ -228,8 +228,8 @@ export function Sidebar() {
           <Image
             src="/otsi-logo.png"
             alt="OTSI logo"
-            width={32}
-            height={32}
+            width={60}
+            height={60}
             className="rounded-lg object-contain shrink-0"
           />
           {!collapsed && (

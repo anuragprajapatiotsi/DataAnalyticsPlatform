@@ -42,7 +42,7 @@ export default function SettingsCatchAllPage() {
   if (isLoading) {
     return (
       <div className="h-full overflow-y-auto p-8 custom-scrollbar">
-        <div className="mx-auto max-w-7xl">
+        <div className="w-full">
           <div className="mb-8 pl-1">
             <Skeleton className="h-10 w-48 mb-2" />
             <Skeleton className="h-6 w-96" />
@@ -90,7 +90,7 @@ export default function SettingsCatchAllPage() {
 
   return (
     <div className="h-full overflow-y-auto p-8 pb-20 custom-scrollbar animate-in fade-in slide-in-from-bottom-3 duration-500">
-      <div className="mx-auto max-w-7xl">
+      <div className="w-full">
         {/* Breadcrumbs */}
         <nav className="mb-8 flex items-center space-x-2 text-sm font-medium text-slate-500">
           {breadcrumbs.map((item, index) => (

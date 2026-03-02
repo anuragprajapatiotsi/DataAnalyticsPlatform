@@ -23,9 +23,8 @@ export default function OrganizationsPage() {
 
   const filteredOrgs = organizations.filter(
     (org) =>
-      org.is_active &&
-      (org.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        org.contact_email.toLowerCase().includes(searchQuery.toLowerCase())),
+      org.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      org.contact_email.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   const handleCreate = () => {

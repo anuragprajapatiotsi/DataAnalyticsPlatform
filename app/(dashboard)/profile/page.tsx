@@ -55,7 +55,7 @@ export default function ProfilePage() {
   };
 
   return (
-    <div className="container max-w-6xl py-8">
+    <div className="w-full p-8 px-6 lg:px-8">
       <div className="mb-8">
         <h1 className="text-2xl font-bold tracking-tight text-slate-900">
           Account Settings

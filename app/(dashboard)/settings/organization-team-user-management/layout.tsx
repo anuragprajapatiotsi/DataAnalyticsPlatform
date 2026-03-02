@@ -47,7 +47,7 @@ export default function OrganizationManagementLayout({
 
   return (
     <div className="h-full overflow-y-auto p-6 pb-20 custom-scrollbar animate-in fade-in duration-500">
-      <div className="mx-auto max-w-6xl">
+      <div className="w-full">
         <div className="mb-10">
           <Breadcrumb>
             <BreadcrumbList>
