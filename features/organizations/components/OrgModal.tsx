@@ -2,7 +2,7 @@
 
 import React, { useEffect } from "react";
 import { Modal, Form, Input as AntInput, Switch } from "antd";
-import type { Organization } from "@/services/api/types";
+import type { Organization } from "@/shared/types";
 
 interface OrgModalProps {
   open: boolean;
@@ -104,3 +104,4 @@ export function OrgModal({
     </Modal>
   );
 }
+

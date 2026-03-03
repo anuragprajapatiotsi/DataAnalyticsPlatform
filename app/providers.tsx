@@ -4,8 +4,8 @@ import { useState, type ReactNode } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 
-import { AuthProvider } from "@/context/auth-context";
-import { SidebarProvider } from "@/context/sidebar-context";
+import { AuthProvider } from "@/shared/contexts/auth-context";
+import { SidebarProvider } from "@/shared/contexts/sidebar-context";
 
 export function Providers({ children }: { children: ReactNode }) {
   const [queryClient] = useState(
@@ -31,3 +31,4 @@ export function Providers({ children }: { children: ReactNode }) {
     </QueryClientProvider>
   );
 }
+

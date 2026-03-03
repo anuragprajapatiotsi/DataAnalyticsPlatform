@@ -15,19 +15,19 @@ export const useTeamDetails = (teamId?: string, activeTab?: TeamTabKey) => {
   });
 
   const membersQuery = useQuery({
-    queryKey: ["teams", teamId, "members"],
+    queryKey: ["team-members", teamId],
     queryFn: () => teamService.getMembers(teamId!),
     enabled: !!teamId && (!activeTab || activeTab === "users"),
   });
 
   const rolesQuery = useQuery({
-    queryKey: ["teams", teamId, "roles"],
+    queryKey: ["team-roles", teamId],
     queryFn: () => teamService.getRoles(teamId!),
     enabled: !!teamId && activeTab === "roles",
   });
 
   const policiesQuery = useQuery({
-    queryKey: ["teams", teamId, "policies"],
+    queryKey: ["team-policies", teamId],
     queryFn: () => teamService.getPolicies(teamId!),
     enabled: !!teamId && activeTab === "policies",
   });
@@ -38,14 +38,15 @@ export const useTeamDetails = (teamId?: string, activeTab?: TeamTabKey) => {
     enabled: !!teamId && activeTab === "assets",
   });
 
-  const addMemberMutation = useMutation({
-    mutationFn: (userId: string) => teamService.addMember(teamId!, userId),
+  const assignMembersMutation = useMutation({
+    mutationFn: (userIds: string[]) =>
+      teamService.assignMembers(teamId!, userIds),
     onSuccess: () => {
-      message.success("Member added successfully");
-      queryClient.invalidateQueries({ queryKey: ["teams", teamId, "members"] });
+      message.success("Members added successfully");
+      queryClient.invalidateQueries({ queryKey: ["team-members", teamId] });
     },
     onError: (error: any) => {
-      message.error(error.response?.data?.message || "Failed to add member");
+      message.error(error.response?.data?.message || "Failed to add members");
     },
   });
 
@@ -53,7 +54,7 @@ export const useTeamDetails = (teamId?: string, activeTab?: TeamTabKey) => {
     mutationFn: (userId: string) => teamService.removeMember(teamId!, userId),
     onSuccess: () => {
       message.success("Member removed successfully");
-      queryClient.invalidateQueries({ queryKey: ["teams", teamId, "members"] });
+      queryClient.invalidateQueries({ queryKey: ["team-members", teamId] });
     },
     onError: (error: any) => {
       message.error(error.response?.data?.message || "Failed to remove member");
@@ -76,10 +77,22 @@ export const useTeamDetails = (teamId?: string, activeTab?: TeamTabKey) => {
     mutationFn: (roleId: string) => teamService.addRole(teamId!, roleId),
     onSuccess: () => {
       message.success("Role assigned successfully");
-      queryClient.invalidateQueries({ queryKey: ["teams", teamId, "roles"] });
+      queryClient.invalidateQueries({ queryKey: ["team-roles", teamId] });
     },
     onError: (error: any) => {
       message.error(error.response?.data?.message || "Failed to assign role");
+    },
+  });
+
+  const assignRolesMutation = useMutation({
+    mutationFn: (roleIds: string[]) =>
+      teamService.assignRoles(teamId!, roleIds),
+    onSuccess: () => {
+      message.success("Roles assigned successfully");
+      queryClient.invalidateQueries({ queryKey: ["team-roles", teamId] });
+    },
+    onError: (error: any) => {
+      message.error(error.response?.data?.message || "Failed to assign roles");
     },
   });
 
@@ -87,7 +100,7 @@ export const useTeamDetails = (teamId?: string, activeTab?: TeamTabKey) => {
     mutationFn: (roleId: string) => teamService.removeRole(teamId!, roleId),
     onSuccess: () => {
       message.success("Role removed successfully");
-      queryClient.invalidateQueries({ queryKey: ["teams", teamId, "roles"] });
+      queryClient.invalidateQueries({ queryKey: ["team-roles", teamId] });
     },
     onError: (error: any) => {
       message.error(error.response?.data?.message || "Failed to remove role");
@@ -99,11 +112,27 @@ export const useTeamDetails = (teamId?: string, activeTab?: TeamTabKey) => {
     onSuccess: () => {
       message.success("Policy assigned successfully");
       queryClient.invalidateQueries({
-        queryKey: ["teams", teamId, "policies"],
+        queryKey: ["team-policies", teamId],
       });
     },
     onError: (error: any) => {
       message.error(error.response?.data?.message || "Failed to assign policy");
+    },
+  });
+
+  const assignPoliciesMutation = useMutation({
+    mutationFn: (policyIds: string[]) =>
+      teamService.assignPolicies(teamId!, policyIds),
+    onSuccess: () => {
+      message.success("Policies assigned successfully");
+      queryClient.invalidateQueries({
+        queryKey: ["team-policies", teamId],
+      });
+    },
+    onError: (error: any) => {
+      message.error(
+        error.response?.data?.message || "Failed to assign policies",
+      );
     },
   });
 
@@ -113,7 +142,7 @@ export const useTeamDetails = (teamId?: string, activeTab?: TeamTabKey) => {
     onSuccess: () => {
       message.success("Policy removed successfully");
       queryClient.invalidateQueries({
-        queryKey: ["teams", teamId, "policies"],
+        queryKey: ["team-policies", teamId],
       });
     },
     onError: (error: any) => {
@@ -136,21 +165,25 @@ export const useTeamDetails = (teamId?: string, activeTab?: TeamTabKey) => {
     isLoadingAssets: assetsQuery.isLoading,
     isError: detailsQuery.isError,
     // Operations
-    addMember: addMemberMutation.mutateAsync,
+    assignMembers: assignMembersMutation.mutateAsync,
     removeMember: removeMemberMutation.mutateAsync,
     addRole: addRoleMutation.mutateAsync,
+    assignRoles: assignRolesMutation.mutateAsync,
     removeRole: removeRoleMutation.mutateAsync,
     addPolicy: addPolicyMutation.mutateAsync,
+    assignPolicies: assignPoliciesMutation.mutateAsync,
     removePolicy: removePolicyMutation.mutateAsync,
     updateTeam: updateTeamMutation.mutateAsync,
     // Pending states
     isPending:
-      addMemberMutation.isPending ||
+      assignMembersMutation.isPending ||
       removeMemberMutation.isPending ||
       addRoleMutation.isPending ||
       removeRoleMutation.isPending ||
+      assignRolesMutation.isPending ||
       addPolicyMutation.isPending ||
       removePolicyMutation.isPending ||
+      assignPoliciesMutation.isPending ||
       updateTeamMutation.isPending,
   };
 };

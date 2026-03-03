@@ -20,10 +20,10 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import type { Organization } from "@/services/api/types";
+} from "@/shared/components/ui/table";
+import { Input } from "@/shared/components/ui/input";
+import { Badge } from "@/shared/components/ui/badge";
+import type { Organization } from "@/shared/types";
 
 interface OrganizationsTableProps {
   organizations: Organization[];
@@ -206,3 +206,4 @@ export function OrganizationsTable({
     </div>
   );
 }
+

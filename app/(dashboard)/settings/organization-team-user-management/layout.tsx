@@ -10,8 +10,8 @@ import {
   BreadcrumbList,
   BreadcrumbPage,
   BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
-import { AccessSelectionCards } from "@/components/settings/AccessSelectionCards";
+} from "@/shared/components/ui/breadcrumb";
+import { AccessSelectionCards } from "@/features/settings/components/AccessSelectionCards";
 
 export default function OrganizationManagementLayout({
   children,
@@ -100,3 +100,4 @@ export default function OrganizationManagementLayout({
     </div>
   );
 }
+

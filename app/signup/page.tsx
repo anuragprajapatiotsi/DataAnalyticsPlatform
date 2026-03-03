@@ -2,9 +2,9 @@
 
 import { useRouter } from "next/navigation";
 
-import { AuthForm } from "@/components/forms/auth-form";
-import { useAuth } from "@/hooks/use-auth";
-import { signupSchema } from "@/utils/validation";
+import { AuthForm } from "@/shared/components/forms/auth-form";
+import { useAuth } from "@/shared/hooks/use-auth";
+import { signupSchema } from "@/shared/utils/validation";
 
 export default function SignupPage() {
   const router = useRouter();
@@ -18,9 +18,24 @@ export default function SignupPage() {
         submitLabel="Sign Up"
         schema={signupSchema}
         fields={[
-          { name: "name", label: "Full name", type: "text", placeholder: "John Doe" },
-          { name: "email", label: "Email", type: "email", placeholder: "name@company.com" },
-          { name: "password", label: "Password", type: "password", placeholder: "********" },
+          {
+            name: "name",
+            label: "Full name",
+            type: "text",
+            placeholder: "John Doe",
+          },
+          {
+            name: "email",
+            label: "Email",
+            type: "email",
+            placeholder: "name@company.com",
+          },
+          {
+            name: "password",
+            label: "Password",
+            type: "password",
+            placeholder: "********",
+          },
           {
             name: "confirmPassword",
             label: "Confirm password",

@@ -1,11 +1,11 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { Sidebar } from "@/components/sidebar";
-import { Topbar } from "@/components/topbar";
-import { ProtectedRoute } from "@/components/auth/protected-route";
+import { Sidebar } from "@/shared/components/layout/sidebar";
+import { Topbar } from "@/shared/components/layout/topbar";
+import { ProtectedRoute } from "@/shared/components/auth/protected-route";
 
-import { NavigationProvider } from "@/context/navigation-context";
+import { NavigationProvider } from "@/shared/contexts/navigation-context";
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   return (
@@ -24,3 +24,4 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     </ProtectedRoute>
   );
 }
+

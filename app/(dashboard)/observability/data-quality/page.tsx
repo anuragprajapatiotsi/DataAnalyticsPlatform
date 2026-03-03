@@ -1,11 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { ObservabilityHeader } from "@/components/observability/header";
-import { QualityTabs } from "@/components/observability/quality-tabs";
-import { QualityFilters } from "@/components/observability/quality-filters";
-import { QualityMetrics } from "@/components/observability/quality-metrics";
-import { QualityTable } from "@/components/observability/quality-table";
+import { ObservabilityHeader } from "@/features/observability/components/header";
+import { QualityTabs } from "@/features/observability/components/quality-tabs";
+import { QualityFilters } from "@/features/observability/components/quality-filters";
+import { QualityMetrics } from "@/features/observability/components/quality-metrics";
+import { QualityTable } from "@/features/observability/components/quality-table";
 
 export default function DataQualityPage() {
   const [activeTab, setActiveTab] = useState("test-cases");
@@ -27,3 +27,4 @@ export default function DataQualityPage() {
     </div>
   );
 }
+

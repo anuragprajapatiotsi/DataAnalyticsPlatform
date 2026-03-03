@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Modal, Input, List, Checkbox, Avatar, Empty, Skeleton } from "antd";
+import { Modal, Input, Checkbox, Avatar, Empty, Skeleton } from "antd";
 import { Search } from "lucide-react";
 
 interface ManagementSelectionModalProps {
@@ -89,39 +89,37 @@ export function ManagementSelectionModal({
               className="py-10"
             />
           ) : (
-            <List
-              dataSource={filteredItems}
-              renderItem={(item) => (
-                <List.Item
-                  className="cursor-pointer hover:bg-slate-50 transition-colors rounded-xl px-3 border-none mb-1"
+            <div className="flex flex-col">
+              {filteredItems.map((item) => (
+                <div
+                  key={item.id}
+                  className="flex items-center gap-3 w-full cursor-pointer hover:bg-slate-50 transition-colors rounded-xl px-3 py-3 mb-1"
                   onClick={() => handleToggle(item.id)}
                 >
-                  <div className="flex items-center gap-3 w-full">
-                    <Checkbox
-                      checked={selectedIds.includes(item.id)}
-                      onChange={() => handleToggle(item.id)}
-                    />
-                    {itemType === "user" && (
-                      <Avatar className="bg-blue-600">
-                        {(item.name || item.username || "U")
-                          .charAt(0)
-                          .toUpperCase()}
-                      </Avatar>
-                    )}
-                    <div className="flex flex-col flex-1">
-                      <span className="font-semibold text-slate-900">
-                        {item.display_name || item.name || item.display_label}
-                      </span>
-                      <span className="text-xs text-slate-500 truncate max-w-[400px]">
-                        {itemType === "user"
-                          ? `@${item.username} • ${item.email}`
-                          : item.description || "No description provided"}
-                      </span>
-                    </div>
+                  <Checkbox
+                    checked={selectedIds.includes(item.id)}
+                    onChange={() => handleToggle(item.id)}
+                  />
+                  {itemType === "user" && (
+                    <Avatar className="bg-blue-600">
+                      {(item.name || item.username || "U")
+                        .charAt(0)
+                        .toUpperCase()}
+                    </Avatar>
+                  )}
+                  <div className="flex flex-col flex-1">
+                    <span className="font-semibold text-slate-900">
+                      {item.name || item.display_name || item.display_label}
+                    </span>
+                    <span className="text-xs text-slate-500 truncate max-w-[400px]">
+                      {itemType === "user"
+                        ? `@${item.username} • ${item.email}`
+                        : item.description || "No description provided"}
+                    </span>
                   </div>
-                </List.Item>
-              )}
-            />
+                </div>
+              ))}
+            </div>
           )}
         </div>
       </div>

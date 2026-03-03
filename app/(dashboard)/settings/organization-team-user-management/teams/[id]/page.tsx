@@ -12,7 +12,7 @@ import { TeamMembersTable } from "@/features/teams/components/details/TeamMember
 import { TeamAssetsList } from "@/features/teams/components/details/TeamAssetsList";
 import { TeamDetailsRoles } from "@/features/teams/components/details/TeamDetailsRoles";
 import { TeamDetailsPolicies } from "@/features/teams/components/details/TeamDetailsPolicies";
-import { useAuthContext } from "@/context/auth-context";
+import { useAuthContext } from "@/shared/contexts/auth-context";
 import { Spin, message } from "antd";
 
 interface PageProps {
@@ -34,11 +34,11 @@ export default function TeamDetailsPage({ params }: PageProps) {
     assets,
     isLoading,
     isError,
-    addMember,
+    assignMembers,
     removeMember,
-    addRole,
+    assignRoles,
     removeRole,
-    addPolicy,
+    assignPolicies,
     removePolicy,
     updateTeam,
     isPending,
@@ -75,16 +75,15 @@ export default function TeamDetailsPage({ params }: PageProps) {
   };
 
   const handleAddMembers = async (userIds: string[]) => {
-    // Adding in parallel for speed, though serial loop is safer for message order
-    await Promise.all(userIds.map((uid) => addMember(uid)));
+    await assignMembers(userIds);
   };
 
   const handleAddRoles = async (roleIds: string[]) => {
-    await Promise.all(roleIds.map((rid) => addRole(rid)));
+    await assignRoles(roleIds);
   };
 
   const handleAddPolicies = async (policyIds: string[]) => {
-    await Promise.all(policyIds.map((pid) => addPolicy(pid)));
+    await assignPolicies(policyIds);
   };
 
   const renderTabContent = () => {
@@ -134,7 +133,7 @@ export default function TeamDetailsPage({ params }: PageProps) {
         isMember={isMember}
         onEdit={() => message.info("Feature coming soon")}
         onDelete={() => message.info("Feature coming soon")}
-        onJoin={() => addMember(user?.id!)}
+        onJoin={() => assignMembers([user?.id!])}
       />
 
       <TeamDetailsInfo

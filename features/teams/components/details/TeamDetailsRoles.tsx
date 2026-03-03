@@ -17,7 +17,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
+} from "@/shared/components/ui/table";
 import type { Role } from "../../types";
 import { ManagementSelectionModal } from "./ManagementSelectionModal";
 import { teamService } from "../../services/team.service";
@@ -44,7 +44,7 @@ export function TeamDetailsRoles({
   // Fetch all available roles for the selection modal
   const { data: availableRoles = [], isLoading: isLoadingAvailable } = useQuery(
     {
-      queryKey: ["available-roles"],
+      queryKey: ["roles"],
       queryFn: () => teamService.getAvailableRoles(),
       enabled: isModalOpen,
     },
@@ -136,7 +136,7 @@ export function TeamDetailsRoles({
                         <Shield className="h-5 w-5 text-indigo-600" />
                       </div>
                       <span className="font-bold text-slate-900 text-[15px]">
-                        {role.display_name}
+                        {role.name}
                       </span>
                     </div>
                   </TableCell>

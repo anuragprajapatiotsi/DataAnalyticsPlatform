@@ -1,0 +1,141 @@
+"use client";
+
+import React from "react";
+import Link from "next/link";
+import { Shield, MoreHorizontal, Info } from "lucide-react";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/shared/components/ui/table";
+import { Badge } from "@/shared/components/ui/badge";
+import { Button } from "antd";
+import { Role } from "../types";
+
+interface RolesTableProps {
+  roles: Role[];
+  isLoading: boolean;
+}
+
+export function RolesTable({ roles, isLoading }: RolesTableProps) {
+  return (
+    <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden animate-in fade-in duration-500">
+      <Table>
+        <TableHeader className="bg-slate-50/50">
+          <TableRow>
+            <TableHead className="w-[280px] text-[13px] font-bold text-slate-500 uppercase py-5 px-8">
+              Name
+            </TableHead>
+            <TableHead className="text-[13px] font-bold text-slate-500 uppercase py-5 px-8">
+              Description
+            </TableHead>
+            <TableHead className="text-[13px] font-bold text-slate-500 uppercase py-5 px-8">
+              Policies
+            </TableHead>
+            <TableHead className="text-right text-[13px] font-bold text-slate-500 uppercase py-5 px-8">
+              Actions
+            </TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {isLoading ? (
+            <TableRow>
+              <TableCell colSpan={4} className="h-40 text-center">
+                <div className="flex items-center justify-center gap-2 text-slate-500">
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600" />
+                  <span className="font-medium text-[14px]">
+                    Loading roles...
+                  </span>
+                </div>
+              </TableCell>
+            </TableRow>
+          ) : roles.length === 0 ? (
+            <TableRow>
+              <TableCell colSpan={4} className="h-40 text-center">
+                <div className="flex flex-col items-center justify-center gap-2 text-slate-400">
+                  <Shield className="h-10 w-10 opacity-20" />
+                  <span className="font-medium">No roles found</span>
+                </div>
+              </TableCell>
+            </TableRow>
+          ) : (
+            roles.map((role) => (
+              <TableRow
+                key={role.id}
+                className="hover:bg-slate-50/30 transition-colors group"
+              >
+                <TableCell className="px-8 py-5">
+                  <div className="flex items-center gap-3">
+                    <div className="h-9 w-9 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600 shadow-sm border border-blue-100 flex-shrink-0">
+                      <Shield className="h-4 w-4" />
+                    </div>
+                    <div className="flex flex-col min-w-0">
+                      <Link
+                        href={`/settings/access-control/roles/${role.id}`}
+                        className="font-bold text-slate-900 text-[14.5px] truncate hover:text-blue-600 transition-colors"
+                      >
+                        {role.name}
+                      </Link>
+                      {role.is_system_role && (
+                        <Badge
+                          variant="outline"
+                          className="w-fit h-4 text-[9px] uppercase tracking-tighter bg-blue-50 text-blue-600 border-blue-100"
+                        >
+                          System Role
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+                </TableCell>
+                <TableCell className="px-8 py-5">
+                  <p className="text-[13.5px] text-slate-600 m-0 line-clamp-2 leading-snug font-medium max-w-md">
+                    {role.description || "No description provided"}
+                  </p>
+                </TableCell>
+                <TableCell className="px-8 py-5">
+                  <div className="flex flex-wrap gap-1.5 max-w-xs">
+                    {role.policies && role.policies.length > 0 ? (
+                      <>
+                        {role.policies.slice(0, 2).map((policy) => (
+                          <Badge
+                            key={policy.id}
+                            variant="secondary"
+                            className="bg-slate-100/80 text-slate-600 text-[11px] font-bold border-none py-0 px-2 rounded-md"
+                          >
+                            {policy.name}
+                          </Badge>
+                        ))}
+                        {role.policies.length > 2 && (
+                          <Badge
+                            variant="secondary"
+                            className="bg-blue-50/50 text-blue-600 text-[11px] font-bold border-none py-0 px-2 rounded-md"
+                          >
+                            +{role.policies.length - 2} more
+                          </Badge>
+                        )}
+                      </>
+                    ) : (
+                      <span className="text-slate-400 text-[12px] italic">
+                        No policies attached
+                      </span>
+                    )}
+                  </div>
+                </TableCell>
+                <TableCell className="px-8 py-5 text-right">
+                  <Button
+                    type="text"
+                    icon={<MoreHorizontal className="h-4 w-4 text-slate-400" />}
+                    className="hover:bg-slate-100 rounded-lg"
+                  />
+                </TableCell>
+              </TableRow>
+            ))
+          )}
+        </TableBody>
+      </Table>
+    </div>
+  );
+}

@@ -3,7 +3,7 @@ import type {
   Organization,
   CreateOrgRequest,
   UpdateOrgRequest,
-} from "@/services/api/types";
+} from "@/shared/types";
 
 export const orgService = {
   async getOrgs() {
@@ -25,3 +25,4 @@ export const orgService = {
     await api.delete(`/orgs/${id}`);
   },
 };
+

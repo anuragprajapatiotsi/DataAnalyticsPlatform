@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { AccessSelectionCards } from "@/components/settings/AccessSelectionCards";
+import { AccessSelectionCards } from "@/features/settings/components/AccessSelectionCards";
 
 export default function OrgManagementIndexPage() {
   return (
@@ -10,3 +10,4 @@ export default function OrgManagementIndexPage() {
     </div>
   );
 }
+

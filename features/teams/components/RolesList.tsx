@@ -9,7 +9,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
+} from "@/shared/components/ui/table";
 
 import { useQuery } from "@tanstack/react-query";
 import { teamService } from "../services/team.service";
@@ -67,7 +67,7 @@ export function RolesList() {
                     <div className="flex items-center gap-2">
                       <Shield className="h-4 w-4 text-blue-500" />
                       <span className="font-semibold text-slate-800">
-                        {role.display_name}
+                        {role.name}
                       </span>
                     </div>
                   </TableCell>
@@ -86,3 +86,4 @@ export function RolesList() {
     </div>
   );
 }
+

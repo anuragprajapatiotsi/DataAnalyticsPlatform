@@ -3,9 +3,9 @@
 import { useMemo } from "react";
 import { useRouter } from "next/navigation";
 
-import { AuthForm } from "@/components/forms/auth-form";
-import { useAuth } from "@/hooks/use-auth";
-import { loginSchema } from "@/utils/validation";
+import { AuthForm } from "@/shared/components/forms/auth-form";
+import { useAuth } from "@/shared/hooks/use-auth";
+import { loginSchema } from "@/shared/utils/validation";
 
 export default function LoginPage() {
   const router = useRouter();

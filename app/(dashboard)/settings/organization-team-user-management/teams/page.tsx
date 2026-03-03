@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import { useTeams } from "@/features/teams/hooks/useTeams";
 import { TeamsTable } from "@/features/teams/components/TeamsTable";
 import { TeamModal } from "@/features/teams/components/TeamModal";
-import { useAuthContext } from "@/context/auth-context";
+import { useAuthContext } from "@/shared/contexts/auth-context";
 import type { Team } from "@/features/teams/types";
 import {
   TeamsTabs,
@@ -120,3 +120,4 @@ export default function TeamsPage() {
     </div>
   );
 }
+

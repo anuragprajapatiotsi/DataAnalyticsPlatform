@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { cn } from "@/utils/cn";
+import { cn } from "@/shared/utils/cn";
 import { Users, Shield, FileText } from "lucide-react";
 
 export type TeamManagementTab = "teams" | "roles" | "policies";
@@ -65,3 +65,4 @@ export function TeamsTabs({ activeTab, onTabChange, isAdmin }: TeamsTabsProps) {
     </div>
   );
 }
+

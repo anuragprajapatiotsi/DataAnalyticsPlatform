@@ -16,7 +16,7 @@ import {
   BreadcrumbList,
   BreadcrumbPage,
   BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
+} from "@/shared/components/ui/breadcrumb";
 import { Button, Dropdown, MenuProps, Popconfirm } from "antd";
 import type { TeamDetail } from "../../types";
 

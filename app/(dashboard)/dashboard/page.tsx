@@ -1,10 +1,10 @@
-import { ActivityFeedCard } from "@/components/dashboard/activity-feed";
-import { DataAssetsCard } from "@/components/dashboard/data-assets";
-import { DashboardHero } from "@/components/dashboard/hero";
-import { FollowingAssetsCard } from "@/components/dashboard/following-assets-card";
-import { KpiCard } from "@/components/dashboard/kpi-card";
-import { MyDataCard } from "@/components/dashboard/my-data";
-import { TotalDataAssetsCard } from "@/components/dashboard/total-data-assets-card";
+import { ActivityFeedCard } from "@/features/dashboard/components/activity-feed";
+import { DataAssetsCard } from "@/features/dashboard/components/data-assets";
+import { DashboardHero } from "@/features/dashboard/components/hero";
+import { FollowingAssetsCard } from "@/features/dashboard/components/following-assets-card";
+import { KpiCard } from "@/features/dashboard/components/kpi-card";
+import { MyDataCard } from "@/features/dashboard/components/my-data";
+import { TotalDataAssetsCard } from "@/features/dashboard/components/total-data-assets-card";
 
 export default function DashboardPage() {
   return (
@@ -37,3 +37,4 @@ export default function DashboardPage() {
     </div>
   );
 }
+

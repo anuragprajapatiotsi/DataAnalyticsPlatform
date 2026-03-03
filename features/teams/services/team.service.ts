@@ -41,9 +41,11 @@ export const teamService = {
     return response.data;
   },
 
-  async addMember(teamId: string, userId: string) {
-    // User mentioned /teams/{team_id}/members/{user_id}
-    const response = await api.post(`/teams/${teamId}/members/${userId}`);
+  async assignMembers(teamId: string, userIds: string[]) {
+    const response = await api.post(`/teams/${teamId}/members`, {
+      team_id: teamId,
+      user_ids: userIds,
+    });
     return response.data;
   },
 
@@ -77,6 +79,15 @@ export const teamService = {
     return response.data;
   },
 
+  async assignRoles(teamId: string, roleIds: string[]) {
+    // Current API might only support single assignments, but requested structure suggests bulk
+    // For now, if the API doesn't support bulk, we could loop, but user requested POST /teams/{team_id}/roles with role_ids array
+    const response = await api.post(`/teams/${teamId}/roles`, {
+      role_ids: roleIds,
+    });
+    return response.data;
+  },
+
   async addPolicy(teamId: string, policyId: string) {
     const response = await api.post(`/teams/${teamId}/policies/${policyId}`);
     return response.data;
@@ -87,8 +98,15 @@ export const teamService = {
     return response.data;
   },
 
+  async assignPolicies(teamId: string, policyIds: string[]) {
+    const response = await api.post(`/teams/${teamId}/policies`, {
+      policy_ids: policyIds,
+    });
+    return response.data;
+  },
+
   async getAvailableUsers() {
-    const response = await api.get<any[]>("/users?limit=1000"); // Standard users endpoint
+    const response = await api.get<any[]>("/admin/users"); // Standard users endpoint
     return response.data;
   },
 
@@ -98,7 +116,7 @@ export const teamService = {
   },
 
   async getAvailablePolicies() {
-    const response = await api.get<Policy[]>("/policies?limit=1000");
+    const response = await api.get<Policy[]>("/policies");
     return response.data;
   },
 };

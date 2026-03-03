@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { message } from "antd";
 import { orgService } from "../services/org.service";
-import type { CreateOrgRequest, UpdateOrgRequest } from "@/services/api/types";
+import type { CreateOrgRequest, UpdateOrgRequest } from "@/shared/types";
 
 export const useOrganizations = () => {
   const queryClient = useQueryClient();
@@ -67,3 +67,4 @@ export const useOrganizations = () => {
     isDeleting: deleteMutation.isPending,
   };
 };
+

@@ -5,7 +5,7 @@ import {
   FileText,
   Plus,
   Trash2,
-  ShieldCheck,
+  MinusCircle,
   ChevronRight,
   Eye,
   Edit2,
@@ -19,7 +19,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
+} from "@/shared/components/ui/table";
 import type { Policy } from "../../types";
 import { ManagementSelectionModal } from "./ManagementSelectionModal";
 import { teamService } from "../../services/team.service";
@@ -34,34 +34,6 @@ interface TeamDetailsPoliciesProps {
   isLoading?: boolean;
 }
 
-const PermissionBadge = ({ type }: { type: string }) => {
-  const config: Record<string, { color: string; icon: React.ReactNode }> = {
-    view: {
-      color: "bg-blue-50 text-blue-700 border-blue-100",
-      icon: <Eye className="h-3 w-3" />,
-    },
-    edit: {
-      color: "bg-amber-50 text-amber-700 border-amber-100",
-      icon: <Edit2 className="h-3 w-3" />,
-    },
-    manage: {
-      color: "bg-purple-50 text-purple-700 border-purple-100",
-      icon: <UsersIcon className="h-3 w-3" />,
-    },
-  };
-
-  const style = config[type] || config.view;
-
-  return (
-    <Badge
-      className={`${style.color} flex items-center gap-1.5 px-2.5 py-0.5 border text-[10px] font-bold uppercase tracking-wider rounded-md`}
-    >
-      {style.icon}
-      {type}
-    </Badge>
-  );
-};
-
 export function TeamDetailsPolicies({
   policies,
   isAdmin,
@@ -74,7 +46,7 @@ export function TeamDetailsPolicies({
   // Fetch available policies for the selection modal
   const { data: availablePolicies = [], isLoading: isLoadingAvailable } =
     useQuery({
-      queryKey: ["available-policies"],
+      queryKey: ["policies"],
       queryFn: () => teamService.getAvailablePolicies(),
       enabled: isModalOpen,
     });
@@ -114,13 +86,13 @@ export function TeamDetailsPolicies({
         <Table>
           <TableHeader className="bg-slate-50/50">
             <TableRow>
-              <TableHead className="w-[300px] text-[12px] font-bold text-slate-400 uppercase tracking-wider py-5 px-8">
-                Policy Name
+              <TableHead className="w-[300px] text-[13px] font-bold text-slate-500 py-4 px-6">
+                Name
               </TableHead>
-              <TableHead className="text-[12px] font-bold text-slate-400 uppercase tracking-wider py-5 px-8">
-                Permissions
+              <TableHead className="text-[13px] font-bold text-slate-500 py-4 px-6">
+                Description
               </TableHead>
-              <TableHead className="text-right text-[12px] font-bold text-slate-400 uppercase tracking-wider py-5 px-8">
+              <TableHead className="text-right text-[13px] font-bold text-slate-500 py-4 px-6">
                 Actions
               </TableHead>
             </TableRow>
@@ -159,41 +131,16 @@ export function TeamDetailsPolicies({
                   key={policy.id}
                   className="hover:bg-slate-50/30 transition-colors group"
                 >
-                  <TableCell className="px-8 py-5">
-                    <div className="flex items-center gap-4">
-                      <div className="h-10 w-10 rounded-xl bg-emerald-50 flex items-center justify-center shadow-sm border border-emerald-100">
-                        <ShieldCheck className="h-5 w-5 text-emerald-600" />
-                      </div>
-                      <div className="flex flex-col">
-                        <span className="font-bold text-slate-900 text-[15px]">
-                          {policy.name}
-                        </span>
-                        {policy.description && (
-                          <span className="text-[12px] text-slate-400 font-medium line-clamp-1">
-                            {policy.description}
-                          </span>
-                        )}
-                      </div>
-                    </div>
+                  <TableCell className="px-6 py-4">
+                    <span className="font-medium text-blue-600 hover:underline cursor-pointer">
+                      {policy.name}
+                    </span>
                   </TableCell>
-                  <TableCell className="px-8 py-5">
-                    <div className="flex items-center gap-2 flex-wrap text-slate-600 text-[14px] font-medium">
-                      <PermissionBadge type="view" />
-                      <PermissionBadge type="edit" />
-                      <PermissionBadge type="manage" />
-                    </div>
+                  <TableCell className="px-6 py-4 text-slate-600 text-[14px]">
+                    {policy.description || "No description provided."}
                   </TableCell>
-                  <TableCell className="px-8 py-5 text-right">
-                    <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-all transform translate-x-2 group-hover:translate-x-0">
-                      <Tooltip title="View Policy Details">
-                        <Button
-                          type="text"
-                          icon={
-                            <ChevronRight className="h-4 w-4 text-slate-400" />
-                          }
-                          className="hover:bg-slate-100 rounded-lg"
-                        />
-                      </Tooltip>
+                  <TableCell className="px-6 py-4 text-right">
+                    <div className="flex items-center justify-end gap-2">
                       {isAdmin && (
                         <Popconfirm
                           title="Detach Policy"
@@ -204,9 +151,10 @@ export function TeamDetailsPolicies({
                         >
                           <Button
                             type="text"
-                            danger
-                            icon={<Trash2 className="h-4 w-4" />}
-                            className="hover:bg-red-50 rounded-lg"
+                            icon={
+                              <MinusCircle className="h-5 w-5 text-slate-400 hover:text-red-500 transition-colors" />
+                            }
+                            className="flex items-center justify-center"
                           />
                         </Popconfirm>
                       )}

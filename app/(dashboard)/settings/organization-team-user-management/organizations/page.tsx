@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import { useOrganizations } from "@/features/organizations/hooks/useOrganizations";
 import { OrganizationsTable } from "@/features/organizations/components/OrganizationsTable";
 import { OrgModal } from "@/features/organizations/components/OrgModal";
-import type { Organization } from "@/services/api/types";
+import type { Organization } from "@/shared/types";
 
 export default function OrganizationsPage() {
   const {
@@ -68,3 +68,4 @@ export default function OrganizationsPage() {
     </div>
   );
 }
+

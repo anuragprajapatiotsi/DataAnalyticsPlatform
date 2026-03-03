@@ -51,66 +51,59 @@ export function TeamDetailsInfo({
     {
       label: "Domains",
       value: team.domains?.length ? team.domains.join(", ") : "No Domains",
-      icon: <Globe className="h-4 w-4 text-slate-400" />,
     },
     {
       label: "Owners",
       value: team.owners?.length
         ? team.owners.map((o) => o.name).join(", ")
         : "No Owners",
-      icon: <User className="h-4 w-4 text-slate-400" />,
     },
     {
       label: "Email",
       value: team.email || "No Email",
-      icon: <Mail className="h-4 w-4 text-slate-400" />,
     },
     {
       label: "Subscription",
       value: team.subscription || "No Subscription",
-      icon: <CreditCard className="h-4 w-4 text-slate-400" />,
     },
     {
       label: "Type",
       value: team.team_type || "Group",
-      icon: <Layers className="h-4 w-4 text-slate-400" />,
     },
     {
       label: "Users",
       value: team.total_users || 0,
-      icon: <Users className="h-4 w-4 text-slate-400" />,
     },
   ];
 
   return (
     <div className="flex flex-col gap-6 mb-8">
-      <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden animate-in fade-in slide-in-from-top-4 duration-700">
-        <div className="p-8">
-          <div className="flex items-start justify-between mb-8">
-            <div className="flex flex-col gap-6 w-full">
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-8">
-                {statCards.map((card, index) => (
-                  <div key={index} className="flex flex-col gap-1.5 min-w-0">
-                    <div className="flex items-center gap-2 text-slate-500 font-semibold text-[11px] uppercase tracking-wider">
-                      {card.icon}
-                      {card.label}
-                    </div>
-                    <div
-                      className="text-[14px] font-bold text-slate-900 truncate"
-                      title={String(card.value)}
-                    >
-                      {card.value}
-                    </div>
-                  </div>
-                ))}
+      <div className="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden animate-in fade-in slide-in-from-top-4 duration-700">
+        <div className="px-8 py-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-y-5 xl:gap-0 mb-6">
+            {statCards.map((card, index) => (
+              <div
+                key={index}
+                className={`flex flex-col min-w-0 ${
+                  index < statCards.length - 1
+                    ? "xl:border-r xl:border-slate-100 xl:pr-6 xl:mr-6"
+                    : "pr-4"
+                }`}
+              >
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
+                  {card.label}
+                </span>
+                <span
+                  className="text-[14px] font-bold text-slate-900 truncate"
+                  title={String(card.value)}
+                >
+                  {card.value}
+                </span>
               </div>
-            </div>
-            <Button className="ml-4 h-10 px-6 rounded-lg font-bold text-slate-600 border-slate-200 hover:text-red-600 hover:border-red-200 hover:bg-red-50 transition-all duration-300">
-              Leave Team
-            </Button>
+            ))}
           </div>
 
-          <div className="border-t border-slate-100 pt-8 mt-2">
+          <div className="border-t border-slate-100 pt-5 mt-1">
             <div className="flex items-center justify-between mb-4">
               <h4 className="text-[14px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
                 <Edit3 className="h-3.5 w-3.5" />

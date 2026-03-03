@@ -19,9 +19,9 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
+} from "@/shared/components/ui/table";
+import { Input } from "@/shared/components/ui/input";
+import { Badge } from "@/shared/components/ui/badge";
 import type { Team } from "../types";
 
 interface TeamsTableProps {
@@ -233,3 +233,4 @@ export function TeamsTable({
     </div>
   );
 }
+

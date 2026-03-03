@@ -1,4 +1,4 @@
-import { ObservabilityHeader } from "@/components/observability/header";
+import { ObservabilityHeader } from "@/features/observability/components/header";
 
 export default function AlertsPage() {
   return (
@@ -14,3 +14,4 @@ export default function AlertsPage() {
     </div>
   );
 }
+

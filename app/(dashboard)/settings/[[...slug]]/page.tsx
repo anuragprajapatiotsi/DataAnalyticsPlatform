@@ -3,11 +3,11 @@
 import React from "react";
 import { useParams, useRouter } from "next/navigation";
 import { ChevronRight, Home as HomeIcon } from "lucide-react";
-import { SettingsCard } from "@/components/dashboard/settings-card";
-import { useSettings } from "@/hooks/use-settings";
-import { getIcon } from "@/utils/icon-mapper";
-import { Skeleton } from "@/components/ui/skeleton";
-import { cn } from "@/utils/cn";
+import { SettingsCard } from "@/features/dashboard/components/settings-card";
+import { useSettings } from "@/features/settings/hooks/use-settings";
+import { getIcon } from "@/shared/utils/icon-mapper";
+import { Skeleton } from "@/shared/components/ui/skeleton";
+import { cn } from "@/shared/utils/cn";
 import Link from "next/link";
 
 export default function SettingsCatchAllPage() {

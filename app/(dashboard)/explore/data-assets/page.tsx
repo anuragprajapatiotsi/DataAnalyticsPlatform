@@ -1,10 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { AlertBanner } from "@/components/catalog/AlertBanner";
-import { AssetSidebar } from "@/components/catalog/AssetSidebar";
-import { AssetFilters } from "@/components/catalog/AssetFilters";
-import { EmptyState } from "@/components/catalog/EmptyState";
+import { AlertBanner } from "@/features/catalog/components/AlertBanner";
+import { AssetSidebar } from "@/features/catalog/components/AssetSidebar";
+import { AssetFilters } from "@/features/catalog/components/AssetFilters";
+import { EmptyState } from "@/features/catalog/components/EmptyState";
 
 export default function ExploreDataAssetsPage() {
   const [hasError, setHasError] = useState(false);
@@ -31,3 +31,4 @@ export default function ExploreDataAssetsPage() {
     </div>
   );
 }
+

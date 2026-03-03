@@ -3,7 +3,7 @@
 import React from "react";
 import { Users, FileBox, Shield, FileText } from "lucide-react";
 import { Tabs } from "antd";
-import { cn } from "@/utils/cn";
+import { cn } from "@/shared/utils/cn";
 
 export type TeamTabKey = "users" | "assets" | "roles" | "policies";
 
@@ -123,3 +123,4 @@ export function TeamDetailsTabs({
     </div>
   );
 }
+

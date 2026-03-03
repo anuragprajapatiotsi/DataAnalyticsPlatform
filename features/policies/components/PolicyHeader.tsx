@@ -11,7 +11,7 @@ import {
   BreadcrumbList,
   BreadcrumbPage,
   BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
+} from "@/shared/components/ui/breadcrumb";
 
 interface PolicyHeaderProps {
   onAddPolicy: () => void;
@@ -74,3 +74,4 @@ export function PolicyHeader({ onAddPolicy }: PolicyHeaderProps) {
     </div>
   );
 }
+

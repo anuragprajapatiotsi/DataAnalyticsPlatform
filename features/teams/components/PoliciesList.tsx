@@ -9,7 +9,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
+} from "@/shared/components/ui/table";
 import { Button } from "antd";
 
 import { useQuery } from "@tanstack/react-query";
@@ -94,3 +94,4 @@ export function PoliciesList() {
     </div>
   );
 }
+

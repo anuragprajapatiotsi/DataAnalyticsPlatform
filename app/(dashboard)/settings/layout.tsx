@@ -1,6 +1,6 @@
 "use client";
 
-import { cn } from "@/utils/cn";
+import { cn } from "@/shared/utils/cn";
 
 export default function SettingsLayout({
   children,
@@ -13,3 +13,4 @@ export default function SettingsLayout({
     </div>
   );
 }
+

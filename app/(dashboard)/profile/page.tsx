@@ -1,11 +1,11 @@
 "use client";
 
-import { useAuthContext } from "@/context/auth-context";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
-import { cn } from "@/utils/cn";
+import { useAuthContext } from "@/shared/contexts/auth-context";
+import { Avatar, AvatarFallback, AvatarImage } from "@/shared/components/ui/avatar";
+import { Badge } from "@/shared/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/shared/components/ui/card";
+import { Separator } from "@/shared/components/ui/separator";
+import { cn } from "@/shared/utils/cn";
 import {
   User,
   Mail,
@@ -254,3 +254,4 @@ export default function ProfilePage() {
     </div>
   );
 }
+
