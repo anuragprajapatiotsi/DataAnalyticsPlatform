@@ -13,7 +13,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       <NavigationProvider>
         <div className="flex h-screen overflow-hidden bg-slate-100">
           <Sidebar />
-          <div className="flex min-w-0 flex-1 flex-col bg-gradient-to-r from-[#dbe8ff] via-[#eaf1ff] to-[#f5f9ff]">
+          <div className="flex min-w-0 flex-1 flex-col bg-[#f8fafc]">
             <Topbar />
             <main className="flex-1 overflow-y-auto custom-scrollbar">
               {children}
