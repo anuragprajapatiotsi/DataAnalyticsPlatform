@@ -80,7 +80,6 @@ export default function OrganizationManagementLayout({
           pathname === "/settings/organization-team-user-management/teams" ||
           pathname ===
             "/settings/organization-team-user-management/organizations" ||
-          pathname === "/settings/organization-team-user-management/users" ||
           pathname === "/settings/organization-team-user-management/admins" ? (
             <div className="mt-8">
               <h1 className="text-[24px] font-bold text-slate-900 mb-1">
@@ -100,4 +99,3 @@ export default function OrganizationManagementLayout({
     </div>
   );
 }
-
