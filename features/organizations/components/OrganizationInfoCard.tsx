@@ -6,7 +6,7 @@ import { Edit2, Info } from "lucide-react";
 
 export function OrganizationInfoCard() {
   return (
-    <Card className="border-slate-200 rounded-xl shadow-none">
+    <Card className="border-slate-200 rounded-lg shadow-none">
       <CardContent className="p-6">
         <div className="grid grid-cols-5 gap-6">
           <div className="flex flex-col gap-1.5">
@@ -58,4 +58,3 @@ export function OrganizationInfoCard() {
     </Card>
   );
 }
-

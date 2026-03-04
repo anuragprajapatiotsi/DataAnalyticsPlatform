@@ -35,7 +35,7 @@ export function AssetSidebar() {
   const [activeItem, setActiveItem] = useState("Databases");
 
   return (
-    <aside className="flex h-full w-[280px] flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition-all duration-300">
+    <aside className="flex h-full w-[280px] flex-col overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm transition-all duration-300">
       <div className="p-4 border-b border-slate-100 shrink-0">
         <h2 className="text-base font-bold text-slate-800">Data Assets</h2>
       </div>
@@ -79,4 +79,3 @@ export function AssetSidebar() {
     </aside>
   );
 }
-

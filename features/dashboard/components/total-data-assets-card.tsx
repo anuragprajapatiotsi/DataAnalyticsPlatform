@@ -1,6 +1,11 @@
 import { Database } from "lucide-react";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/shared/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/shared/components/ui/card";
 import { CustomSelect } from "@/shared/components/ui/custom-select";
 
 const timeRangeOptions = [
@@ -11,7 +16,7 @@ const timeRangeOptions = [
 
 export function TotalDataAssetsCard() {
   return (
-    <Card className="h-full rounded-2xl border-slate-200 bg-slate-50/95 shadow-sm">
+    <Card className="h-full rounded-lg border-slate-200 bg-slate-50/95 shadow-sm">
       <CardHeader className="flex flex-row items-center justify-between border-b border-slate-200 pb-4">
         <CardTitle className="flex items-center gap-2 text-base text-slate-900">
           <Database className="h-4 w-4 text-slate-500" />
@@ -29,7 +34,7 @@ export function TotalDataAssetsCard() {
             484
           </div>
         </div>
-        <div className="rounded-xl border border-blue-200 bg-blue-100 px-5 py-2 text-center">
+        <div className="rounded-lg border border-blue-200 bg-blue-100 px-5 py-2 text-center">
           <p className="text-2xl font-semibold leading-6 text-slate-700">24</p>
           <p className="text-xs text-slate-500">Feb</p>
         </div>
@@ -37,4 +42,3 @@ export function TotalDataAssetsCard() {
     </Card>
   );
 }
-

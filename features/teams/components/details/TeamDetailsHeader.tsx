@@ -1,24 +1,10 @@
 "use client";
 
 import React from "react";
-import Link from "next/link";
-import {
-  ChevronRight,
-  Edit2,
-  Trash2,
-  MoreVertical,
-  UserPlus,
-} from "lucide-react";
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/shared/components/ui/breadcrumb";
+import { Edit2, Trash2, MoreVertical, UserPlus } from "lucide-react";
 import { Button, Dropdown, MenuProps, Popconfirm } from "antd";
 import type { TeamDetail } from "../../types";
+import { PageHeader } from "@/shared/components/layout/PageHeader";
 
 interface TeamDetailsHeaderProps {
   team: TeamDetail;
@@ -63,68 +49,51 @@ export function TeamDetailsHeader({
     },
   ];
 
+  const breadcrumbItems = [
+    { label: "Settings", href: "/settings" },
+    {
+      label: "Team & User Management",
+      href: "/settings/organization-team-user-management",
+    },
+    {
+      label: "Teams",
+      href: "/settings/organization-team-user-management/teams",
+    },
+    { label: team.display_name },
+  ];
+
   return (
-    <div className="flex flex-col gap-4 mb-8">
-      <Breadcrumb>
-        <BreadcrumbList>
-          <BreadcrumbItem>
-            <BreadcrumbLink asChild>
-              <Link href="/settings/organization-team-user-management/teams">
-                Teams
-              </Link>
-            </BreadcrumbLink>
-          </BreadcrumbItem>
-          <BreadcrumbSeparator />
-          <BreadcrumbItem>
-            <BreadcrumbPage>{team.display_name}</BreadcrumbPage>
-          </BreadcrumbItem>
-        </BreadcrumbList>
-      </Breadcrumb>
+    <PageHeader
+      title={team.display_name}
+      description={team.description}
+      breadcrumbItems={breadcrumbItems}
+    >
+      <div className="flex items-center gap-3">
+        {!isMember && (
+          <Button
+            type="primary"
+            icon={<UserPlus className="h-4 w-4" />}
+            onClick={onJoin}
+            className="bg-blue-600 hover:bg-blue-700 h-9 px-6 rounded-lg font-semibold shadow-sm"
+          >
+            Join Team
+          </Button>
+        )}
 
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <h1 className="text-[28px] font-bold text-slate-900 m-0">
-            {team.display_name}
-          </h1>
-          {isAdmin && (
+        {isAdmin && (
+          <Dropdown
+            menu={{ items: actions }}
+            placement="bottomRight"
+            trigger={["click"]}
+          >
             <Button
-              type="text"
-              icon={
-                <Edit2 className="h-5 w-5 text-slate-400 hover:text-blue-600 transition-colors" />
-              }
-              onClick={onEdit}
-              className="p-1 h-auto flex items-center justify-center"
+              type="default"
+              icon={<MoreVertical className="h-4 w-4 text-slate-500" />}
+              className="h-9 w-9 flex items-center justify-center rounded-lg border-slate-200 hover:bg-slate-50"
             />
-          )}
-        </div>
-
-        <div className="flex items-center gap-3">
-          {!isMember && (
-            <Button
-              type="primary"
-              icon={<UserPlus className="h-4 w-4" />}
-              onClick={onJoin}
-              className="bg-blue-600 hover:bg-blue-700 h-10 px-6 rounded-lg font-semibold shadow-sm"
-            >
-              Join Team
-            </Button>
-          )}
-
-          {isAdmin && (
-            <Dropdown
-              menu={{ items: actions }}
-              placement="bottomRight"
-              trigger={["click"]}
-            >
-              <Button
-                type="text"
-                icon={<MoreVertical className="h-5 w-5 text-slate-500" />}
-                className="h-10 w-10 flex items-center justify-center rounded-lg hover:bg-slate-100"
-              />
-            </Dropdown>
-          )}
-        </div>
+          </Dropdown>
+        )}
       </div>
-    </div>
+    </PageHeader>
   );
 }

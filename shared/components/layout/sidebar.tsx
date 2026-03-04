@@ -71,7 +71,7 @@ function SidebarItem({
       onMouseEnter={(e) => onMouseEnter(e, item)}
       onMouseLeave={onMouseLeave}
       className={cn(
-        "relative flex items-center gap-3 rounded-xl transition-all duration-200 cursor-pointer",
+        "relative flex items-center gap-3 rounded-lg transition-all duration-200 cursor-pointer",
         collapsed
           ? "h-11 w-11 justify-center p-0"
           : cn(
@@ -80,7 +80,7 @@ function SidebarItem({
             ),
         isActive
           ? collapsed
-            ? "bg-blue-50 text-blue-700 border-l-[3px] border-blue-600 rounded-l-none rounded-r-xl"
+            ? "bg-blue-50 text-blue-700 border-l-[3px] border-blue-600 rounded-l-none rounded-r-lg"
             : level === 0
               ? "bg-white text-blue-700 shadow-sm border border-slate-200/50"
               : "text-blue-600 bg-blue-50/50"
@@ -299,7 +299,7 @@ export function Sidebar() {
                 clearTimeout(flyoutTimeoutRef.current);
             }}
             onMouseLeave={handleMouseLeave}
-            className="fixed left-[72px] z-[100] w-56 rounded-xl border border-slate-200 bg-white p-2 shadow-xl animate-in fade-in slide-in-from-left-2 duration-200"
+            className="fixed left-[72px] z-[100] w-56 rounded-lg border border-slate-200 bg-white p-2 shadow-xl animate-in fade-in slide-in-from-left-2 duration-200"
             style={{ top: flyoutTop }}
           >
             <p className="px-3 py-2 text-xs font-bold uppercase tracking-wider text-slate-400">
@@ -336,9 +336,9 @@ export function Sidebar() {
             <Link
               href="/settings"
               className={cn(
-                "flex h-11 w-11 items-center justify-center rounded-xl transition-all duration-200",
+                "flex h-11 w-11 items-center justify-center rounded-lg transition-all duration-200",
                 pathname.startsWith("/settings")
-                  ? "bg-blue-50 text-blue-700 border-l-[3px] border-blue-600 rounded-l-none rounded-r-xl"
+                  ? "bg-blue-50 text-blue-700 border-l-[3px] border-blue-600 rounded-l-none rounded-r-lg"
                   : "text-slate-600 hover:bg-white hover:text-slate-900",
               )}
             >
@@ -351,7 +351,7 @@ export function Sidebar() {
           <Link
             href="/settings"
             className={cn(
-              "flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium transition-all duration-200",
+              "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200",
               pathname.startsWith("/settings")
                 ? "bg-white text-blue-700 shadow-sm border border-slate-200/50"
                 : "text-slate-600 hover:bg-white hover:text-slate-900",
@@ -369,7 +369,7 @@ export function Sidebar() {
             <button
               onClick={() => logout()}
               disabled={isLoggingOut}
-              className="flex h-11 w-11 items-center justify-center rounded-xl text-slate-600 hover:bg-white hover:text-slate-900 disabled:opacity-50"
+              className="flex h-11 w-11 items-center justify-center rounded-lg text-slate-600 hover:bg-white hover:text-slate-900 disabled:opacity-50"
             >
               <LogOut className="h-5 w-5" />
             </button>
@@ -378,7 +378,7 @@ export function Sidebar() {
           <button
             onClick={() => logout()}
             disabled={isLoggingOut}
-            className="flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium text-slate-600 hover:bg-white hover:text-slate-900 disabled:opacity-50"
+            className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-slate-600 hover:bg-white hover:text-slate-900 disabled:opacity-50"
           >
             <LogOut className="h-4 w-4" />
             {isLoggingOut ? "Logging out..." : "Logout"}
@@ -388,4 +388,3 @@ export function Sidebar() {
     </aside>
   );
 }
-

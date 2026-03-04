@@ -1,14 +1,34 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/shared/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/shared/components/ui/card";
 
 const myDataItems = [
-  { id: "my-1", name: "finance.monthly_revenue", owner: "admin", status: "Healthy" },
-  { id: "my-2", name: "customer.orders_cleaned", owner: "admin", status: "Warning" },
-  { id: "my-3", name: "ops.pipeline_run_log", owner: "admin", status: "Healthy" },
+  {
+    id: "my-1",
+    name: "finance.monthly_revenue",
+    owner: "admin",
+    status: "Healthy",
+  },
+  {
+    id: "my-2",
+    name: "customer.orders_cleaned",
+    owner: "admin",
+    status: "Warning",
+  },
+  {
+    id: "my-3",
+    name: "ops.pipeline_run_log",
+    owner: "admin",
+    status: "Healthy",
+  },
 ];
 
 export function MyDataCard() {
   return (
-    <Card className="h-full rounded-2xl border-slate-200 bg-slate-50/95 shadow-sm">
+    <Card className="h-full rounded-lg border-slate-200 bg-slate-50/95 shadow-sm">
       <CardHeader>
         <CardTitle className="text-base text-slate-900">My Data</CardTitle>
       </CardHeader>
@@ -16,7 +36,7 @@ export function MyDataCard() {
         {myDataItems.map((item) => (
           <div
             key={item.id}
-            className="flex items-center justify-between rounded-xl border border-slate-200 bg-white p-3"
+            className="flex items-center justify-between rounded-lg border border-slate-200 bg-white p-3"
           >
             <div>
               <p className="text-sm font-medium text-slate-900">{item.name}</p>
@@ -37,4 +57,3 @@ export function MyDataCard() {
     </Card>
   );
 }
-

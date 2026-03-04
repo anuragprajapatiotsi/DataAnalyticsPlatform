@@ -93,7 +93,7 @@ export function ManagementSelectionModal({
               {filteredItems.map((item) => (
                 <div
                   key={item.id}
-                  className="flex items-center gap-3 w-full cursor-pointer hover:bg-slate-50 transition-colors rounded-xl px-3 py-3 mb-1"
+                  className="flex items-center gap-3 w-full cursor-pointer hover:bg-slate-50 transition-colors rounded-lg px-3 py-3 mb-1"
                   onClick={() => handleToggle(item.id)}
                 >
                   <Checkbox

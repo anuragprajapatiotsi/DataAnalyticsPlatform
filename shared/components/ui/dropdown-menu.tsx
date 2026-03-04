@@ -16,7 +16,7 @@ const DropdownMenuContent = React.forwardRef<
       ref={ref}
       sideOffset={sideOffset}
       className={cn(
-        "z-50 min-w-44 rounded-xl border border-slate-200 bg-white p-1 text-slate-900 shadow-md",
+        "z-50 min-w-44 rounded-lg border border-slate-200 bg-white p-1 text-slate-900 shadow-md",
         className,
       )}
       {...props}
@@ -59,4 +59,3 @@ export {
   DropdownMenuItem,
   DropdownMenuSeparator,
 };
-

@@ -48,7 +48,7 @@ export function TeamAssetsList({ assets, isLoading }: TeamAssetsListProps) {
         <h2 className="text-[18px] font-bold text-slate-900 m-0">Assets</h2>
       </div>
 
-      <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+      <div className="rounded-lg border border-slate-200 bg-white shadow-sm overflow-hidden">
         <Table>
           <TableHeader className="bg-slate-50/50">
             <TableRow>
@@ -140,4 +140,3 @@ export function TeamAssetsList({ assets, isLoading }: TeamAssetsListProps) {
     </div>
   );
 }
-

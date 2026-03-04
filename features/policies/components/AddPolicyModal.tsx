@@ -89,15 +89,15 @@ export function AddPolicyModal({ isOpen, onClose }: AddPolicyModalProps) {
   return (
     <Modal
       title={
-        <div className="flex items-center gap-2 py-1">
-          <div className="bg-blue-50 p-2 rounded-lg">
-            <Shield className="h-5 w-5 text-blue-600" />
+        <div className="flex items-center gap-3 py-1">
+          <div className="bg-blue-50 p-2 rounded-lg border border-blue-100">
+            <Shield size={18} className="text-blue-600" />
           </div>
-          <div>
-            <h3 className="text-[18px] font-bold text-slate-900 m-0 leading-tight">
+          <div className="flex flex-col gap-0.5">
+            <h3 className="text-[18px] font-semibold text-slate-900 m-0 leading-tight">
               Create New Policy
             </h3>
-            <p className="text-[12px] text-slate-400 font-medium m-0">
+            <p className="text-[12px] text-slate-500 font-medium m-0">
               Define access rules and permissions for resources.
             </p>
           </div>
@@ -124,30 +124,30 @@ export function AddPolicyModal({ isOpen, onClose }: AddPolicyModalProps) {
           <Form.Item
             name="name"
             label={
-              <span className="flex items-center gap-2 font-bold text-slate-700">
-                <Shield className="h-4 w-4 text-blue-500" /> Policy Name
+              <span className="flex items-center gap-2 font-semibold text-[13px] text-slate-700">
+                <Shield size={14} className="text-blue-500" /> Policy Name
               </span>
             }
             rules={[{ required: true, message: "Please enter policy name" }]}
           >
             <Input
               placeholder="e.g. Admin Access"
-              className="h-11 rounded-lg border-slate-200"
+              className="h-9 rounded-lg border-slate-200 text-[13px]"
             />
           </Form.Item>
 
           <Form.Item
             name="rule_name"
             label={
-              <span className="flex items-center gap-2 font-bold text-slate-700">
-                <ListTree className="h-4 w-4 text-purple-500" /> Rule Name
+              <span className="flex items-center gap-2 font-semibold text-[13px] text-slate-700">
+                <ListTree size={14} className="text-purple-500" /> Rule Name
               </span>
             }
             rules={[{ required: true, message: "Please enter rule name" }]}
           >
             <Input
               placeholder="e.g. read_all_data"
-              className="h-11 rounded-lg border-slate-200"
+              className="h-9 rounded-lg border-slate-200 text-[13px]"
             />
           </Form.Item>
         </div>
@@ -155,8 +155,8 @@ export function AddPolicyModal({ isOpen, onClose }: AddPolicyModalProps) {
         <Form.Item
           name="description"
           label={
-            <span className="flex items-center gap-2 font-bold text-slate-700">
-              <Info className="h-4 w-4 text-slate-400" /> Description
+            <span className="flex items-center gap-2 font-semibold text-[13px] text-slate-700">
+              <Info size={14} className="text-slate-400" /> Description
             </span>
           }
           rules={[{ required: true, message: "Please enter description" }]}
@@ -164,12 +164,12 @@ export function AddPolicyModal({ isOpen, onClose }: AddPolicyModalProps) {
           <TextArea
             placeholder="What does this policy permit?"
             autoSize={{ minRows: 2, maxRows: 4 }}
-            className="rounded-lg border-slate-200"
+            className="rounded-lg border-slate-200 text-[13px]"
           />
         </Form.Item>
 
         <Divider className="my-6 opacity-30">
-          <span className="text-[12px] font-bold text-slate-400 uppercase tracking-wider">
+          <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-widest bg-white px-2">
             Resource & Permissions
           </span>
         </Divider>
@@ -178,8 +178,8 @@ export function AddPolicyModal({ isOpen, onClose }: AddPolicyModalProps) {
           <Form.Item
             name="resource"
             label={
-              <span className="flex items-center gap-2 font-bold text-slate-700">
-                <Activity className="h-4 w-4 text-emerald-500" /> Resource
+              <span className="flex items-center gap-2 font-semibold text-[13px] text-slate-700">
+                <Activity size={14} className="text-emerald-500" /> Resource
               </span>
             }
             rules={[{ required: true, message: "Please select a resource" }]}
@@ -192,7 +192,7 @@ export function AddPolicyModal({ isOpen, onClose }: AddPolicyModalProps) {
               className="h-11 custom-select"
               classNames={{
                 popup: {
-                  root: "rounded-xl border-slate-200 shadow-xl",
+                  root: "rounded-lg border-slate-200 shadow-xl",
                 },
               }}
             >
@@ -214,8 +214,8 @@ export function AddPolicyModal({ isOpen, onClose }: AddPolicyModalProps) {
           <Form.Item
             name="condition"
             label={
-              <span className="flex items-center gap-2 font-bold text-slate-700">
-                <Filter className="h-4 w-4 text-amber-500" /> Condition
+              <span className="flex items-center gap-2 font-semibold text-[13px] text-slate-700">
+                <Filter size={14} className="text-amber-500" /> Condition
               </span>
             }
             rules={[{ required: true, message: "Please select a condition" }]}
@@ -225,7 +225,7 @@ export function AddPolicyModal({ isOpen, onClose }: AddPolicyModalProps) {
               className="h-11 custom-select"
               classNames={{
                 popup: {
-                  root: "rounded-xl border-slate-200 shadow-xl",
+                  root: "rounded-lg border-slate-200 shadow-xl",
                 },
               }}
             >
@@ -249,23 +249,23 @@ export function AddPolicyModal({ isOpen, onClose }: AddPolicyModalProps) {
               name="operations"
               label={
                 <div className="flex items-center justify-between w-full">
-                  <span className="flex items-center gap-2 font-bold text-slate-700">
-                    <Shield className="h-4 w-4 text-blue-500" /> Operations
+                  <span className="flex items-center gap-2 font-semibold text-[13px] text-slate-700">
+                    <Shield size={14} className="text-blue-500" /> Operations
                   </span>
-                  <span className="text-[11px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded uppercase tracking-wider">
+                  <span className="text-[10px] font-semibold text-blue-600 bg-blue-50 px-2 py-0.5 rounded uppercase tracking-tight">
                     Auto-populated
                   </span>
                 </div>
               }
               rules={[{ required: true, message: "Operations are required" }]}
             >
-              <div className="min-h-[44px] p-2 border border-slate-200 rounded-lg bg-slate-50/50 flex flex-wrap gap-2">
+              <div className="min-h-[36px] p-2 border border-slate-200 rounded-lg bg-slate-50/50 flex flex-wrap gap-2">
                 {getFieldValue("operations")?.length > 0 ? (
                   getFieldValue("operations").map((op: string) => (
                     <Tag
                       key={op}
                       color="blue"
-                      className="rounded px-2.5 py-0.5 m-0 border-blue-200 text-blue-700 font-bold uppercase text-[11px]"
+                      className="rounded-md px-2 py-0.5 m-0 border-blue-100 text-blue-600 font-semibold uppercase text-[10px] tracking-tight"
                     >
                       {op}
                     </Tag>
@@ -288,14 +288,14 @@ export function AddPolicyModal({ isOpen, onClose }: AddPolicyModalProps) {
           <button
             type="button"
             onClick={onClose}
-            className="h-10 px-6 rounded-lg font-medium border border-slate-200 hover:bg-slate-50 transition-colors"
+            className="h-9 px-4 rounded-lg font-semibold border border-slate-200 hover:bg-slate-50 transition-colors text-[13px]"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={isCreating}
-            className="h-10 px-6 rounded-lg font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-sm transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="h-9 px-4 rounded-lg font-semibold bg-blue-600 hover:bg-blue-700 text-white shadow-sm transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed text-[13px]"
           >
             {isCreating ? "Creating..." : "Create Policy"}
           </button>
@@ -304,7 +304,7 @@ export function AddPolicyModal({ isOpen, onClose }: AddPolicyModalProps) {
 
       <style jsx global>{`
         .policy-modal .ant-modal-content {
-          border-radius: 20px;
+          border-radius: 8px;
           overflow: hidden;
           padding: 24px;
         }

@@ -6,4 +6,9 @@ export const userService = {
     const response = await api.get<AdminUser[]>("/admin/users", { params });
     return response.data;
   },
+
+  createUser: async (data: any) => {
+    const response = await api.post<AdminUser>("/admin/users", data);
+    return response.data;
+  },
 };

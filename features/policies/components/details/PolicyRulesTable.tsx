@@ -30,7 +30,7 @@ export function PolicyRulesTable({
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-1">
-        <h3 className="text-[18px] font-bold text-slate-900 m-0">
+        <h3 className="text-[18px] font-semibold text-slate-900 m-0 leading-tight">
           Policy Rules
         </h3>
         <p className="text-[13px] text-slate-500 font-medium m-0">
@@ -38,17 +38,17 @@ export function PolicyRulesTable({
         </p>
       </div>
 
-      <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden animate-in fade-in duration-500">
+      <div className="rounded-lg border border-slate-200 bg-white shadow-sm overflow-hidden animate-in fade-in duration-500">
         <Table>
           <TableHeader className="bg-slate-50/50">
             <TableRow>
-              <TableHead className="text-[12px] font-bold text-slate-500 uppercase py-4 px-8">
+              <TableHead className="text-[13px] font-semibold text-slate-600 py-2 px-4">
                 Rule Name
               </TableHead>
-              <TableHead className="text-[12px] font-bold text-slate-500 uppercase py-4 px-8">
+              <TableHead className="text-[13px] font-semibold text-slate-600 py-2 px-4">
                 Resource
               </TableHead>
-              <TableHead className="text-[12px] font-bold text-slate-500 uppercase py-4 px-8">
+              <TableHead className="text-[13px] font-semibold text-slate-600 py-2 px-4">
                 Operations
               </TableHead>
             </TableRow>
@@ -75,14 +75,14 @@ export function PolicyRulesTable({
                 </TableCell>
               </TableRow>
             ) : (
-              <TableRow className="hover:bg-slate-50/30 transition-colors group">
-                <TableCell className="px-8 py-5">
-                  <span className="font-bold text-slate-900 text-[14px]">
+              <TableRow className="hover:bg-slate-50/30 transition-colors group h-12">
+                <TableCell className="px-4 py-2">
+                  <span className="font-semibold text-slate-900 text-[13px]">
                     {ruleName || "--"}
                   </span>
                 </TableCell>
-                <TableCell className="px-8 py-5">
-                  <span className="text-[13.5px] text-slate-600 font-medium">
+                <TableCell className="px-4 py-2">
+                  <span className="text-[13px] text-slate-600 font-medium font-mono">
                     {resource || "--"}
                   </span>
                 </TableCell>
@@ -92,7 +92,7 @@ export function PolicyRulesTable({
                       operations.map((op) => (
                         <span
                           key={op}
-                          className="text-[12px] px-2 py-0.5 bg-blue-50 text-blue-600 rounded font-bold uppercase tracking-wider"
+                          className="text-[11px] px-2 py-0.5 bg-blue-50 text-blue-600 rounded-md font-semibold border border-blue-100 uppercase tracking-tight"
                         >
                           {op}
                         </span>

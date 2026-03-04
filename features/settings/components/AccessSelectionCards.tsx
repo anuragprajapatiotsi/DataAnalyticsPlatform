@@ -23,15 +23,15 @@ function SelectionCard({
   return (
     <Card
       className={cn(
-        "group flex cursor-pointer flex-row items-start gap-4 rounded-2xl border border-slate-200 p-5 transition-all duration-300 hover:shadow-md",
+        "group flex cursor-pointer flex-row items-start gap-4 rounded-lg border border-slate-200 p-6 transition-all duration-300 hover:shadow-md bg-white",
         active
-          ? "border-blue-500 ring-1 ring-blue-500"
+          ? "border-blue-500 ring-1 ring-blue-500 shadow-sm"
           : "hover:border-slate-300",
       )}
       onClick={onClick}
     >
-      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#faf5ff] text-pink-500 transition-all duration-300 group-hover:scale-105">
-        <Icon className="h-5 w-5" />
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600 transition-all duration-300 group-hover:scale-105 border border-blue-100">
+        <Icon size={18} />
       </div>
       <div className="space-y-1.5 pt-0.5">
         <h3
@@ -99,7 +99,7 @@ export function AccessSelectionCards({
   };
 
   return (
-    <div className="grid grid-cols-1 gap-6 md:grid-cols-3 mb-10">
+    <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4 mb-8">
       {sections.map((section) => (
         <SelectionCard
           key={section.id}
@@ -113,4 +113,3 @@ export function AccessSelectionCards({
     </div>
   );
 }
-

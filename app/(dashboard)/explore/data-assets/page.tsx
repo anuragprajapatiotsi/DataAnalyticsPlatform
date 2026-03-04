@@ -23,7 +23,7 @@ export default function ExploreDataAssetsPage() {
             <AssetFilters />
           </div>
 
-          <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar rounded-2xl border border-dashed border-slate-200 bg-white shadow-inner flex flex-col items-center justify-center p-8">
+          <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar rounded-lg border border-dashed border-slate-200 bg-white shadow-inner flex flex-col items-center justify-center p-8">
             <EmptyState />
           </div>
         </div>
@@ -31,4 +31,3 @@ export default function ExploreDataAssetsPage() {
     </div>
   );
 }
-

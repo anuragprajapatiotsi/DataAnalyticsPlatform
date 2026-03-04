@@ -54,7 +54,7 @@ export function QualityMetrics() {
   return (
     <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
       {/* Total Tests */}
-      <div className="flex items-center justify-between rounded-xl border border-slate-100 bg-white p-5 shadow-sm">
+      <div className="flex items-center justify-between rounded-lg border border-slate-100 bg-white p-5 shadow-sm">
         <div className="space-y-3">
           <p className="text-sm font-medium text-slate-500 uppercase tracking-wider">
             Total Tests
@@ -82,7 +82,7 @@ export function QualityMetrics() {
       </div>
 
       {/* Healthy Data Assets */}
-      <div className="flex items-center justify-between rounded-xl border border-slate-100 bg-white p-5 shadow-sm">
+      <div className="flex items-center justify-between rounded-lg border border-slate-100 bg-white p-5 shadow-sm">
         <div className="space-y-1">
           <p className="text-sm font-medium text-slate-500 uppercase tracking-wider">
             Healthy Data Assets
@@ -93,7 +93,7 @@ export function QualityMetrics() {
       </div>
 
       {/* Data Assets Coverage */}
-      <div className="flex items-center justify-between rounded-xl border border-slate-100 bg-white p-5 shadow-sm">
+      <div className="flex items-center justify-between rounded-lg border border-slate-100 bg-white p-5 shadow-sm">
         <div className="space-y-1">
           <p className="text-sm font-medium text-slate-500 uppercase tracking-wider">
             Data Assets Coverage
@@ -105,4 +105,3 @@ export function QualityMetrics() {
     </div>
   );
 }
-

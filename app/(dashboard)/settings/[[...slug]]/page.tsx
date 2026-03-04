@@ -49,7 +49,7 @@ export default function SettingsCatchAllPage() {
           </div>
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
             {[1, 2, 3, 4, 5, 6].map((i) => (
-              <Skeleton key={i} className="h-32 w-full rounded-2xl" />
+              <Skeleton key={i} className="h-32 w-full rounded-lg" />
             ))}
           </div>
         </div>
@@ -151,7 +151,7 @@ export default function SettingsCatchAllPage() {
             );
           })}
           {sortedSettings.length === 0 && (
-            <div className="col-span-full flex flex-col items-center justify-center py-20 text-center rounded-3xl border-2 border-dashed border-slate-200 bg-slate-50/10">
+            <div className="col-span-full flex flex-col items-center justify-center py-20 text-center rounded-lg border-2 border-dashed border-slate-200 bg-slate-50/10">
               <div className="h-16 w-16 bg-slate-100/50 rounded-full flex items-center justify-center mb-4">
                 <div className="h-8 w-8 text-slate-400" />
               </div>

@@ -5,14 +5,12 @@ import { useTeams } from "@/features/teams/hooks/useTeams";
 import { TeamsTable } from "@/features/teams/components/TeamsTable";
 import { TeamModal } from "@/features/teams/components/TeamModal";
 import { useAuthContext } from "@/shared/contexts/auth-context";
-import type { Team } from "@/features/teams/types";
-import {
-  TeamsTabs,
-  TeamManagementTab,
-} from "@/features/teams/components/TeamsTabs";
+import type { Team, TeamManagementTab } from "@/features/teams/types";
+import { TeamsTabs } from "@/features/teams/components/TeamsTabs";
 import { RolesList } from "@/features/teams/components/RolesList";
 import { PoliciesList } from "@/features/teams/components/PoliciesList";
 import { useSearchParams, useRouter } from "next/navigation";
+import { PageHeader } from "@/shared/components/layout/PageHeader";
 
 export default function TeamsPage() {
   const { user } = useAuthContext();
@@ -47,7 +45,6 @@ export default function TeamsPage() {
 
   const handleTabChange = (tab: TeamManagementTab) => {
     setActiveTab(tab);
-    // Soft update URL for deep linking
     router.push(
       `/settings/organization-team-user-management/teams?tab=${tab}`,
       {
@@ -82,31 +79,48 @@ export default function TeamsPage() {
     setIsModalOpen(false);
   };
 
+  const breadcrumbItems = [
+    { label: "Settings", href: "/settings" },
+    {
+      label: "Team & User Management",
+      href: "/settings/organization-team-user-management",
+    },
+    { label: "Teams" },
+  ];
+
   return (
-    <div className="animate-in fade-in duration-500">
-      <TeamsTabs
-        activeTab={activeTab}
-        onTabChange={handleTabChange}
-        isAdmin={isAdmin}
+    <div className="flex flex-col space-y-6 animate-in fade-in duration-500 px-6 py-6">
+      <PageHeader
+        title="Teams"
+        description="View and manage teams in your organization."
+        breadcrumbItems={breadcrumbItems}
       />
 
-      <div className="mt-4">
-        {activeTab === "teams" && (
-          <TeamsTable
-            teams={filteredTeams}
-            isLoading={isLoading}
-            isAdmin={isAdmin}
-            searchQuery={searchQuery}
-            onSearchChange={setSearchQuery}
-            onCreateClick={handleCreate}
-            onEditClick={handleEdit}
-            onDeleteConfirm={deleteTeam}
-          />
-        )}
+      <div className="mt-6">
+        <TeamsTabs
+          activeTab={activeTab}
+          onTabChange={handleTabChange}
+          isAdmin={isAdmin}
+        />
 
-        {activeTab === "roles" && <RolesList />}
+        <div className="mt-6">
+          {activeTab === "teams" && (
+            <TeamsTable
+              teams={filteredTeams}
+              isLoading={isLoading}
+              isAdmin={isAdmin}
+              searchQuery={searchQuery}
+              onSearchChange={setSearchQuery}
+              onCreateClick={handleCreate}
+              onEditClick={handleEdit}
+              onDeleteConfirm={deleteTeam}
+            />
+          )}
 
-        {activeTab === "policies" && <PoliciesList />}
+          {activeTab === "roles" && <RolesList />}
+
+          {activeTab === "policies" && <PoliciesList />}
+        </div>
       </div>
 
       <TeamModal
@@ -120,4 +134,3 @@ export default function TeamsPage() {
     </div>
   );
 }
-

@@ -82,7 +82,7 @@ export function PolicyTable({
   ];
 
   return (
-    <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+    <div className="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden">
       <Table
         columns={columns}
         dataSource={policies}
@@ -106,17 +106,18 @@ export function PolicyTable({
       <style jsx global>{`
         .custom-policy-table .ant-table-thead > tr > th {
           background-color: #f8fafc !important;
-          color: #64748b !important;
-          font-weight: 700 !important;
+          color: #475569 !important;
+          font-weight: 600 !important;
           font-size: 13px !important;
-          text-transform: uppercase !important;
-          letter-spacing: 0.025em !important;
-          padding: 16px 24px !important;
+          text-transform: none !important;
+          padding: 12px 16px !important;
           border-bottom: 1px solid #e2e8f0 !important;
         }
         .custom-policy-table .ant-table-tbody > tr > td {
-          padding: 16px 24px !important;
+          padding: 12px 16px !important;
           border-bottom: 1px solid #f1f5f9 !important;
+          font-size: 14px !important;
+          color: #334155 !important;
         }
         .custom-policy-table .ant-table-tbody > tr:hover > td {
           background-color: #f8fafc !important;

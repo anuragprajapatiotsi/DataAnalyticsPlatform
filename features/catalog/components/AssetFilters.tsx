@@ -26,7 +26,7 @@ export function AssetFilters() {
   const [isDeleted, setIsDeleted] = useState(false);
 
   return (
-    <div className="mb-4 flex flex-wrap items-center justify-between gap-4 rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
+    <div className="mb-4 flex flex-wrap items-center justify-between gap-4 rounded-lg border border-slate-200 bg-white p-3 shadow-sm">
       <div className="flex flex-wrap items-center gap-2">
         {filterItems.map((filter) => (
           <DropdownMenu key={filter}>
@@ -117,4 +117,3 @@ export function AssetFilters() {
     </div>
   );
 }
-

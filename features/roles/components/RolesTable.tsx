@@ -22,20 +22,20 @@ interface RolesTableProps {
 
 export function RolesTable({ roles, isLoading }: RolesTableProps) {
   return (
-    <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden animate-in fade-in duration-500">
+    <div className="rounded-lg border border-slate-200 bg-white shadow-sm overflow-hidden animate-in fade-in duration-500">
       <Table>
         <TableHeader className="bg-slate-50/50">
           <TableRow>
-            <TableHead className="w-[280px] text-[13px] font-bold text-slate-500 uppercase py-5 px-8">
+            <TableHead className="w-[280px] text-[13px] font-semibold text-slate-600 py-2 px-4">
               Name
             </TableHead>
-            <TableHead className="text-[13px] font-bold text-slate-500 uppercase py-5 px-8">
+            <TableHead className="text-[13px] font-semibold text-slate-600 py-2 px-4">
               Description
             </TableHead>
-            <TableHead className="text-[13px] font-bold text-slate-500 uppercase py-5 px-8">
+            <TableHead className="text-[13px] font-semibold text-slate-600 py-2 px-4">
               Policies
             </TableHead>
-            <TableHead className="text-right text-[13px] font-bold text-slate-500 uppercase py-5 px-8">
+            <TableHead className="text-right text-[13px] font-semibold text-slate-600 py-2 px-4">
               Actions
             </TableHead>
           </TableRow>
@@ -65,17 +65,17 @@ export function RolesTable({ roles, isLoading }: RolesTableProps) {
             roles.map((role) => (
               <TableRow
                 key={role.id}
-                className="hover:bg-slate-50/30 transition-colors group"
+                className="hover:bg-slate-50/30 transition-colors group h-12"
               >
-                <TableCell className="px-8 py-5">
+                <TableCell className="px-4 py-2">
                   <div className="flex items-center gap-3">
-                    <div className="h-9 w-9 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600 shadow-sm border border-blue-100 flex-shrink-0">
-                      <Shield className="h-4 w-4" />
+                    <div className="h-8 w-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600 shadow-sm border border-blue-100 flex-shrink-0">
+                      <Shield size={16} />
                     </div>
                     <div className="flex flex-col min-w-0">
                       <Link
                         href={`/settings/access-control/roles/${role.id}`}
-                        className="font-bold text-slate-900 text-[14.5px] truncate hover:text-blue-600 transition-colors"
+                        className="font-semibold text-slate-900 text-[13px] truncate hover:text-blue-600 transition-colors"
                       >
                         {role.name}
                       </Link>
@@ -90,12 +90,12 @@ export function RolesTable({ roles, isLoading }: RolesTableProps) {
                     </div>
                   </div>
                 </TableCell>
-                <TableCell className="px-8 py-5">
-                  <p className="text-[13.5px] text-slate-600 m-0 line-clamp-2 leading-snug font-medium max-w-md">
+                <TableCell className="px-4 py-2">
+                  <p className="text-[13px] text-slate-600 m-0 line-clamp-2 leading-snug font-medium max-w-md">
                     {role.description || "No description provided"}
                   </p>
                 </TableCell>
-                <TableCell className="px-8 py-5">
+                <TableCell className="px-4 py-2">
                   <div className="flex flex-wrap gap-1.5 max-w-xs">
                     {role.policies && role.policies.length > 0 ? (
                       <>
@@ -124,11 +124,13 @@ export function RolesTable({ roles, isLoading }: RolesTableProps) {
                     )}
                   </div>
                 </TableCell>
-                <TableCell className="px-8 py-5 text-right">
+                <TableCell className="px-4 py-2 text-right">
                   <Button
                     type="text"
-                    icon={<MoreHorizontal className="h-4 w-4 text-slate-400" />}
-                    className="hover:bg-slate-100 rounded-lg"
+                    icon={
+                      <MoreHorizontal size={16} className="text-slate-400" />
+                    }
+                    className="hover:bg-slate-100 rounded-lg h-8 w-8 flex items-center justify-center"
                   />
                 </TableCell>
               </TableRow>

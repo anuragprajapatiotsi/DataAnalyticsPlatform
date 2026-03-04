@@ -50,14 +50,26 @@ export function TeamModal({
 
   return (
     <Modal
-      title={isEdit ? "Update Team" : "Add Team"}
+      title={
+        <div className="flex flex-col gap-0.5">
+          <span className="text-[18px] font-semibold text-slate-900 leading-tight">
+            {isEdit ? "Update Team" : "Add Team"}
+          </span>
+          <span className="text-[12px] text-slate-500 font-medium">
+            {isEdit
+              ? "Update team information and settings"
+              : "Create a new team in your organization"}
+          </span>
+        </div>
+      }
       open={open}
       onOk={handleSubmit}
       onCancel={onClose}
       confirmLoading={isLoading}
       destroyOnHidden
       mask={{ closable: false }}
-      width={600}
+      width={560}
+      className="custom-modal"
     >
       <Form
         form={form}
@@ -123,10 +135,18 @@ export function TeamModal({
 
         <Form.Item
           name="parent_team_id"
-          label="Parent Team"
+          label={
+            <span className="text-[13px] font-semibold text-slate-700">
+              Parent Team
+            </span>
+          }
           className="col-span-2"
         >
-          <Select placeholder="Select parent team (optional)" allowClear>
+          <Select
+            placeholder="Select parent team (optional)"
+            allowClear
+            className="h-9"
+          >
             {teams
               .filter((t) => t.id !== initialValues?.id)
               .map((t) => (
@@ -137,7 +157,7 @@ export function TeamModal({
           </Select>
         </Form.Item>
 
-        <div className="col-span-2 flex gap-10 bg-slate-50 p-4 rounded-xl border border-slate-100">
+        <div className="col-span-2 flex gap-8 bg-slate-50 p-4 rounded-lg border border-slate-100">
           <Form.Item
             name="public_team_view"
             label="Public View"

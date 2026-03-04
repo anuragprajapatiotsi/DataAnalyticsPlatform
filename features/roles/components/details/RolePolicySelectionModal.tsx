@@ -55,7 +55,7 @@ export function RolePolicySelectionModal({
       dataIndex: "name",
       key: "name",
       render: (text: string) => (
-        <span className="font-bold text-slate-900">{text}</span>
+        <span className="font-semibold text-slate-900 text-[13px]">{text}</span>
       ),
     },
     {
@@ -63,8 +63,8 @@ export function RolePolicySelectionModal({
       dataIndex: "description",
       key: "description",
       render: (text: string) => (
-        <p className="text-[13px] text-slate-500 line-clamp-1 max-w-xs">
-          {text || "No description"}
+        <p className="text-[13px] text-slate-500 line-clamp-1 max-w-sm font-medium m-0">
+          {text || "No description provided"}
         </p>
       ),
     },
@@ -73,8 +73,8 @@ export function RolePolicySelectionModal({
       dataIndex: "resource",
       key: "resource",
       render: (text: string) => (
-        <span className="text-[12px] px-2 py-0.5 bg-slate-100 rounded text-slate-600 font-medium">
-          {text || "N/A"}
+        <span className="text-[11px] px-2 py-0.5 bg-slate-100 rounded-md text-slate-600 font-semibold border border-slate-200 uppercase tracking-tight">
+          {text || "global"}
         </span>
       ),
     },
@@ -83,11 +83,18 @@ export function RolePolicySelectionModal({
   return (
     <Modal
       title={
-        <div className="flex items-center gap-2 pb-2 border-b border-slate-100">
-          <Shield className="h-5 w-5 text-blue-600" />
-          <span className="text-[18px] font-bold text-slate-900">
-            Add Policies to Role
-          </span>
+        <div className="flex items-center gap-3 py-1">
+          <div className="bg-blue-50 p-2 rounded-lg border border-blue-100">
+            <Shield size={18} className="text-blue-600" />
+          </div>
+          <div className="flex flex-col gap-0.5">
+            <h3 className="text-[18px] font-semibold text-slate-900 m-0 leading-tight">
+              Add Policies to Role
+            </h3>
+            <p className="text-[12px] text-slate-500 font-medium m-0">
+              Select one or more policies to attach to this role.
+            </p>
+          </div>
         </div>
       }
       open={open}
@@ -97,7 +104,7 @@ export function RolePolicySelectionModal({
         <Button
           key="cancel"
           onClick={onClose}
-          className="rounded-lg h-10 px-6 font-medium"
+          className="rounded-lg h-9 px-4 font-semibold text-[13px]"
         >
           Cancel
         </Button>,
@@ -107,7 +114,7 @@ export function RolePolicySelectionModal({
           onClick={handleAdd}
           loading={isSubmitting}
           disabled={selectedRowKeys.length === 0}
-          className="bg-blue-600 hover:bg-blue-700 h-10 px-8 rounded-lg font-bold shadow-sm"
+          className="bg-blue-600 hover:bg-blue-700 h-9 px-6 rounded-lg font-semibold shadow-sm text-[13px]"
         >
           Add {selectedRowKeys.length > 0 ? `(${selectedRowKeys.length})` : ""}{" "}
           Policies
@@ -117,8 +124,8 @@ export function RolePolicySelectionModal({
       className="role-policy-selection-modal"
     >
       <div className="py-4 flex flex-col gap-6">
-        <div className="flex flex-col gap-1.5">
-          <p className="text-[14px] text-slate-500 font-medium m-0">
+        <div className="flex flex-col gap-1">
+          <p className="text-[13px] text-slate-500 font-medium m-0">
             Select one or more policies to attach to this role. Only policies
             not already assigned are shown.
           </p>
@@ -126,13 +133,13 @@ export function RolePolicySelectionModal({
 
         <Input
           placeholder="Search policies by name, description or resource..."
-          prefix={<Search className="h-4 w-4 text-slate-400 mr-2" />}
-          className="h-11 rounded-xl bg-slate-50 border-slate-200"
+          prefix={<Search size={16} className="text-slate-400 mr-2" />}
+          className="h-9 rounded-lg bg-slate-50/50 border-slate-200 text-[13px]"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
         />
 
-        <div className="border border-slate-100 rounded-xl overflow-hidden">
+        <div className="border border-slate-100 rounded-lg overflow-hidden">
           <Table
             rowSelection={{
               type: "checkbox",

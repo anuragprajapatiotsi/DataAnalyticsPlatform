@@ -41,7 +41,7 @@ export function TeamDetailsInfo({
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-8">
         {[...Array(6)].map((_, i) => (
-          <Skeleton.Button key={i} active block className="h-24 rounded-xl" />
+          <Skeleton.Button key={i} active block className="h-24 rounded-lg" />
         ))}
       </div>
     );
@@ -128,7 +128,7 @@ export function TeamDetailsInfo({
                   onChange={(e) => setTempDesc(e.target.value)}
                   rows={4}
                   placeholder="Enter team description..."
-                  className="rounded-xl border-slate-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 p-4 text-[14px]"
+                  className="rounded-lg border-slate-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 p-4 text-[14px]"
                 />
                 <div className="flex items-center justify-end gap-2">
                   <Button

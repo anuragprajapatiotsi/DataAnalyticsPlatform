@@ -11,15 +11,12 @@ import {
   TableRow,
 } from "@/shared/components/ui/table";
 
-import { useQuery } from "@tanstack/react-query";
-import { teamService } from "../services/team.service";
+import { useRoles } from "@/features/roles/hooks/useRoles";
 import { Skeleton, Empty } from "antd";
 
 export function RolesList() {
-  const { data: roles = [], isLoading } = useQuery({
-    queryKey: ["roles"],
-    queryFn: () => teamService.getAvailableRoles(),
-  });
+  const { data: rolesData, isLoading } = useRoles({ skip: 0, limit: 100 });
+  const roles = rolesData?.data || [];
 
   if (isLoading) {
     return (
@@ -38,7 +35,7 @@ export function RolesList() {
         </p>
       </div>
 
-      <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+      <div className="rounded-lg border border-slate-200 bg-white shadow-sm overflow-hidden">
         <Table>
           <TableHeader className="bg-slate-50/50">
             <TableRow>
@@ -86,4 +83,3 @@ export function RolesList() {
     </div>
   );
 }
-

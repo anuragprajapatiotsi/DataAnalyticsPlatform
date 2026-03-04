@@ -90,7 +90,7 @@ export function TeamMembersTable({
             placeholder="Search members by name, username or email..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-[450px] h-11 pl-10 rounded-xl border-slate-200 shadow-sm focus-visible:ring-2 focus-visible:ring-blue-500 transition-all font-medium"
+            className="w-[450px] h-11 pl-10 rounded-lg border-slate-200 shadow-sm focus-visible:ring-2 focus-visible:ring-blue-500 transition-all font-medium"
           />
         </div>
         {isAdmin && (
@@ -98,14 +98,14 @@ export function TeamMembersTable({
             type="primary"
             icon={<Plus className="h-4 w-4" />}
             onClick={() => setIsAddModalOpen(true)}
-            className="bg-blue-600 hover:bg-blue-700 h-11 px-8 rounded-xl font-bold shadow-lg flex items-center gap-2 transform transition-transform active:scale-95"
+            className="bg-blue-600 hover:bg-blue-700 h-11 px-8 rounded-lg font-bold shadow-lg flex items-center gap-2 transform transition-transform active:scale-95"
           >
             Add Member
           </Button>
         )}
       </div>
 
-      <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+      <div className="rounded-lg border border-slate-200 bg-white shadow-sm overflow-hidden">
         <Table>
           <TableHeader className="bg-slate-50/50">
             <TableRow>
@@ -235,4 +235,3 @@ export function TeamMembersTable({
     </div>
   );
 }
-

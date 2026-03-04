@@ -41,7 +41,7 @@ export function PoliciesList() {
         </p>
       </div>
 
-      <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+      <div className="rounded-lg border border-slate-200 bg-white shadow-sm overflow-hidden">
         <Table>
           <TableHeader className="bg-slate-50/50">
             <TableRow>
@@ -94,4 +94,3 @@ export function PoliciesList() {
     </div>
   );
 }
-

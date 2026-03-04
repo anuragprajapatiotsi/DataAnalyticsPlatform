@@ -23,10 +23,10 @@ export function SettingsCard({
   href,
 }: SettingsCardProps) {
   const content = (
-    <div className="group flex cursor-pointer flex-row items-start gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-all duration-300 hover:shadow-md hover:border-slate-300 h-full">
+    <div className="group flex cursor-pointer flex-row items-start gap-4 rounded-lg border border-slate-200 bg-white p-5 shadow-sm transition-all duration-300 hover:shadow-md hover:border-slate-300 h-full">
       <div
         className={cn(
-          "flex h-12 w-12 shrink-0 items-center justify-center rounded-xl transition-all duration-300 group-hover:scale-105",
+          "flex h-12 w-12 shrink-0 items-center justify-center rounded-lg transition-all duration-300 group-hover:scale-105",
           iconBgClass,
           iconColorClass,
         )}
@@ -54,4 +54,3 @@ export function SettingsCard({
 
   return content;
 }
-

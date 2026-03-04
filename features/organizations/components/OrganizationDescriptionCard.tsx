@@ -10,7 +10,7 @@ import {
 
 export function OrganizationDescriptionCard() {
   return (
-    <Card className="border-slate-200 rounded-xl shadow-none mt-4 overflow-hidden">
+    <Card className="border-slate-200 rounded-lg shadow-none mt-4 overflow-hidden">
       <Accordion type="single" collapsible className="w-full">
         <AccordionItem value="description" className="border-none">
           <AccordionTrigger className="px-6 py-4 hover:no-underline hover:bg-slate-50 transition-colors">
@@ -28,4 +28,3 @@ export function OrganizationDescriptionCard() {
     </Card>
   );
 }
-

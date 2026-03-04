@@ -77,7 +77,7 @@ export function AdminControlCards() {
       {controls.map((control) => (
         <Card
           key={control.title}
-          className="border-slate-200 rounded-xl shadow-none hover:shadow-sm transition-shadow"
+          className="border-slate-200 rounded-lg shadow-none hover:shadow-sm transition-shadow"
         >
           <CardHeader className="pb-4">
             <CardTitle className="text-[18px] font-bold text-slate-900">
@@ -110,4 +110,3 @@ export function AdminControlCards() {
     </div>
   );
 }
-

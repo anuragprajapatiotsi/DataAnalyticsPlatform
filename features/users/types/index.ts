@@ -35,3 +35,15 @@ export interface GetUserParams {
   skip?: number;
   limit?: number;
 }
+
+export interface CreateUserRequest {
+  email: string;
+  display_name: string;
+  description: string;
+  password: string;
+  confirm_password: string;
+  is_admin: boolean;
+  team_ids: string[];
+  role_ids: string[];
+  domain_ids: string[];
+}

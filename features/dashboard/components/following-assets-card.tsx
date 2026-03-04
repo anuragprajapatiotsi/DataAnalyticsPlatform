@@ -1,7 +1,12 @@
 import { BellOff } from "lucide-react";
 
 import { Button } from "@/shared/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/shared/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/shared/components/ui/card";
 import { CustomSelect } from "@/shared/components/ui/custom-select";
 
 const filterOptions = [
@@ -12,7 +17,7 @@ const filterOptions = [
 
 export function FollowingAssetsCard() {
   return (
-    <Card className="h-full rounded-2xl border-slate-200 bg-slate-50/95 shadow-sm">
+    <Card className="h-full rounded-lg border-slate-200 bg-slate-50/95 shadow-sm">
       <CardHeader className="flex flex-row items-center justify-between border-b border-slate-200 pb-4">
         <CardTitle className="text-base text-slate-900">
           Following Assets
@@ -44,4 +49,3 @@ export function FollowingAssetsCard() {
     </Card>
   );
 }
-

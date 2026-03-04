@@ -1,68 +1,30 @@
 "use client";
 
-import Link from "next/link";
+import React from "react";
 import { useRoles } from "@/features/roles/hooks/useRoles";
 import { RolesTable } from "@/features/roles/components/RolesTable";
-import { Layout } from "lucide-react";
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/shared/components/ui/breadcrumb";
+import { PageHeader } from "@/shared/components/layout/PageHeader";
 
 export default function RolesPage() {
   const { data, isLoading } = useRoles({ skip: 0, limit: 10 });
 
+  const breadcrumbItems = [
+    { label: "Settings", href: "/settings" },
+    { label: "Access Control", href: "/settings/access-control" },
+    { label: "Roles" },
+  ];
+
   return (
-    <div className="flex flex-col gap-6 p-8 pb-20 animate-in fade-in duration-500">
-      <div className="flex flex-col gap-6 mb-8">
-        <Breadcrumb>
-          <BreadcrumbList>
-            <BreadcrumbItem>
-              <BreadcrumbLink asChild>
-                <Link
-                  href="/settings"
-                  className="hover:text-blue-600 transition-colors"
-                >
-                  Settings
-                </Link>
-              </BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbLink asChild>
-                <Link
-                  href="/settings/access-control"
-                  className="hover:text-blue-600 transition-colors"
-                >
-                  Access Control
-                </Link>
-              </BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbPage className="font-bold text-slate-900">
-                Roles
-              </BreadcrumbPage>
-            </BreadcrumbItem>
-          </BreadcrumbList>
-        </Breadcrumb>
+    <div className="flex flex-col px-6 py-6 space-y-6 animate-in fade-in duration-500">
+      <PageHeader
+        title="Roles"
+        description="Define and manage user roles to control access levels across your organization."
+        breadcrumbItems={breadcrumbItems}
+      />
 
-        <div className="flex flex-col gap-1">
-          <h1 className="text-[28px] font-bold text-slate-900 m-0 leading-tight">
-            Roles
-          </h1>
-          <p className="text-[14px] text-slate-500 font-medium max-w-2xl">
-            Define and manage user roles to control access levels across your
-            organization.
-          </p>
-        </div>
+      <div className="mt-6 animate-in fade-in duration-300">
+        <RolesTable roles={data?.data || []} isLoading={isLoading} />
       </div>
-
-      <RolesTable roles={data?.data || []} isLoading={isLoading} />
     </div>
   );
 }

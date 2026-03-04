@@ -49,19 +49,19 @@ export function TeamsTable({
     <div className="flex flex-col gap-6 animate-in fade-in duration-500">
       <div className="flex items-center justify-between">
         <div className="flex flex-col gap-1">
-          <h2 className="text-[18px] font-semibold text-slate-900 m-0">
+          <h2 className="text-[18px] font-semibold text-slate-900 m-0 leading-tight">
             Teams
           </h2>
-          <p className="text-[14px] text-slate-500 m-0">
+          <p className="text-[13px] text-slate-500 m-0">
             Manage your organizational structure and team collaborations.
           </p>
         </div>
         {isAdmin && (
           <Button
             type="primary"
-            icon={<Plus className="h-4 w-4" />}
+            icon={<Plus size={16} />}
             onClick={onCreateClick}
-            className="bg-blue-600 hover:bg-blue-700 flex items-center gap-2 rounded-lg"
+            className="bg-blue-600 hover:bg-blue-700 h-9 flex items-center gap-2 rounded-lg font-semibold"
           >
             Add Team
           </Button>
@@ -69,38 +69,43 @@ export function TeamsTable({
       </div>
 
       <div className="flex items-center justify-between">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+        <div className="relative group">
+          <div className="absolute left-3 top-0 bottom-0 flex items-center pointer-events-none">
+            <Search
+              size={16}
+              className="text-slate-400 group-focus-within:text-blue-500 transition-colors"
+            />
+          </div>
           <Input
             placeholder="Search teams..."
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
-            className="w-[320px] h-10 pl-10 rounded-lg border-slate-200 shadow-none focus-visible:ring-1 focus-visible:ring-blue-500"
+            className="w-[320px] h-9 pl-9 rounded-lg border-slate-200 shadow-none focus-visible:ring-1 focus-visible:ring-blue-500"
           />
         </div>
       </div>
 
-      <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+      <div className="rounded-lg border border-slate-200 bg-white shadow-sm overflow-hidden">
         <Table>
           <TableHeader className="bg-slate-50/50">
             <TableRow>
-              <TableHead className="w-[250px] text-[13px] font-bold text-slate-500 uppercase py-3 px-6">
+              <TableHead className="w-[220px] text-[13px] font-semibold text-slate-600 py-2 px-4">
                 Display Name
               </TableHead>
-              <TableHead className="text-[13px] font-bold text-slate-500 uppercase py-3 px-6">
+              <TableHead className="text-[13px] font-semibold text-slate-600 py-2 px-4">
                 Email
               </TableHead>
-              <TableHead className="text-[13px] font-bold text-slate-500 uppercase py-3 px-6">
+              <TableHead className="text-[13px] font-semibold text-slate-600 py-2 px-4">
                 Type
               </TableHead>
-              <TableHead className="text-[13px] font-bold text-slate-500 uppercase py-3 px-6">
+              <TableHead className="text-[13px] font-semibold text-slate-600 py-2 px-4">
                 Status
               </TableHead>
-              <TableHead className="text-[13px] font-bold text-slate-500 uppercase py-3 px-6">
+              <TableHead className="text-[13px] font-semibold text-slate-600 py-2 px-4">
                 Created
               </TableHead>
               {isAdmin && (
-                <TableHead className="text-right text-[13px] font-bold text-slate-500 uppercase py-3 px-6">
+                <TableHead className="text-right text-[13px] font-semibold text-slate-600 py-2 px-4">
                   Actions
                 </TableHead>
               )}
@@ -135,95 +140,82 @@ export function TeamsTable({
               teams.map((team) => (
                 <TableRow
                   key={team.id}
-                  className="hover:bg-slate-50/50 transition-colors group"
+                  className="hover:bg-slate-50/50 transition-colors group h-12"
                 >
-                  <TableCell className="px-6 py-4">
+                  <TableCell className="px-4 py-2">
                     <div className="flex flex-col">
                       <Link
                         href={`/settings/organization-team-user-management/teams/${team.id}`}
-                        className="font-semibold text-slate-900 text-[14px] hover:text-blue-600 transition-colors"
+                        className="font-semibold text-slate-900 text-[13px] hover:text-blue-600 transition-colors"
                       >
                         {team.display_name}
                       </Link>
-                      <span className="text-[12px] text-slate-400">
+                      <span className="text-[11px] text-slate-400 font-medium">
                         {team.name}
                       </span>
                       {team.description && (
-                        <p className="text-[12px] text-slate-500 line-clamp-1 mt-0.5">
+                        <p className="text-[11px] text-slate-500 line-clamp-1 mt-0.5 font-medium m-0">
                           {team.description}
                         </p>
                       )}
                     </div>
                   </TableCell>
-                  <TableCell className="px-6 py-4">
+                  <TableCell className="px-4 py-2">
                     <div className="flex items-center gap-2 text-slate-600">
-                      <Mail className="h-3.5 w-3.5 text-slate-400" />
-                      <span className="text-[14px] font-medium">
+                      <Mail size={14} className="text-slate-400" />
+                      <span className="text-[13px] font-medium">
                         {team.email}
                       </span>
                     </div>
                   </TableCell>
-                  <TableCell className="px-6 py-4">
+                  <TableCell className="px-4 py-2">
                     <Badge
                       variant="outline"
-                      className="capitalize text-[12px] bg-slate-50 border-slate-200 text-slate-600"
+                      className="capitalize text-[11px] bg-slate-50 border-slate-200 text-slate-600 font-semibold py-0 px-1.5 h-5 flex items-center w-fit"
                     >
                       {team.team_type}
                     </Badge>
                   </TableCell>
-                  <TableCell className="px-6 py-4">
+                  <TableCell className="px-4 py-2">
                     {team.is_active ? (
-                      <Badge className="bg-emerald-50 text-emerald-700 border-emerald-100 text-[12px]">
+                      <Badge className="bg-emerald-50 text-emerald-700 border-emerald-100 text-[11px] font-semibold py-0 px-2 h-5 flex items-center w-fit">
                         Active
                       </Badge>
                     ) : (
                       <Badge
                         variant="secondary"
-                        className="bg-rose-50 text-rose-700 border-rose-100 text-[12px]"
+                        className="bg-rose-50 text-rose-700 border-rose-100 text-[11px] font-semibold py-0 px-2 h-5 flex items-center w-fit"
                       >
                         Inactive
                       </Badge>
                     )}
                   </TableCell>
-                  <TableCell className="px-6 py-4">
-                    <div className="flex items-center gap-2 text-slate-500">
-                      <Calendar className="h-3.5 w-3.5 text-slate-400" />
-                      <span className="text-[13px]">
-                        {new Intl.DateTimeFormat("en-US", {
-                          month: "short",
-                          day: "numeric",
-                          year: "numeric",
-                        }).format(new Date(team.created_at))}
-                      </span>
-                    </div>
-                  </TableCell>
-                  {isAdmin && (
-                    <TableCell className="px-6 py-4 text-right">
-                      <div className="flex items-center justify-end gap-1">
+                  <TableCell className="px-4 py-2 text-right">
+                    <div className="flex items-center justify-end gap-1">
+                      <Button
+                        type="text"
+                        icon={<Edit2 size={16} />}
+                        onClick={() => onEditClick(team)}
+                        className="text-slate-400 hover:text-blue-600 hover:bg-blue-50 h-8 w-8 flex items-center justify-center rounded-lg"
+                      />
+                      <Popconfirm
+                        title="Delete Team"
+                        description="Are you sure you want to delete this team?"
+                        onConfirm={() => onDeleteConfirm(team.id)}
+                        okType="danger"
+                        okText="Delete"
+                        cancelText="Cancel"
+                        okButtonProps={{ danger: true }}
+                      >
                         <Button
                           type="text"
-                          icon={<Edit2 className="h-4 w-4" />}
-                          onClick={() => onEditClick(team)}
-                          className="text-slate-400 hover:text-blue-600"
+                          danger
+                          icon={<Trash2 size={16} />}
+                          className="text-slate-400 hover:text-red-600 hover:bg-red-50 h-8 w-8 flex items-center justify-center rounded-lg"
                         />
-                        <Popconfirm
-                          title="Delete Team"
-                          description="Are you sure you want to delete this team?"
-                          onConfirm={() => onDeleteConfirm(team.id)}
-                          okType="danger"
-                          okText="Delete"
-                          cancelText="Cancel"
-                        >
-                          <Button
-                            type="text"
-                            danger
-                            icon={<Trash2 className="h-4 w-4" />}
-                            className="text-slate-400 hover:text-red-600"
-                          />
-                        </Popconfirm>
-                      </div>
-                    </TableCell>
-                  )}
+                      </Popconfirm>
+                    </div>
+                  </TableCell>
                 </TableRow>
               ))
             )}
@@ -233,4 +225,3 @@ export function TeamsTable({
     </div>
   );
 }
-

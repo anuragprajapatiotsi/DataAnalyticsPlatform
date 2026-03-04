@@ -42,7 +42,7 @@ export function TeamsSubGroupContent() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="border border-slate-200 rounded-xl bg-white overflow-hidden shadow-sm">
+      <div className="border border-slate-200 rounded-lg bg-white overflow-hidden shadow-sm">
         <div className="flex items-center px-6 py-2 border-b border-slate-100">
           {tabs.map((tab) => (
             <button
@@ -69,7 +69,7 @@ export function TeamsSubGroupContent() {
         <div className="p-6">
           {activeSubTab === "teams" && <TeamsEmptyState />}
           {activeSubTab === "roles" && (
-            <div className="flex flex-col items-center justify-center py-20 bg-slate-50/50 border-dashed border-2 border-slate-200 rounded-xl">
+            <div className="flex flex-col items-center justify-center py-20 bg-slate-50/50 border-dashed border-2 border-slate-200 rounded-lg">
               <span className="text-slate-500 font-medium">
                 Roles section coming soon...
               </span>
@@ -87,7 +87,7 @@ export function TeamsSubGroupContent() {
                 </div>
               </div>
 
-              <div className="rounded-xl border border-slate-200 overflow-hidden">
+              <div className="rounded-lg border border-slate-200 overflow-hidden">
                 <Table>
                   <TableHeader className="bg-slate-50/50">
                     <TableRow>
@@ -135,4 +135,3 @@ export function TeamsSubGroupContent() {
     </div>
   );
 }
-

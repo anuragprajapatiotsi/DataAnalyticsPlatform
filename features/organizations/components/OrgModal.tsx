@@ -44,13 +44,26 @@ export function OrgModal({
 
   return (
     <Modal
-      title={isEdit ? "Update Organization" : "Add Organization"}
+      title={
+        <div className="flex flex-col gap-0.5">
+          <span className="text-[18px] font-semibold text-slate-900 leading-tight">
+            {isEdit ? "Update Organization" : "Add Organization"}
+          </span>
+          <span className="text-[12px] text-slate-500 font-medium">
+            {isEdit
+              ? "Update organizational entity details"
+              : "Create a new organizational entity"}
+          </span>
+        </div>
+      }
       open={open}
       onOk={handleSubmit}
       onCancel={onClose}
       confirmLoading={isLoading}
       destroyOnHidden
       mask={{ closable: false }}
+      width={520}
+      className="custom-modal"
     >
       <Form
         form={form}
@@ -60,43 +73,94 @@ export function OrgModal({
       >
         <Form.Item
           name="name"
-          label="Name"
+          label={
+            <span className="text-[13px] font-semibold text-slate-700">
+              Name
+            </span>
+          }
           rules={[
             { required: true, message: "Please enter organization name" },
           ]}
         >
-          <AntInput placeholder="Enter name" />
+          <AntInput
+            placeholder="Enter organization name"
+            className="h-9 text-[13px]"
+          />
         </Form.Item>
 
         <Form.Item
           name="slug"
-          label="Slug"
+          label={
+            <span className="text-[13px] font-semibold text-slate-700">
+              Slug
+            </span>
+          }
           rules={[{ required: true, message: "Please enter slug" }]}
         >
-          <AntInput placeholder="enter-slug" disabled={isEdit} />
+          <AntInput
+            placeholder="e.g. engineering-unit"
+            disabled={isEdit}
+            className="h-9 text-[13px]"
+          />
         </Form.Item>
 
-        <Form.Item name="description" label="Description">
-          <AntInput.TextArea placeholder="Enter description" rows={3} />
+        <Form.Item
+          name="description"
+          label={
+            <span className="text-[13px] font-semibold text-slate-700">
+              Description
+            </span>
+          }
+        >
+          <AntInput.TextArea
+            placeholder="Enter description"
+            rows={3}
+            className="text-[13px]"
+          />
         </Form.Item>
 
         <Form.Item
           name="contact_email"
-          label="Contact Email"
+          label={
+            <span className="text-[13px] font-semibold text-slate-700">
+              Contact Email
+            </span>
+          }
           rules={[
             { required: true, message: "Please enter contact email" },
             { type: "email", message: "Please enter a valid email" },
           ]}
         >
-          <AntInput placeholder="email@example.com" />
+          <AntInput
+            placeholder="email@example.com"
+            className="h-9 text-[13px]"
+          />
         </Form.Item>
 
-        <div className="flex gap-8">
-          <Form.Item name="is_active" label="Active" valuePropName="checked">
+        <div className="flex gap-8 bg-slate-50 p-4 rounded-lg border border-slate-100">
+          <Form.Item
+            name="is_active"
+            label={
+              <span className="text-[13px] font-semibold text-slate-700">
+                Active
+              </span>
+            }
+            valuePropName="checked"
+            className="mb-0"
+          >
             <Switch />
           </Form.Item>
 
-          <Form.Item name="is_default" label="Default" valuePropName="checked">
+          <Form.Item
+            name="is_default"
+            label={
+              <span className="text-[13px] font-semibold text-slate-700">
+                Default
+              </span>
+            }
+            valuePropName="checked"
+            className="mb-0"
+          >
             <Switch />
           </Form.Item>
         </div>
@@ -104,4 +168,3 @@ export function OrgModal({
     </Modal>
   );
 }
-

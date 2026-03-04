@@ -1,6 +1,11 @@
 import { Clock3 } from "lucide-react";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/shared/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/shared/components/ui/card";
 
 const activityItems = [
   {
@@ -25,13 +30,18 @@ const activityItems = [
 
 export function ActivityFeedCard() {
   return (
-    <Card className="h-full rounded-2xl border-slate-200 bg-slate-50/95 shadow-sm">
+    <Card className="h-full rounded-lg border-slate-200 bg-slate-50/95 shadow-sm">
       <CardHeader>
-        <CardTitle className="text-base text-slate-900">Activity Feed</CardTitle>
+        <CardTitle className="text-base text-slate-900">
+          Activity Feed
+        </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         {activityItems.map((item) => (
-          <div key={item.id} className="rounded-xl border border-slate-200 bg-white p-3">
+          <div
+            key={item.id}
+            className="rounded-lg border border-slate-200 bg-white p-3"
+          >
             <p className="text-sm font-semibold text-slate-900">{item.title}</p>
             <p className="mt-1 text-xs text-slate-600">{item.description}</p>
             <p className="mt-2 inline-flex items-center gap-1 text-xs text-slate-500">
@@ -44,4 +54,3 @@ export function ActivityFeedCard() {
     </Card>
   );
 }
-

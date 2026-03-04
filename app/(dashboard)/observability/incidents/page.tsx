@@ -8,7 +8,7 @@ export default function IncidentsPage() {
         subtitle="Manage and track data incidents to ensure timely resolution."
       />
 
-      <div className="rounded-2xl border-2 border-dashed border-slate-200 bg-white p-20 text-center">
+      <div className="rounded-lg border-2 border-dashed border-slate-200 bg-white p-20 text-center">
         <p className="text-slate-500">
           Incident Manager content coming soon...
         </p>
@@ -16,4 +16,3 @@ export default function IncidentsPage() {
     </div>
   );
 }
-

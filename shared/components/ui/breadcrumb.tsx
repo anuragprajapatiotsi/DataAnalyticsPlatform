@@ -83,7 +83,7 @@ const BreadcrumbSeparator = ({
     className={cn("[&>svg]:size-3.5", className)}
     {...props}
   >
-    {children ?? <ChevronRight />}
+    {children ?? <span className="text-slate-400 font-normal">{">"}</span>}
   </li>
 );
 BreadcrumbSeparator.displayName = "BreadcrumbSeparator";
@@ -113,4 +113,3 @@ export {
   BreadcrumbSeparator,
   BreadcrumbEllipsis,
 };
-

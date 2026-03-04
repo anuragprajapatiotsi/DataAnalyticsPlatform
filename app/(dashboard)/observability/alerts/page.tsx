@@ -8,10 +8,9 @@ export default function AlertsPage() {
         subtitle="Configure and manage alerts for data quality and system health."
       />
 
-      <div className="rounded-2xl border-2 border-dashed border-slate-200 bg-white p-20 text-center">
+      <div className="rounded-lg border-2 border-dashed border-slate-200 bg-white p-20 text-center">
         <p className="text-slate-500">Alerts configuration coming soon...</p>
       </div>
     </div>
   );
 }
-

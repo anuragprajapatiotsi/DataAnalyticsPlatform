@@ -260,4 +260,265 @@ Tables → full width
 * Follow a predictable layout pattern for all settings pages.
 * Use consistent typography and colors.
 
+
+# Card & Container Standards
+
+To ensure a **unified, production-grade UI**, all card-like containers, panels, and table wrappers in the application must follow these standards.
+
+These rules apply to pages such as **Users, Teams, Roles, Policies, Settings, Dashboards, and Admin panels**.
+
+---
+
+# 1. Core Styling
+
+All card containers must use the following base styles.
+
+| Property      | Value                 | Tailwind Class                 |
+| ------------- | --------------------- | ------------------------------ |
+| Corner Radius | 8px (Large)           | `rounded-lg`                   |
+| Border Color  | Slate 200             | `border-slate-200`             |
+| Background    | White / Light Surface | `bg-white` or `bg-slate-50/95` |
+| Shadow        | Subtle elevation      | `shadow-sm` or `shadow-none`   |
+
+Example:
+
+```
+<div className="rounded-lg border border-slate-200 bg-white shadow-sm">
+```
+
+Rules:
+
+* Avoid large shadows.
+* Prefer subtle elevation to maintain a clean SaaS UI.
+* Do not mix multiple border colors.
+
+---
+
+# 2. Spacing (Padding)
+
+Proper internal spacing improves readability and visual balance.
+
+### Standard Cards
+
+Use:
+
+```
+p-6
+```
+
+Equivalent spacing:
+
+```
+24px
+```
+
+Used for:
+
+* Settings pages
+* Forms
+* Data sections
+* Table wrappers
+
+---
+
+### Small / Grid Cards
+
+Use:
+
+```
+p-4
+```
+
+or
+
+```
+p-5
+```
+
+Equivalent spacing:
+
+```
+16px – 20px
+```
+
+Used for:
+
+* Dashboard cards
+* Grid items
+* Compact UI blocks
+
+---
+
+### Layout Spacing Between Cards
+
+Use:
+
+```
+gap-6
+```
+
+Equivalent spacing:
+
+```
+24px
+```
+
+Example layout:
+
+```
+<div className="grid gap-6">
+```
+
+Rules:
+
+* Never place cards directly next to each other without spacing.
+* Maintain consistent separation across all pages.
+
+---
+
+# 3. Table Containers
+
+All tables must be wrapped inside a **card container** to maintain consistent UI boundaries.
+
+Example:
+
+```
+<div className="rounded-lg border border-slate-200 bg-white shadow-sm overflow-hidden">
+  {/* Table goes here */}
+</div>
+```
+
+Important notes:
+
+* `overflow-hidden` ensures rounded corners are preserved.
+* Tables must **never directly touch the page background**.
+* Always wrap tables inside a card.
+
+---
+
+# 4. Interactive States (Hover)
+
+For **clickable cards or dashboard items**, use subtle hover transitions.
+
+Required transition:
+
+```
+transition-all duration-300
+```
+
+Optional hover effects:
+
+```
+hover:shadow-md
+hover:-translate-y-1
+```
+
+Example:
+
+```
+<div className="rounded-lg border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:shadow-md hover:-translate-y-1">
+```
+
+Rules:
+
+* Use hover animations sparingly.
+* Avoid aggressive motion.
+
+---
+
+# 5. Header Consistency
+
+Card headers must follow consistent typography rules.
+
+### Card Titles
+
+Font Size:
+
+```
+18px
+```
+
+Tailwind:
+
+```
+text-lg font-bold text-slate-900
+```
+
+Example:
+
+```
+<h3 className="text-lg font-bold text-slate-900">
+```
+
+---
+
+### Card Subtitle / Description
+
+Font Size:
+
+```
+14px
+```
+
+Tailwind:
+
+```
+text-sm font-medium text-slate-500
+```
+
+Example:
+
+```
+<p className="text-sm text-slate-500">
+```
+
+---
+
+# 6. Card Layout Pattern
+
+All cards should follow this internal structure:
+
+```
+Card
+ ├── Header (title + description)
+ ├── Divider (optional)
+ └── Content (form / table / controls)
+```
+
+Example structure:
+
+```
+<div className="rounded-lg border border-slate-200 bg-white shadow-sm p-6 space-y-4">
+
+  <div>
+    <h3 className="text-lg font-bold text-slate-900">Users</h3>
+    <p className="text-sm text-slate-500">
+      Manage users in your organization
+    </p>
+  </div>
+
+  <div>
+    {/* content */}
+  </div>
+
+</div>
+```
+
+---
+
+# 7. Design Principle
+
+All UI containers must follow these principles:
+
+* Consistent radius
+* Consistent spacing
+* Minimal shadows
+* Clean visual hierarchy
+* Predictable layouts
+
+Never introduce **new card styles** unless they follow these rules.
+
+This ensures the UI remains **scalable, maintainable, and production-ready**.
+
+
 These rules ensure a **clean, scalable, production-quality UI**.

@@ -41,7 +41,7 @@ export function CustomSelect({
       <DropdownMenuTrigger asChild>
         <button
           className={cn(
-            "flex h-11 min-w-52 items-center justify-between rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 shadow-sm outline-none transition hover:bg-slate-50 focus:ring-2 focus:ring-blue-500",
+            "flex h-11 min-w-52 items-center justify-between rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 shadow-sm outline-none transition hover:bg-slate-50 focus:ring-2 focus:ring-blue-500",
             className,
           )}
         >
@@ -69,4 +69,3 @@ export function CustomSelect({
     </DropdownMenu>
   );
 }
-

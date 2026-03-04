@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import {
   Shield,
   Plus,
@@ -21,8 +21,7 @@ import {
 import type { Role } from "../../types";
 import { ManagementSelectionModal } from "./ManagementSelectionModal";
 import { teamService } from "../../services/team.service";
-import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { useRoles } from "../../../roles/hooks/useRoles";
 
 interface TeamDetailsRolesProps {
   roles: Role[];
@@ -42,13 +41,11 @@ export function TeamDetailsRoles({
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Fetch all available roles for the selection modal
-  const { data: availableRoles = [], isLoading: isLoadingAvailable } = useQuery(
-    {
-      queryKey: ["roles"],
-      queryFn: () => teamService.getAvailableRoles(),
-      enabled: isModalOpen,
-    },
-  );
+  const { data: rolesData, isLoading: isLoadingAvailable } = useRoles({
+    skip: 0,
+    limit: 100,
+  });
+  const availableRoles = rolesData?.data || [];
 
   // Filter out roles already assigned to the team
   const assignedRoleIds = new Set(roles.map((r) => r.id));
@@ -74,14 +71,14 @@ export function TeamDetailsRoles({
             type="primary"
             icon={<Plus className="h-4 w-4" />}
             onClick={() => setIsModalOpen(true)}
-            className="bg-blue-600 hover:bg-blue-700 h-11 px-8 rounded-xl font-bold shadow-lg flex items-center gap-2 transform transition-transform active:scale-95"
+            className="bg-blue-600 hover:bg-blue-700 h-11 px-8 rounded-lg font-bold shadow-lg flex items-center gap-2 transform transition-transform active:scale-95"
           >
             Add Role
           </Button>
         )}
       </div>
 
-      <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+      <div className="rounded-lg border border-slate-200 bg-white shadow-sm overflow-hidden">
         <Table>
           <TableHeader className="bg-slate-50/50">
             <TableRow>
@@ -132,7 +129,7 @@ export function TeamDetailsRoles({
                 >
                   <TableCell className="px-8 py-5">
                     <div className="flex items-center gap-4">
-                      <div className="h-10 w-10 rounded-xl bg-indigo-50 flex items-center justify-center shadow-sm border border-indigo-100">
+                      <div className="h-10 w-10 rounded-lg bg-indigo-50 flex items-center justify-center shadow-sm border border-indigo-100">
                         <Shield className="h-5 w-5 text-indigo-600" />
                       </div>
                       <span className="font-bold text-slate-900 text-[15px]">

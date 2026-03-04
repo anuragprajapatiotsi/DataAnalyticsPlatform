@@ -1,3 +1,16 @@
+"use client";
+
+import React from "react";
+import Link from "next/link";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/shared/components/ui/breadcrumb";
+
 export default function TeamsSectionLayout({
   children,
 }: {

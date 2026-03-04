@@ -36,21 +36,22 @@ export default function PolicyDetailPage() {
   });
 
   return (
-    <div className="flex flex-col p-8 pb-20 animate-in fade-in duration-500">
+    <div className="flex flex-col px-6 py-6 space-y-6 animate-in fade-in duration-500">
       <PolicyDetailsHeader policy={policy} isLoading={isLoadingPolicy} />
 
       <Tabs defaultValue="rules" className="w-full">
-        <TabsList className="mb-8 bg-slate-100/50 p-1 rounded-xl h-12 w-fit">
+        <TabsList className="mb-6 bg-slate-100/50 p-1 rounded-lg h-10 w-fit">
           <TabsTrigger
             value="rules"
             active={activeTab === "rules"}
             onClick={() => setActiveTab("rules")}
-            className="px-6 py-2 rounded-lg gap-2"
+            className="px-4 py-2 rounded-md gap-2 text-[13px] font-semibold"
           >
             <Shield
-              className={`h-4 w-4 ${
+              size={16}
+              className={
                 activeTab === "rules" ? "text-blue-600" : "text-slate-400"
-              }`}
+              }
             />
             Rules
           </TabsTrigger>
@@ -58,12 +59,13 @@ export default function PolicyDetailPage() {
             value="teams"
             active={activeTab === "teams"}
             onClick={() => setActiveTab("teams")}
-            className="px-6 py-2 rounded-lg gap-2"
+            className="px-4 py-2 rounded-md gap-2 text-[13px] font-semibold"
           >
             <Users
-              className={`h-4 w-4 ${
+              size={16}
+              className={
                 activeTab === "teams" ? "text-blue-600" : "text-slate-400"
-              }`}
+              }
             />
             Teams
           </TabsTrigger>
@@ -71,12 +73,13 @@ export default function PolicyDetailPage() {
             value="roles"
             active={activeTab === "roles"}
             onClick={() => setActiveTab("roles")}
-            className="px-6 py-2 rounded-lg gap-2"
+            className="px-4 py-2 rounded-md gap-2 text-[13px] font-semibold"
           >
             <ShieldCheck
-              className={`h-4 w-4 ${
+              size={16}
+              className={
                 activeTab === "roles" ? "text-blue-600" : "text-slate-400"
-              }`}
+              }
             />
             Roles
           </TabsTrigger>

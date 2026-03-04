@@ -4,15 +4,15 @@ import React, { useState } from "react";
 import { UsersHeader } from "@/features/users/components/UsersHeader";
 import { UsersTable } from "@/features/users/components/UsersTable";
 import { useAdminUsers } from "@/features/users/hooks/useAdminUsers";
-import { Button, Pagination } from "antd";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { Pagination } from "antd";
+import { PageHeader } from "@/shared/components/layout/PageHeader";
 
 export default function UsersManagementPage() {
   const [filters, setFilters] = useState({
     search: "",
     is_active: true,
     skip: 0,
-    limit: 10, // Requirement sample shows limit=50, but let's use 10 for better UI testing unless specified
+    limit: 10,
   });
 
   const { data: users = [], isLoading } = useAdminUsers(filters);
@@ -25,35 +25,41 @@ export default function UsersManagementPage() {
     setFilters((prev) => ({ ...prev, is_active, skip: 0 }));
   };
 
-  const handlePageChange = (direction: "next" | "prev") => {
-    const newSkip =
-      direction === "next"
-        ? filters.skip + filters.limit
-        : Math.max(0, filters.skip - filters.limit);
-
-    setFilters((prev) => ({ ...prev, skip: newSkip }));
-  };
-
   const currentPage = Math.floor(filters.skip / filters.limit) + 1;
 
+  const breadcrumbItems = [
+    { label: "Settings", href: "/settings" },
+    {
+      label: "Team & User Management",
+      href: "/settings/organization-team-user-management",
+    },
+    { label: "Users" },
+  ];
+
   return (
-    <div className="flex flex-col  animate-in fade-in duration-500 max-w-[1400px] mx-auto">
-      <UsersHeader
-        onSearchChange={handleSearchChange}
-        isActive={filters.is_active}
-        onIsActiveChange={handleIsActiveChange}
+    <div className="flex flex-col px-6 py-6 space-y-6 animate-in fade-in duration-500 max-w-[1400px] mx-auto">
+      <PageHeader
+        title="Users"
+        description="View and manage regular users in your organization. For admin users, please visit the Admin page."
+        breadcrumbItems={breadcrumbItems}
       />
+
+      <div className="mt-6">
+        <UsersHeader
+          onSearchChange={handleSearchChange}
+          isActive={filters.is_active}
+          onIsActiveChange={handleIsActiveChange}
+        />
+      </div>
 
       <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 delay-150">
         <UsersTable users={users} isLoading={isLoading} />
       </div>
 
-      <div className="flex items-center justify-between mt-8 bg-white p-4 px-6 rounded-2xl border border-slate-200 shadow-sm animate-in fade-in slide-in-from-bottom-2 duration-500 delay-300">
+      <div className="flex items-center justify-between mt-4 bg-slate-50/50 p-3 px-4 rounded-lg border border-slate-200/60">
         <div className="text-[13px] text-slate-500 font-medium">
           Showing{" "}
-          <span className="text-slate-900 font-bold tracking-tight">
-            {users.length}
-          </span>{" "}
+          <span className="text-slate-900 font-semibold">{users.length}</span>{" "}
           results
         </div>
 
@@ -64,7 +70,7 @@ export default function UsersManagementPage() {
             users.length === filters.limit
               ? (currentPage + 1) * filters.limit
               : currentPage * filters.limit
-          } // This is a workaround since we don't have total count. In real app, API should return total.
+          }
           onChange={(page) => {
             const newSkip = (page - 1) * filters.limit;
             setFilters((prev) => ({ ...prev, skip: newSkip }));

@@ -25,10 +25,10 @@ export default function PoliciesPage() {
   };
 
   return (
-    <div className="flex flex-col p-8 pb-20 animate-in fade-in duration-500">
+    <div className="flex flex-col px-6 py-6 space-y-6 animate-in fade-in duration-500 max-w-[1400px] mx-auto">
       <PolicyHeader onAddPolicy={handleAddPolicy} />
 
-      <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm animate-in fade-in slide-in-from-bottom-2 duration-700">
+      <div className="bg-white rounded-lg border border-slate-200 overflow-hidden shadow-sm animate-in fade-in slide-in-from-bottom-2 duration-700">
         <PolicyTable
           policies={policies}
           isLoading={isLoading}
