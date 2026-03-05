@@ -2,13 +2,12 @@
 
 import React from "react";
 import { useParams, useRouter } from "next/navigation";
-import { ChevronRight, Home as HomeIcon } from "lucide-react";
+import Link from "next/link";
 import { SettingsCard } from "@/features/dashboard/components/settings-card";
 import { useSettings } from "@/features/settings/hooks/use-settings";
 import { getIcon } from "@/shared/utils/icon-mapper";
 import { Skeleton } from "@/shared/components/ui/skeleton";
-import { cn } from "@/shared/utils/cn";
-import Link from "next/link";
+import { PageHeader } from "@/shared/components/layout/PageHeader";
 
 export default function SettingsCatchAllPage() {
   const router = useRouter();
@@ -79,59 +78,43 @@ export default function SettingsCatchAllPage() {
     (a, b) => (a.sort_order || 0) - (b.sort_order || 0),
   );
 
-  // Reconstruct breadcrumbs from slugs
-  const breadcrumbs = [{ slug: "", label: "Settings" }];
+  // Reconstruct breadcrumb items
+  const breadcrumbItems = [
+    {
+      label: "Settings",
+      href: "/settings",
+      active: currentSlug === "settings",
+    },
+  ];
+
   slugs.forEach((slug, index) => {
-    breadcrumbs.push({
-      slug: slugs.slice(0, index + 1).join("/"),
+    breadcrumbItems.push({
       label: slug.charAt(0).toUpperCase() + slug.slice(1),
+      href: `/settings/${slugs.slice(0, index + 1).join("/")}`,
+      active: index === slugs.length - 1,
     });
   });
 
   return (
-    <div className="h-full overflow-y-auto p-6 pb-20 custom-scrollbar animate-in fade-in slide-in-from-bottom-3 duration-500">
+    <div className="h-full overflow-y-auto px-6 py-6 pb-20 custom-scrollbar animate-in fade-in slide-in-from-bottom-2 duration-500">
       <div className="w-full">
-        {/* Breadcrumbs */}
-        <nav className="mb-8 flex items-center space-x-2 text-sm font-medium text-slate-500">
-          {breadcrumbs.map((item, index) => (
-            <div key={item.slug || "root"} className="flex items-center">
-              {index > 0 && (
-                <ChevronRight className="mx-2 h-4 w-4 text-slate-400" />
-              )}
-              {index === breadcrumbs.length - 1 ? (
-                <span className="flex items-center text-slate-900 font-bold">
-                  {index === 0 && <HomeIcon className="mr-1.5 h-4 w-4" />}
-                  {item.label}
-                </span>
-              ) : (
-                <Link
-                  href={`/settings/${item.slug}`}
-                  className="flex items-center hover:text-blue-600 transition-colors"
-                >
-                  {index === 0 && <HomeIcon className="mr-1.5 h-4 w-4" />}
-                  {item.label}
-                </Link>
-              )}
-            </div>
-          ))}
-        </nav>
-
-        <div className="mb-8 pl-1">
-          <h1 className="text-xl font-bold tracking-tight text-slate-900">
-            {currentSlug === "settings"
+        <PageHeader
+          title={
+            currentSlug === "settings"
               ? "Settings"
-              : currentSlug.charAt(0).toUpperCase() + currentSlug.slice(1)}
-          </h1>
-          <p className="mt-2 text-slate-500 font-medium max-w-2xl text-lg leading-relaxed">
-            {settings?.find((item: any) => item.slug === currentSlug)
+              : currentSlug.charAt(0).toUpperCase() + currentSlug.slice(1)
+          }
+          description={
+            settings?.find((item: any) => item.slug === currentSlug)
               ?.description ||
-              (currentSlug === "settings"
-                ? "Manage your account, workspace preferences, and application settings."
-                : `Manage and configure settings for the ${currentSlug} category.`)}
-          </p>
-        </div>
+            (currentSlug === "settings"
+              ? "Manage your account, workspace preferences, and application settings."
+              : `Manage and configure settings for the ${currentSlug} category.`)
+          }
+          breadcrumbItems={breadcrumbItems}
+        />
 
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-8 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
           {sortedSettings.map((item) => {
             const IconComponent = getIcon(item.icon);
             return (
