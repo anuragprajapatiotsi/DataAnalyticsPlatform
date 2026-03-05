@@ -60,4 +60,9 @@ export const policyService = {
     const response = await api.post<Policy>("/policies", payload);
     return response.data;
   },
+
+  async updatePolicy(id: string, payload: any) {
+    const response = await api.put<Policy>(`/policies/${id}`, payload);
+    return response.data;
+  },
 };

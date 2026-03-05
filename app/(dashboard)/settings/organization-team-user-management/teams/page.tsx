@@ -92,7 +92,7 @@ export default function TeamsPage() {
   ];
 
   return (
-    <div className="flex flex-col animate-in fade-in duration-500">
+    <div className="flex flex-col animate-in fade-in slide-in-from-bottom-2 duration-500 max-w-[1400px] mx-auto">
       <PageHeader
         title="Teams"
         description="View and manage teams in your organization."

@@ -22,6 +22,17 @@ export interface Role {
 export interface GetRolesParams {
   skip: number;
   limit: number;
+  search?: string;
+  is_system_role?: boolean;
+  user_id?: string;
+  team_id?: string;
+  org_id_assigned?: string;
+}
+
+export interface CreateRolePayload {
+  name: string;
+  description: string;
+  policy_ids: string[];
 }
 
 export interface RoleUser {

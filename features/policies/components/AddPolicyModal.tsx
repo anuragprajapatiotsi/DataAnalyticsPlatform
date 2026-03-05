@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import { Modal, Form, Input, Select, Tag, Divider, message } from "antd";
 import { Shield, Info, ListTree, Activity, Filter } from "lucide-react";
 import { useCreatePolicy } from "../hooks/useCreatePolicy";
-import { Resource } from "../types";
+import { Policy, Resource } from "../types";
 
 const { Option, OptGroup } = Select;
 const { TextArea } = Input;
@@ -12,6 +12,7 @@ const { TextArea } = Input;
 interface AddPolicyModalProps {
   isOpen: boolean;
   onClose: () => void;
+  initialValues?: Policy | null;
 }
 
 const STATIC_CONDITIONS = [
@@ -27,21 +28,56 @@ const STATIC_CONDITIONS = [
   { name: "noOwner" },
 ];
 
-export function AddPolicyModal({ isOpen, onClose }: AddPolicyModalProps) {
+export function AddPolicyModal({
+  isOpen,
+  onClose,
+  initialValues,
+}: AddPolicyModalProps) {
   const [form] = Form.useForm();
-  const { resources, isLoadingResources, isCreating, createPolicy } =
-    useCreatePolicy();
+  const {
+    resources,
+    isLoadingResources,
+    isCreating,
+    createPolicy,
+    isUpdating,
+    updatePolicy,
+  } = useCreatePolicy();
   const [selectedResource, setSelectedResource] = useState<Resource | null>(
     null,
   );
 
-  // Reset form when modal closes
+  const isEdit = !!initialValues;
+
+  // Reset form when modal closes or initialValues change
   useEffect(() => {
-    if (!isOpen) {
-      form.resetFields();
-      setSelectedResource(null);
+    if (isOpen) {
+      if (initialValues) {
+        form.setFieldsValue({
+          name: initialValues.name,
+          description: initialValues.description,
+          rule_name: initialValues.rule_name,
+          resource: initialValues.resource,
+          operations: initialValues.operations,
+          condition: initialValues.conditions?.[0]?.attr,
+        });
+
+        // Try to find and set the selected resource object to show operations list
+        let found: Resource | null = null;
+        resources.forEach((group: any) => {
+          const res = group.resources.find(
+            (r: any) =>
+              r.key === initialValues.resource ||
+              r.label === initialValues.resource,
+          );
+          if (res) found = res;
+        });
+        if (found) setSelectedResource(found);
+      } else {
+        form.resetFields();
+        setSelectedResource(null);
+      }
     }
-  }, [isOpen, form]);
+  }, [isOpen, initialValues, form, resources]);
 
   const handleResourceChange = (resourceKey: string) => {
     // Find the resource in the grouped data
@@ -79,7 +115,11 @@ export function AddPolicyModal({ isOpen, onClose }: AddPolicyModalProps) {
         ],
       };
 
-      await createPolicy(payload);
+      if (isEdit && initialValues) {
+        await updatePolicy({ id: initialValues.id, payload });
+      } else {
+        await createPolicy(payload);
+      }
       onClose();
     } catch (error) {
       // Error handled by mutation
@@ -95,10 +135,12 @@ export function AddPolicyModal({ isOpen, onClose }: AddPolicyModalProps) {
           </div>
           <div className="flex flex-col gap-0.5">
             <h3 className="text-[18px] font-semibold text-slate-900 m-0 leading-tight">
-              Create New Policy
+              {isEdit ? "Edit Policy" : "Create New Policy"}
             </h3>
             <p className="text-[12px] text-slate-500 font-medium m-0">
-              Define access rules and permissions for resources.
+              {isEdit
+                ? "Update access rules and permissions."
+                : "Define access rules and permissions for resources."}
             </p>
           </div>
         </div>
@@ -294,10 +336,19 @@ export function AddPolicyModal({ isOpen, onClose }: AddPolicyModalProps) {
           </button>
           <button
             type="submit"
-            disabled={isCreating}
+            disabled={isCreating || isUpdating}
             className="h-9 px-4 rounded-lg font-semibold bg-blue-600 hover:bg-blue-700 text-white shadow-sm transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed text-[13px]"
           >
-            {isCreating ? "Creating..." : "Create Policy"}
+            {isCreating || isUpdating ? (
+              <>
+                <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white" />
+                {isEdit ? "Updating..." : "Creating..."}
+              </>
+            ) : isEdit ? (
+              "Update Policy"
+            ) : (
+              "Create Policy"
+            )}
           </button>
         </div>
       </Form>

@@ -30,10 +30,32 @@ export const useCreatePolicy = () => {
     },
   });
 
+  // Update policy mutation
+  const updatePolicyMutation = useMutation({
+    mutationFn: ({
+      id,
+      payload,
+    }: {
+      id: string;
+      payload: CreatePolicyPayload;
+    }) => policyService.updatePolicy(id, payload),
+    onSuccess: () => {
+      message.success("Policy updated successfully");
+      queryClient.invalidateQueries({ queryKey: ["policies"] });
+    },
+    onError: (error: any) => {
+      const errorMsg =
+        error.response?.data?.message || "Failed to update policy";
+      message.error(errorMsg);
+    },
+  });
+
   return {
     resources: resourcesQuery.data || [],
     isLoadingResources: resourcesQuery.isLoading,
     isCreating: createPolicyMutation.isPending,
     createPolicy: createPolicyMutation.mutateAsync,
+    isUpdating: updatePolicyMutation.isPending,
+    updatePolicy: updatePolicyMutation.mutateAsync,
   };
 };

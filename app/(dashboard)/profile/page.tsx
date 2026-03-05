@@ -1,9 +1,18 @@
 "use client";
 
 import { useAuthContext } from "@/shared/contexts/auth-context";
-import { Avatar, AvatarFallback, AvatarImage } from "@/shared/components/ui/avatar";
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from "@/shared/components/ui/avatar";
 import { Badge } from "@/shared/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/shared/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/shared/components/ui/card";
 import { Separator } from "@/shared/components/ui/separator";
 import { cn } from "@/shared/utils/cn";
 import {
@@ -17,13 +26,16 @@ import {
   Building2,
   FileText,
 } from "lucide-react";
+import { PageHeader } from "@/shared/components/layout/PageHeader";
 
 export default function ProfilePage() {
   const { user, isLoading } = useAuthContext();
 
+  const breadcrumbItems = [{ label: "Profile" }];
+
   if (isLoading) {
     return (
-      <div className="flex h-[calc(100vh-4rem)] items-center justify-center">
+      <div className="flex h-[calc(100vh-4rem)] items-center justify-center p-6">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent"></div>
       </div>
     );
@@ -31,8 +43,10 @@ export default function ProfilePage() {
 
   if (!user) {
     return (
-      <div className="flex h-[calc(100vh-4rem)] items-center justify-center">
-        <p className="text-slate-500">Failed to load profile.</p>
+      <div className="flex h-[calc(100vh-4rem)] items-center justify-center p-6">
+        <p className="text-slate-500 font-medium text-lg">
+          Failed to load profile.
+        </p>
       </div>
     );
   }
@@ -55,17 +69,14 @@ export default function ProfilePage() {
   };
 
   return (
-    <div className="w-full p-8 px-6 lg:px-8">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold tracking-tight text-slate-900">
-          Account Settings
-        </h1>
-        <p className="text-sm text-slate-500">
-          Manage your profile and account preferences.
-        </p>
-      </div>
+    <div className="flex flex-col px-6 py-6 pb-20 space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500 max-w-[1400px] mx-auto">
+      <PageHeader
+        title="Account Settings"
+        description="Manage your profile and account preferences."
+        breadcrumbItems={breadcrumbItems}
+      />
 
-      <div className="grid gap-8 lg:grid-cols-3">
+      <div className="grid gap-8 lg:grid-cols-3 mt-4">
         {/* Left Panel */}
         <div className="space-y-4 lg:col-span-1">
           <Card className="overflow-hidden border-slate-200/60 shadow-md">
@@ -254,4 +265,3 @@ export default function ProfilePage() {
     </div>
   );
 }
-

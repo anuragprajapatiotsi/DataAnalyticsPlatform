@@ -5,14 +5,22 @@ import { PolicyHeader } from "@/features/policies/components/PolicyHeader";
 import { PolicyTable } from "@/features/policies/components/PolicyTable";
 import { AddPolicyModal } from "@/features/policies/components/AddPolicyModal";
 import { usePolicies } from "@/features/policies/hooks/usePolicies";
+import { Policy } from "@/features/policies/types";
 
 export default function PoliciesPage() {
   const [params, setParams] = useState({ skip: 0, limit: 50, name: "primary" });
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedPolicy, setSelectedPolicy] = useState<Policy | null>(null);
 
   const { policies, isLoading, deletePolicy, isDeleting } = usePolicies(params);
 
   const handleAddPolicy = () => {
+    setSelectedPolicy(null);
+    setIsModalOpen(true);
+  };
+
+  const handleEditPolicy = (policy: Policy) => {
+    setSelectedPolicy(policy);
     setIsModalOpen(true);
   };
 
@@ -32,6 +40,7 @@ export default function PoliciesPage() {
         <PolicyTable
           policies={policies}
           isLoading={isLoading}
+          onEdit={handleEditPolicy}
           onDelete={handleDeletePolicy}
           isDeleting={isDeleting}
         />
@@ -39,7 +48,11 @@ export default function PoliciesPage() {
 
       <AddPolicyModal
         isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        onClose={() => {
+          setIsModalOpen(false);
+          setSelectedPolicy(null);
+        }}
+        initialValues={selectedPolicy}
       />
 
       {/* Implementation Note: Pagination and Search can be added here in the future */}

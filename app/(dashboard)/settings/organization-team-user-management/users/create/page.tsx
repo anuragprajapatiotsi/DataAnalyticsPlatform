@@ -71,9 +71,7 @@ export default function CreateUserPage() {
         >
           {/* User Info Section */}
           <div>
-            <h3 className="text-base font-bold text-slate-800 ">
-              User Info
-            </h3>
+            <h3 className="text-base font-bold text-slate-800 ">User Info</h3>
             <div className="grid grid-cols-2 gap-6">
               <Form.Item
                 name="email"
@@ -174,7 +172,7 @@ export default function CreateUserPage() {
                   loading={isLoadingRoles}
                   size="large"
                   className="w-full rounded-lg"
-                  options={rolesData?.data?.map((r: any) => ({
+                  options={rolesData?.map((r: any) => ({
                     label: r.name,
                     value: r.id,
                   }))}

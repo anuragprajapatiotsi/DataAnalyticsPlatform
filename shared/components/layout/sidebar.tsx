@@ -227,6 +227,7 @@ export function Sidebar() {
             alt="OTSI logo"
             width={60}
             height={60}
+            
             className="rounded-lg object-contain shrink-0"
           />
           {!collapsed && (

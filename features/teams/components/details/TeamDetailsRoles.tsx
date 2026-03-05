@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import Link from "next/link";
 import {
   Shield,
   Plus,
@@ -19,6 +20,7 @@ import {
   TableRow,
 } from "@/shared/components/ui/table";
 import type { Role } from "../../types";
+import type { Role as RolesRole } from "../../../roles/types";
 import { ManagementSelectionModal } from "./ManagementSelectionModal";
 import { teamService } from "../../services/team.service";
 import { useRoles } from "../../../roles/hooks/useRoles";
@@ -45,12 +47,12 @@ export function TeamDetailsRoles({
     skip: 0,
     limit: 100,
   });
-  const availableRoles = rolesData?.data || [];
+  const availableRoles = rolesData || [];
 
   // Filter out roles already assigned to the team
   const assignedRoleIds = new Set(roles.map((r) => r.id));
   const trulyAvailableRoles = availableRoles.filter(
-    (r) => !assignedRoleIds.has(r.id),
+    (r: RolesRole) => !assignedRoleIds.has(r.id),
   );
 
   const handleAssignSubmit = async (roleIds: string[]) => {
@@ -132,9 +134,12 @@ export function TeamDetailsRoles({
                       <div className="h-10 w-10 rounded-lg bg-indigo-50 flex items-center justify-center shadow-sm border border-indigo-100">
                         <Shield className="h-5 w-5 text-indigo-600" />
                       </div>
-                      <span className="font-bold text-slate-900 text-[15px]">
+                      <Link
+                        href={`/settings/access-control/roles/${role.id}`}
+                        className="font-bold text-blue-600 hover:text-blue-700 hover:underline text-[15px] transition-colors"
+                      >
                         {role.name}
-                      </span>
+                      </Link>
                     </div>
                   </TableCell>
                   <TableCell className="px-8 py-5 text-slate-500 text-[14px] font-medium">

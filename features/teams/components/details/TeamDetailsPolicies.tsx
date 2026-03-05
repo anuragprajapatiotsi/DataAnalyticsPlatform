@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Link from "next/link";
 import {
   FileText,
   Plus,
@@ -132,9 +133,12 @@ export function TeamDetailsPolicies({
                   className="hover:bg-slate-50/30 transition-colors group"
                 >
                   <TableCell className="px-6 py-4">
-                    <span className="font-medium text-blue-600 hover:underline cursor-pointer">
+                    <Link
+                      href={`/settings/access-control/policies/${policy.id}`}
+                      className="text-[14px] font-medium text-blue-600 hover:text-blue-700 hover:underline transition-colors block w-fit"
+                    >
                       {policy.name}
-                    </span>
+                    </Link>
                   </TableCell>
                   <TableCell className="px-6 py-4 text-slate-600 text-[14px]">
                     {policy.description || "No description provided."}
