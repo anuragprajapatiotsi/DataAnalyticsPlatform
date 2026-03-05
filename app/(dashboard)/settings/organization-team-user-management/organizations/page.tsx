@@ -4,9 +4,8 @@ import React, { useState } from "react";
 import { useOrganizations } from "@/features/organizations/hooks/useOrganizations";
 import { OrganizationsTable } from "@/features/organizations/components/OrganizationsTable";
 import { OrgModal } from "@/features/organizations/components/OrgModal";
-import type { Organization } from "@/shared/types";
 import { PageHeader } from "@/shared/components/layout/PageHeader";
-import { Organization } from "@/features/organizations/types";
+import type { Organization } from "@/shared/types";
 
 export default function OrganizationsPage() {
   const {
@@ -58,14 +57,14 @@ export default function OrganizationsPage() {
   ];
 
   return (
-    <div className="flex flex-col px-6 space-y-6 animate-in fade-in duration-500">
+    <div className="flex flex-col space-y-6 animate-in fade-in duration-500">
       <PageHeader
         title="Organizations"
         description="Manage your organization's sub-entities."
         breadcrumbItems={breadcrumbItems}
       />
 
-      <div className="animate-in fade-in duration-300 mt-6">
+      <div className="animate-in fade-in duration-300 ">
         <OrganizationsTable
           organizations={filteredOrgs}
           isLoading={isLoading}

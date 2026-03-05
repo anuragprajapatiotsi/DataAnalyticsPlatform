@@ -37,14 +37,14 @@ export default function UsersManagementPage() {
   ];
 
   return (
-    <div className="flex flex-col px-6 py-6 space-y-6 animate-in fade-in duration-500 max-w-[1400px] mx-auto">
+    <div className="flex flex-col  space-y-6 animate-in fade-in duration-500 max-w-[1400px] mx-auto">
       <PageHeader
         title="Users"
-        description="View and manage regular users in your organization. For admin users, please visit the Admin page."
+        description="View and manage regular users in your organization."
         breadcrumbItems={breadcrumbItems}
       />
 
-      <div className="mt-6">
+      <div>
         <UsersHeader
           onSearchChange={handleSearchChange}
           isActive={filters.is_active}
@@ -56,7 +56,7 @@ export default function UsersManagementPage() {
         <UsersTable users={users} isLoading={isLoading} />
       </div>
 
-      <div className="flex items-center justify-between mt-4 bg-slate-50/50 p-3 px-4 rounded-lg border border-slate-200/60">
+      <div className="flex items-center justify-between bg-slate-50/50 p-3 px-4 rounded-lg border border-slate-200/60">
         <div className="text-[13px] text-slate-500 font-medium">
           Showing{" "}
           <span className="text-slate-900 font-semibold">{users.length}</span>{" "}

@@ -48,14 +48,24 @@ export function TeamsTable({
   return (
     <div className="flex flex-col gap-6 animate-in fade-in duration-500">
       <div className="flex items-center justify-between">
-        <div className="flex flex-col gap-1">
-          <h2 className="text-[18px] font-semibold text-slate-900 m-0 leading-tight">
-            Teams
-          </h2>
-          <p className="text-[13px] text-slate-500 m-0">
-            Manage your organizational structure and team collaborations.
-          </p>
+        {/* Search Input */}
+        <div className="relative group">
+          <div className="absolute left-3 top-2 bottom-2 flex items-center pointer-events-none">
+            <Search
+              size={16}
+              className="text-slate-400 group-focus-within:text-blue-500 transition-colors"
+            />
+          </div>
+
+          <Input
+            placeholder="Search teams..."
+            value={searchQuery}
+            onChange={(e) => onSearchChange(e.target.value)}
+            className="w-[320px] h-9 pl-9 rounded-lg border-slate-200 shadow-none focus-visible:ring-1 focus-visible:ring-blue-500"
+          />
         </div>
+
+        {/* Add Team Button */}
         {isAdmin && (
           <Button
             type="primary"
@@ -66,23 +76,6 @@ export function TeamsTable({
             Add Team
           </Button>
         )}
-      </div>
-
-      <div className="flex items-center justify-between">
-        <div className="relative group">
-          <div className="absolute left-3 top-0 bottom-0 flex items-center pointer-events-none">
-            <Search
-              size={16}
-              className="text-slate-400 group-focus-within:text-blue-500 transition-colors"
-            />
-          </div>
-          <Input
-            placeholder="Search teams..."
-            value={searchQuery}
-            onChange={(e) => onSearchChange(e.target.value)}
-            className="w-[320px] h-9 pl-9 rounded-lg border-slate-200 shadow-none focus-visible:ring-1 focus-visible:ring-blue-500"
-          />
-        </div>
       </div>
 
       <div className="rounded-lg border border-slate-200 bg-white shadow-sm overflow-hidden">
@@ -100,9 +93,6 @@ export function TeamsTable({
               </TableHead>
               <TableHead className="text-[13px] font-semibold text-slate-600 py-2 px-4">
                 Status
-              </TableHead>
-              <TableHead className="text-[13px] font-semibold text-slate-600 py-2 px-4">
-                Created
               </TableHead>
               {isAdmin && (
                 <TableHead className="text-right text-[13px] font-semibold text-slate-600 py-2 px-4">
@@ -150,14 +140,6 @@ export function TeamsTable({
                       >
                         {team.display_name}
                       </Link>
-                      <span className="text-[11px] text-slate-400 font-medium">
-                        {team.name}
-                      </span>
-                      {team.description && (
-                        <p className="text-[11px] text-slate-500 line-clamp-1 mt-0.5 font-medium m-0">
-                          {team.description}
-                        </p>
-                      )}
                     </div>
                   </TableCell>
                   <TableCell className="px-4 py-2">

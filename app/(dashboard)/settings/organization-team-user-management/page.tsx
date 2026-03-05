@@ -11,7 +11,7 @@ export default function OrgManagementIndexPage() {
   ];
 
   return (
-    <div className="flex flex-col px-6 space-y-6 animate-in fade-in duration-500">
+    <div className="flex flex-col space-y-6 animate-in fade-in duration-500">
       <PageHeader
         title="Team & User Management"
         description="Streamline access to users and teams in OpenMetadata."

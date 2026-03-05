@@ -65,10 +65,9 @@ export function TeamDetailsHeader({
   return (
     <PageHeader
       title={team.display_name}
-      description={team.description}
       breadcrumbItems={breadcrumbItems}
     >
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 py-2">
         {!isMember && (
           <Button
             type="primary"

@@ -90,11 +90,11 @@ export function TeamDetailsInfo({
                     : "pr-4"
                 }`}
               >
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
+                <span className="text-[13px] font-bold text-slate-400 tracking-widest mb-1.5">
                   {card.label}
                 </span>
                 <span
-                  className="text-[14px] font-bold text-slate-900 truncate"
+                  className="text-[13px] font-bold text-slate-900 truncate"
                   title={String(card.value)}
                 >
                   {card.value}
@@ -105,7 +105,7 @@ export function TeamDetailsInfo({
 
           <div className="border-t border-slate-100 pt-5 mt-1">
             <div className="flex items-center justify-between mb-4">
-              <h4 className="text-[14px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
+              <h4 className="text-[13px] font-bold text-slate-400  tracking-widest flex items-center gap-2">
                 <Edit3 className="h-3.5 w-3.5" />
                 Description
               </h4>

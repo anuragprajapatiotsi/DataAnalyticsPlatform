@@ -89,7 +89,7 @@ export default function SettingsCatchAllPage() {
   });
 
   return (
-    <div className="h-full overflow-y-auto p-8 pb-20 custom-scrollbar animate-in fade-in slide-in-from-bottom-3 duration-500">
+    <div className="h-full overflow-y-auto p-6 pb-20 custom-scrollbar animate-in fade-in slide-in-from-bottom-3 duration-500">
       <div className="w-full">
         {/* Breadcrumbs */}
         <nav className="mb-8 flex items-center space-x-2 text-sm font-medium text-slate-500">
@@ -117,12 +117,12 @@ export default function SettingsCatchAllPage() {
         </nav>
 
         <div className="mb-8 pl-1">
-          <h1 className="text-3xl font-bold tracking-tight text-slate-900">
+          <h1 className="text-xl font-bold tracking-tight text-slate-900">
             {currentSlug === "settings"
               ? "Settings"
               : currentSlug.charAt(0).toUpperCase() + currentSlug.slice(1)}
           </h1>
-          <p className="mt-3 text-slate-500 font-medium max-w-2xl text-lg leading-relaxed">
+          <p className="mt-2 text-slate-500 font-medium max-w-2xl text-lg leading-relaxed">
             {settings?.find((item: any) => item.slug === currentSlug)
               ?.description ||
               (currentSlug === "settings"

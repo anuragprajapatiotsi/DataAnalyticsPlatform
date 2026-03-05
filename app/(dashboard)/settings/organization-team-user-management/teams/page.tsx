@@ -5,8 +5,11 @@ import { useTeams } from "@/features/teams/hooks/useTeams";
 import { TeamsTable } from "@/features/teams/components/TeamsTable";
 import { TeamModal } from "@/features/teams/components/TeamModal";
 import { useAuthContext } from "@/shared/contexts/auth-context";
-import type { Team, TeamManagementTab } from "@/features/teams/types";
-import { TeamsTabs } from "@/features/teams/components/TeamsTabs";
+import type { Team } from "@/features/teams/types";
+import {
+  TeamsTabs,
+  type TeamManagementTab,
+} from "@/features/teams/components/TeamsTabs";
 import { RolesList } from "@/features/teams/components/RolesList";
 import { PoliciesList } from "@/features/teams/components/PoliciesList";
 import { useSearchParams, useRouter } from "next/navigation";
@@ -89,21 +92,21 @@ export default function TeamsPage() {
   ];
 
   return (
-    <div className="flex flex-col space-y-6 animate-in fade-in duration-500 px-6 py-6">
+    <div className="flex flex-col animate-in fade-in duration-500">
       <PageHeader
         title="Teams"
         description="View and manage teams in your organization."
         breadcrumbItems={breadcrumbItems}
       />
 
-      <div className="mt-6">
+      <div className="mt-4">
         <TeamsTabs
           activeTab={activeTab}
           onTabChange={handleTabChange}
           isAdmin={isAdmin}
         />
 
-        <div className="mt-6">
+        <div className="mt-4">
           {activeTab === "teams" && (
             <TeamsTable
               teams={filteredTeams}

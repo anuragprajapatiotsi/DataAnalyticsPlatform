@@ -9,6 +9,6 @@ export function useSettings(parent: string = "settings") {
   return useQuery({
     queryKey: [...SETTINGS_QUERY_KEY, parent],
     queryFn: () => settingsApi.getSettings(parent),
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 10 * 60 * 1000, // 10 minutes
   });
 }

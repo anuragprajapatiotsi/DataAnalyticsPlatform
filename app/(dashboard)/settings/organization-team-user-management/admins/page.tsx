@@ -14,7 +14,7 @@ export default function AdminsPlaceholderPage() {
   ];
 
   return (
-    <div className="flex flex-col px-6 space-y-6 animate-in fade-in duration-500">
+    <div className="flex flex-col space-y-6 animate-in fade-in duration-500">
       <PageHeader
         title="Admins"
         description="Manage administrative access for your organization."

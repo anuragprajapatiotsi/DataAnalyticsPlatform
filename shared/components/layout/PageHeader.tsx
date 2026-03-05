@@ -57,7 +57,7 @@ export function PageHeader({
         </BreadcrumbList>
       </Breadcrumb>
 
-      <div className="flex items-start justify-between gap-4">
+      <div className="flex items-start justify-between gap-4 mt-4">
         <div className="flex flex-col gap-1">
           <h1 className="text-2xl font-bold text-slate-900 tracking-tight m-0">
             {title}
@@ -68,7 +68,7 @@ export function PageHeader({
             </p>
           )}
         </div>
-        {children && <div className="flex items-center gap-3">{children}</div>}
+        {children && <div className="flex items-center gap-2">{children}</div>}
       </div>
     </div>
   );

@@ -54,7 +54,7 @@ export default function CreateUserPage() {
   };
 
   return (
-    <div className="flex flex-col px-6 py-6 space-y-6 animate-in fade-in duration-500 max-w-[1200px] mx-auto">
+    <div className="flex flex-col space-y-6 animate-in fade-in duration-500 max-w-[1200px] mx-auto">
       <PageHeader
         title="Create User"
         description="Add a new user to your organization."
@@ -71,7 +71,7 @@ export default function CreateUserPage() {
         >
           {/* User Info Section */}
           <div>
-            <h3 className="text-base font-bold text-slate-800 mb-4">
+            <h3 className="text-base font-bold text-slate-800 ">
               User Info
             </h3>
             <div className="grid grid-cols-2 gap-6">
