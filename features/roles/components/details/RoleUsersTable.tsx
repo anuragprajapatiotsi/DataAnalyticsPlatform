@@ -37,17 +37,11 @@ export function RoleUsersTable({
 
       <div className="rounded-lg border border-slate-200 bg-white shadow-sm overflow-hidden animate-in fade-in duration-500">
         <Table>
-          <TableHeader className="bg-slate-50/50">
+          <TableHeader>
             <TableRow>
-              <TableHead className="text-[13px] font-semibold text-slate-600 py-2 px-4">
-                User
-              </TableHead>
-              <TableHead className="text-[13px] font-semibold text-slate-600 py-2 px-4">
-                Description
-              </TableHead>
-              <TableHead className="text-right text-[13px] font-semibold text-slate-600 py-2 px-4">
-                Actions
-              </TableHead>
+              <TableHead>User</TableHead>
+              <TableHead>Description</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -73,10 +67,7 @@ export function RoleUsersTable({
               </TableRow>
             ) : (
               users.map((user) => (
-                <TableRow
-                  key={user.id}
-                  className="hover:bg-slate-50/30 transition-colors group h-12"
-                >
+                <TableRow key={user.id} className="group h-12">
                   <TableCell className="px-4 py-2">
                     <div className="flex items-center gap-3">
                       <Avatar
@@ -100,7 +91,7 @@ export function RoleUsersTable({
                       {user.description || "No description provided"}
                     </p>
                   </TableCell>
-                  <TableCell className="px-4 py-2 text-right">
+                  <TableCell className="text-right">
                     <Popconfirm
                       title="Remove User"
                       description="Are you sure you want to remove this user from the role?"
@@ -113,7 +104,7 @@ export function RoleUsersTable({
                         type="text"
                         danger
                         icon={<Trash2 size={16} />}
-                        className="hover:bg-red-50 rounded-lg flex items-center justify-center ml-auto h-8 w-8"
+                        className="hover:bg-slate-100 rounded-lg flex items-center justify-center ml-auto h-8 w-8 p-0"
                       />
                     </Popconfirm>
                   </TableCell>

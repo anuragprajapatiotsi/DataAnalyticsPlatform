@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Link from "next/link";
 import { Users, Trash2 } from "lucide-react";
 import {
   Table,
@@ -32,17 +33,11 @@ export function RoleTeamsTable({ teams, isLoading }: RoleTeamsTableProps) {
 
       <div className="rounded-lg border border-slate-200 bg-white shadow-sm overflow-hidden animate-in fade-in duration-500">
         <Table>
-          <TableHeader className="bg-slate-50/50">
+          <TableHeader>
             <TableRow>
-              <TableHead className="text-[13px] font-semibold text-slate-600 py-2 px-4">
-                Team Name
-              </TableHead>
-              <TableHead className="text-[13px] font-semibold text-slate-600 py-2 px-4">
-                Description
-              </TableHead>
-              <TableHead className="text-right text-[13px] font-semibold text-slate-600 py-2 px-4">
-                Actions
-              </TableHead>
+              <TableHead>Team Name</TableHead>
+              <TableHead>Description</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -68,18 +63,18 @@ export function RoleTeamsTable({ teams, isLoading }: RoleTeamsTableProps) {
               </TableRow>
             ) : (
               teams.map((team) => (
-                <TableRow
-                  key={team.id}
-                  className="hover:bg-slate-50/30 transition-colors group h-12"
-                >
+                <TableRow key={team.id} className="group h-12">
                   <TableCell className="px-4 py-2">
                     <div className="flex items-center gap-3">
                       <div className="h-8 w-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600 border border-blue-100 flex-shrink-0">
                         <Users size={16} />
                       </div>
-                      <span className="font-semibold text-slate-900 text-[13px]">
+                      <Link
+                        href={`/settings/organization-team-user-management/teams/${team.id}`}
+                        className="text-blue-600 hover:text-blue-700  cursor-pointer font-semibold text-[13px] transition-colors"
+                      >
                         {team.display_name || team.name}
-                      </span>
+                      </Link>
                     </div>
                   </TableCell>
                   <TableCell className="px-4 py-2">
@@ -87,12 +82,12 @@ export function RoleTeamsTable({ teams, isLoading }: RoleTeamsTableProps) {
                       {team.description || "No description provided"}
                     </p>
                   </TableCell>
-                  <TableCell className="px-4 py-2 text-right">
+                  <TableCell className="text-right">
                     <Button
                       type="text"
                       danger
                       icon={<Trash2 size={16} />}
-                      className="hover:bg-red-50 rounded-lg flex items-center justify-center ml-auto h-8 w-8"
+                      className="hover:bg-slate-100 rounded-lg flex items-center justify-center ml-auto h-8 w-8 p-0"
                     />
                   </TableCell>
                 </TableRow>

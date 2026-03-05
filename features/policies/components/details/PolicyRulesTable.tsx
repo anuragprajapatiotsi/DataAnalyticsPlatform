@@ -40,17 +40,11 @@ export function PolicyRulesTable({
 
       <div className="rounded-lg border border-slate-200 bg-white shadow-sm overflow-hidden animate-in fade-in duration-500">
         <Table>
-          <TableHeader className="bg-slate-50/50">
+          <TableHeader>
             <TableRow>
-              <TableHead className="text-[13px] font-semibold text-slate-600 py-2 px-4">
-                Rule Name
-              </TableHead>
-              <TableHead className="text-[13px] font-semibold text-slate-600 py-2 px-4">
-                Resource
-              </TableHead>
-              <TableHead className="text-[13px] font-semibold text-slate-600 py-2 px-4">
-                Operations
-              </TableHead>
+              <TableHead>Rule Name</TableHead>
+              <TableHead>Resource</TableHead>
+              <TableHead>Operations</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -75,7 +69,7 @@ export function PolicyRulesTable({
                 </TableCell>
               </TableRow>
             ) : (
-              <TableRow className="hover:bg-slate-50/30 transition-colors group h-12">
+              <TableRow className="group h-12">
                 <TableCell className="px-4 py-2">
                   <span className="font-semibold text-slate-900 text-[13px]">
                     {ruleName || "--"}

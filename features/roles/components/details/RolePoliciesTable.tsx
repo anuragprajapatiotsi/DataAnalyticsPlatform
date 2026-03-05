@@ -1,4 +1,5 @@
 import React from "react";
+import Link from "next/link";
 import { Shield, Trash2, Plus } from "lucide-react";
 import {
   Table,
@@ -62,17 +63,11 @@ export function RolePoliciesTable({
 
       <div className="rounded-lg border border-slate-200 bg-white shadow-sm overflow-hidden animate-in fade-in duration-500">
         <Table>
-          <TableHeader className="bg-slate-50/50">
+          <TableHeader>
             <TableRow>
-              <TableHead className="text-[13px] font-semibold text-slate-600 py-2 px-4">
-                Policy Name
-              </TableHead>
-              <TableHead className="text-[13px] font-semibold text-slate-600 py-2 px-4">
-                Description
-              </TableHead>
-              <TableHead className="text-right text-[13px] font-semibold text-slate-600 py-2 px-4">
-                Actions
-              </TableHead>
+              <TableHead>Policy Name</TableHead>
+              <TableHead>Description</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -98,21 +93,21 @@ export function RolePoliciesTable({
               </TableRow>
             ) : (
               policies.map((policy) => (
-                <TableRow
-                  key={policy.id}
-                  className="hover:bg-slate-50/30 transition-colors group h-12"
-                >
+                <TableRow key={policy.id} className="group h-12">
                   <TableCell className="px-4 py-2">
-                    <span className="font-semibold text-slate-900 text-[13px]">
+                    <Link
+                      href={`/settings/access-control/policies/${policy.id}`}
+                      className="text-blue-600 hover:text-blue-700  cursor-pointer font-semibold text-[13px] transition-colors"
+                    >
                       {policy.name}
-                    </span>
+                    </Link>
                   </TableCell>
                   <TableCell className="px-4 py-2">
                     <p className="text-[13px] text-slate-600 m-0 line-clamp-1 max-w-md font-medium">
                       {policy.description || "No description provided"}
                     </p>
                   </TableCell>
-                  <TableCell className="px-4 py-2 text-right">
+                  <TableCell className="text-right">
                     <Popconfirm
                       title="Remove Policy"
                       description="Are you sure you want to remove this policy from the role?"
@@ -125,7 +120,7 @@ export function RolePoliciesTable({
                         type="text"
                         danger
                         icon={<Trash2 size={16} />}
-                        className="hover:bg-red-50 rounded-lg flex items-center justify-center ml-auto h-8 w-8"
+                        className="hover:bg-slate-100 rounded-lg flex items-center justify-center ml-auto h-8 w-8 p-0"
                       />
                     </Popconfirm>
                   </TableCell>

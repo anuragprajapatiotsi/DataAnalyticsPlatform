@@ -10,10 +10,13 @@ import {
   TableRow,
 } from "@/shared/components/ui/table";
 import { Avatar, AvatarFallback } from "@/shared/components/ui/avatar";
-import { Trash2, User as UserIcon } from "lucide-react";
+import { Trash2, User as UserIcon, MoreVertical, Edit2 } from "lucide-react";
 import Link from "next/link";
 import { AdminUser } from "../types";
 import { Skeleton } from "@/shared/components/ui/skeleton";
+import { Dropdown, MenuProps, Popconfirm, message } from "antd";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { userService } from "../services/user.service";
 
 interface UsersTableProps {
   users: AdminUser[];
@@ -21,27 +24,30 @@ interface UsersTableProps {
 }
 
 export function UsersTable({ users, isLoading }: UsersTableProps) {
+  const queryClient = useQueryClient();
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => userService.deleteUser(id),
+    onSuccess: () => {
+      message.success("User deleted successfully");
+      queryClient.invalidateQueries({ queryKey: ["admin-users"] });
+    },
+    onError: () => {
+      message.error("Failed to delete user");
+    },
+  });
+
   if (isLoading) {
     return (
       <div className="rounded-lg border border-slate-200 bg-white shadow-sm overflow-hidden">
         <Table>
-          <TableHeader className="bg-slate-50/50">
+          <TableHeader>
             <TableRow>
-              <TableHead className="w-[300px] text-[13px] font-semibold text-slate-600 px-4">
-                Username
-              </TableHead>
-              <TableHead className="text-[13px] font-semibold text-slate-600 px-4">
-                Name
-              </TableHead>
-              <TableHead className="text-[13px] font-semibold text-slate-600 px-4">
-                Teams
-              </TableHead>
-              <TableHead className="text-[13px] font-semibold text-slate-600 px-4">
-                Roles
-              </TableHead>
-              <TableHead className="text-right text-[13px] font-semibold text-slate-600 px-4">
-                Actions
-              </TableHead>
+              <TableHead className="w-[300px]">Username</TableHead>
+              <TableHead>Name</TableHead>
+              <TableHead>Teams</TableHead>
+              <TableHead>Roles</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -82,47 +88,46 @@ export function UsersTable({ users, isLoading }: UsersTableProps) {
   return (
     <div className="rounded-lg border border-slate-200 bg-white shadow-sm overflow-hidden">
       <Table>
-        <TableHeader className="bg-slate-50/50">
+        <TableHeader>
           <TableRow>
-            <TableHead className="w-[300px] text-[13px] font-semibold text-slate-600 px-4">
-              Username
-            </TableHead>
-            <TableHead className="text-[13px] font-semibold text-slate-600 px-4">
-              Name
-            </TableHead>
-            <TableHead className="text-[13px] font-semibold text-slate-600 px-4">
-              Teams
-            </TableHead>
-            <TableHead className="text-[13px] font-semibold text-slate-600 px-4">
-              Roles
-            </TableHead>
-            <TableHead className="text-right text-[13px] font-semibold text-slate-600 px-4">
-              Actions
-            </TableHead>
+            <TableHead className="w-[300px]">Username</TableHead>
+            <TableHead>Name</TableHead>
+            <TableHead>Teams</TableHead>
+            <TableHead>Roles</TableHead>
+            <TableHead className="text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {users.map((user) => (
-            <TableRow
-              key={user.id}
-              className="hover:bg-slate-50/50 transition-colors group h-12"
-            >
+            <TableRow key={user.id} className="group">
               <TableCell className="px-4 py-2">
-                <div className="flex items-center gap-3">
-                  <Avatar className="h-8 w-8 border border-slate-100">
-                    <AvatarFallback className="bg-blue-50 text-blue-600 font-semibold text-[11px]">
+                <div className="flex items-center gap-3 font-medium">
+                  <Avatar className="h-8 w-8 border border-slate-100 shrink-0">
+                    <AvatarFallback className="bg-indigo-50 text-indigo-600 font-bold text-[11px]">
                       {user.username.charAt(0).toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
-                  <span className="text-[13px] text-slate-900 font-semibold group-hover:text-blue-600 transition-colors">
-                    {user.username}
-                  </span>
+                  <Link
+                    href={`/settings/organization-team-user-management/users/${user.id}`}
+                    className="group-hover:text-blue-600 transition-colors"
+                  >
+                    <div className="flex flex-col">
+                      <span className="text-[13px] text-slate-900 font-bold leading-tight">
+                        {user.username}
+                      </span>
+                    </div>
+                  </Link>
                 </div>
               </TableCell>
               <TableCell className="px-4 py-2">
-                <span className="text-[13px] text-slate-500 font-medium italic">
-                  {user.display_name}
-                </span>
+                <Link
+                  href={`/settings/organization-team-user-management/users/${user.id}`}
+                  className="group-hover:text-blue-600"
+                >
+                  <span className="text-[13px] text-slate-500 font-bold italic">
+                    {user.display_name}
+                  </span>
+                </Link>
               </TableCell>
               <TableCell className="px-4 py-2">
                 <div className="flex items-center gap-2">
@@ -163,10 +168,59 @@ export function UsersTable({ users, isLoading }: UsersTableProps) {
                   )}
                 </div>
               </TableCell>
-              <TableCell className="px-4 py-2 text-right">
-                <button className="text-slate-400 hover:text-red-600 transition-all p-2 hover:bg-red-50 rounded-lg">
-                  <Trash2 size={16} />
-                </button>
+              <TableCell className="text-right">
+                <Dropdown
+                  menu={{
+                    items: [
+                      {
+                        key: "edit",
+                        label: (
+                          <Link
+                            href={`/settings/organization-team-user-management/users/${user.id}/edit`}
+                            className="flex items-center gap-2 px-1"
+                          >
+                            <Edit2 size={14} />
+                            <span>Edit User</span>
+                          </Link>
+                        ),
+                      },
+                      {
+                        type: "divider",
+                      },
+                      {
+                        key: "delete",
+                        danger: true,
+                        label: (
+                          <Popconfirm
+                            title="Delete User"
+                            description="Are you sure you want to delete this user? This action cannot be undone."
+                            onConfirm={() => deleteMutation.mutate(user.id)}
+                            okText="Delete"
+                            cancelText="Cancel"
+                            okButtonProps={{
+                              danger: true,
+                              loading: deleteMutation.isPending,
+                            }}
+                          >
+                            <div
+                              className="flex items-center gap-2 px-1"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <Trash2 size={14} />
+                              <span>Delete User</span>
+                            </div>
+                          </Popconfirm>
+                        ),
+                      },
+                    ],
+                  }}
+                  trigger={["click"]}
+                  placement="bottomRight"
+                >
+                  <button className="text-slate-400 hover:text-slate-600 transition-all h-8 w-8 hover:bg-slate-100 rounded-lg flex items-center justify-center p-0 ml-auto">
+                    <MoreVertical size={16} />
+                  </button>
+                </Dropdown>
               </TableCell>
             </TableRow>
           ))}

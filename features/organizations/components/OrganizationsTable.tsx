@@ -71,20 +71,12 @@ export function OrganizationsTable({
 
       <div className="rounded-lg border border-slate-200 bg-white shadow-sm overflow-hidden">
         <Table>
-          <TableHeader className="bg-slate-50/50">
+          <TableHeader>
             <TableRow>
-              <TableHead className="w-[220px] text-[13px] font-semibold text-slate-600 py-2 px-4">
-                Organization
-              </TableHead>
-              <TableHead className="text-[13px] font-semibold text-slate-600 py-2 px-4">
-                Contact
-              </TableHead>
-              <TableHead className="text-[13px] font-semibold text-slate-600 py-2 px-4">
-                Status
-              </TableHead>
-              <TableHead className="text-right text-[13px] font-semibold text-slate-600 py-2 px-4">
-                Actions
-              </TableHead>
+              <TableHead className="w-[220px]">Organization</TableHead>
+              <TableHead>Contact</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -114,10 +106,7 @@ export function OrganizationsTable({
               </TableRow>
             ) : (
               organizations.map((org) => (
-                <TableRow
-                  key={org.id}
-                  className="hover:bg-slate-50/50 transition-colors group h-12"
-                >
+                <TableRow key={org.id} className="group">
                   <TableCell className="px-4 py-2">
                     <div className="flex flex-col">
                       <div className="flex items-center gap-2">
@@ -157,13 +146,13 @@ export function OrganizationsTable({
                       </Badge>
                     )}
                   </TableCell>
-                  <TableCell className="px-4 py-2 text-right">
+                  <TableCell className="text-right">
                     <div className="flex items-center justify-end gap-1">
                       <Button
                         type="text"
                         icon={<Edit2 size={16} />}
                         onClick={() => onEditClick(org)}
-                        className="text-slate-400 hover:text-blue-600 hover:bg-blue-50 h-8 w-8 flex items-center justify-center rounded-lg"
+                        className="text-slate-400 hover:text-blue-600 hover:bg-slate-100 h-8 w-8 flex items-center justify-center rounded-lg p-0"
                       />
                       <Popconfirm
                         title="Delete Organization"
@@ -177,7 +166,7 @@ export function OrganizationsTable({
                           type="text"
                           danger
                           icon={<Trash2 size={16} />}
-                          className="text-slate-400 hover:text-red-600 hover:bg-red-50 h-8 w-8 flex items-center justify-center rounded-lg"
+                          className="text-slate-400 hover:text-red-600 hover:bg-slate-100 h-8 w-8 flex items-center justify-center rounded-lg p-0"
                         />
                       </Popconfirm>
                     </div>

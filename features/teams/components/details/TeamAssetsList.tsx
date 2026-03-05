@@ -50,20 +50,12 @@ export function TeamAssetsList({ assets, isLoading }: TeamAssetsListProps) {
 
       <div className="rounded-lg border border-slate-200 bg-white shadow-sm overflow-hidden">
         <Table>
-          <TableHeader className="bg-slate-50/50">
+          <TableHeader>
             <TableRow>
-              <TableHead className="w-[300px] text-[12px] font-bold text-slate-400 uppercase tracking-wider py-5 px-8">
-                Name
-              </TableHead>
-              <TableHead className="text-[12px] font-bold text-slate-400 uppercase tracking-wider py-5 px-8">
-                Type
-              </TableHead>
-              <TableHead className="text-[12px] font-bold text-slate-400 uppercase tracking-wider py-5 px-8">
-                Owner
-              </TableHead>
-              <TableHead className="text-right text-[12px] font-bold text-slate-400 uppercase tracking-wider py-5 px-8">
-                Actions
-              </TableHead>
+              <TableHead className="w-[300px]">Name</TableHead>
+              <TableHead>Type</TableHead>
+              <TableHead>Owner</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -96,10 +88,7 @@ export function TeamAssetsList({ assets, isLoading }: TeamAssetsListProps) {
               </TableRow>
             ) : (
               assets.map((asset) => (
-                <TableRow
-                  key={asset.id}
-                  className="hover:bg-slate-50/50 transition-colors"
-                >
+                <TableRow key={asset.id} className="group">
                   <TableCell className="px-6 py-4">
                     <div className="flex items-center gap-3">
                       <AssetIcon type={asset.type} />
@@ -123,12 +112,16 @@ export function TeamAssetsList({ assets, isLoading }: TeamAssetsListProps) {
                   <TableCell className="px-6 py-4 text-slate-600 text-[14px]">
                     {asset.owner || "No Owner"}
                   </TableCell>
-                  <TableCell className="px-6 py-4 text-right">
+                  <TableCell className="text-right">
                     <Button
                       type="text"
                       icon={
-                        <ExternalLink className="h-4 w-4 text-slate-400 hover:text-blue-600" />
+                        <ExternalLink
+                          size={16}
+                          className="text-slate-400 hover:text-blue-600"
+                        />
                       }
+                      className="hover:bg-slate-100 rounded-lg h-8 w-8 flex items-center justify-center p-0 ml-auto"
                     />
                   </TableCell>
                 </TableRow>

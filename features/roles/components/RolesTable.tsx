@@ -31,20 +31,12 @@ export function RolesTable({
   return (
     <div className="rounded-lg border border-slate-200 bg-white shadow-sm overflow-hidden animate-in fade-in duration-500">
       <Table>
-        <TableHeader className="bg-slate-50/50">
+        <TableHeader>
           <TableRow>
-            <TableHead className="w-[280px] text-[13px] font-semibold text-slate-600 py-2 px-4">
-              Name
-            </TableHead>
-            <TableHead className="text-[13px] font-semibold text-slate-600 py-2 px-4">
-              Description
-            </TableHead>
-            <TableHead className="text-[13px] font-semibold text-slate-600 py-2 px-4">
-              Policies
-            </TableHead>
-            <TableHead className="text-right text-[13px] font-semibold text-slate-600 py-2 px-4">
-              Actions
-            </TableHead>
+            <TableHead className="w-[280px]">Name</TableHead>
+            <TableHead>Description</TableHead>
+            <TableHead>Policies</TableHead>
+            <TableHead className="text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -97,10 +89,7 @@ export function RolesTable({
               ];
 
               return (
-                <TableRow
-                  key={role.id}
-                  className="hover:bg-slate-50/30 transition-colors group h-12"
-                >
+                <TableRow key={role.id} className="group">
                   <TableCell className="px-4 py-2">
                     <div className="flex items-center gap-3">
                       <div className="h-8 w-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600 shadow-sm border border-blue-100 flex-shrink-0">
@@ -158,7 +147,7 @@ export function RolesTable({
                       )}
                     </div>
                   </TableCell>
-                  <TableCell className="px-4 py-2 text-right">
+                  <TableCell className="text-right">
                     {!role.is_system_role && (
                       <Dropdown
                         menu={{ items: menuItems }}
@@ -173,7 +162,7 @@ export function RolesTable({
                               className="text-slate-400"
                             />
                           }
-                          className="hover:bg-slate-100 rounded-lg h-8 w-8 flex items-center justify-center p-0"
+                          className="hover:bg-slate-100 rounded-lg h-8 w-8 flex items-center justify-center p-0 ml-auto"
                         />
                       </Dropdown>
                     )}

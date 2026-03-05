@@ -85,17 +85,11 @@ export function TeamDetailsPolicies({
 
       <div className="rounded-lg border border-slate-200 bg-white shadow-sm overflow-hidden">
         <Table>
-          <TableHeader className="bg-slate-50/50">
+          <TableHeader>
             <TableRow>
-              <TableHead className="w-[300px] text-[13px] font-bold text-slate-500 py-4 px-6">
-                Name
-              </TableHead>
-              <TableHead className="text-[13px] font-bold text-slate-500 py-4 px-6">
-                Description
-              </TableHead>
-              <TableHead className="text-right text-[13px] font-bold text-slate-500 py-4 px-6">
-                Actions
-              </TableHead>
+              <TableHead className="w-[300px]">Name</TableHead>
+              <TableHead>Description</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -128,14 +122,11 @@ export function TeamDetailsPolicies({
               </TableRow>
             ) : (
               policies.map((policy) => (
-                <TableRow
-                  key={policy.id}
-                  className="hover:bg-slate-50/30 transition-colors group"
-                >
+                <TableRow key={policy.id} className="group">
                   <TableCell className="px-6 py-4">
                     <Link
                       href={`/settings/access-control/policies/${policy.id}`}
-                      className="text-[14px] font-medium text-blue-600 hover:text-blue-700 hover:underline transition-colors block w-fit"
+                      className="text-[14px] font-medium text-blue-600 hover:text-blue-700 transition-colors block w-fit"
                     >
                       {policy.name}
                     </Link>
@@ -143,7 +134,7 @@ export function TeamDetailsPolicies({
                   <TableCell className="px-6 py-4 text-slate-600 text-[14px]">
                     {policy.description || "No description provided."}
                   </TableCell>
-                  <TableCell className="px-6 py-4 text-right">
+                  <TableCell className="text-right">
                     <div className="flex items-center justify-end gap-2">
                       {isAdmin && (
                         <Popconfirm
@@ -156,9 +147,12 @@ export function TeamDetailsPolicies({
                           <Button
                             type="text"
                             icon={
-                              <MinusCircle className="h-5 w-5 text-slate-400 hover:text-red-500 transition-colors" />
+                              <MinusCircle
+                                size={20}
+                                className="text-slate-400 hover:text-red-500 transition-colors leading-none"
+                              />
                             }
-                            className="flex items-center justify-center"
+                            className="flex items-center justify-center hover:bg-slate-100 rounded-lg h-8 w-8 p-0 ml-auto"
                           />
                         </Popconfirm>
                       )}

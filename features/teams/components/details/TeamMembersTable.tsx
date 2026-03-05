@@ -107,22 +107,12 @@ export function TeamMembersTable({
 
       <div className="rounded-lg border border-slate-200 bg-white shadow-sm overflow-hidden">
         <Table>
-          <TableHeader className="bg-slate-50/50">
+          <TableHeader>
             <TableRow>
-              <TableHead className="w-[300px] text-[12px] font-bold text-slate-400 uppercase tracking-wider py-5 px-8">
-                User
-              </TableHead>
-              <TableHead className="text-[12px] font-bold text-slate-400 uppercase tracking-wider py-5 px-8">
-                Email
-              </TableHead>
-              <TableHead className="text-[12px] font-bold text-slate-400 uppercase tracking-wider py-5 px-8">
-                Team Role
-              </TableHead>
-              {isAdmin && (
-                <TableHead className="text-right text-[12px] font-bold text-slate-400 uppercase tracking-wider py-5 px-8">
-                  Actions
-                </TableHead>
-              )}
+              <TableHead className="w-[300px]">User</TableHead>
+              <TableHead>Email</TableHead>
+              <TableHead>Team Role</TableHead>
+              {isAdmin && <TableHead className="text-right">Actions</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -161,10 +151,7 @@ export function TeamMembersTable({
               </TableRow>
             ) : (
               filteredMembers.map((member) => (
-                <TableRow
-                  key={member.id}
-                  className="hover:bg-slate-50/30 transition-colors group"
-                >
+                <TableRow key={member.id} className="group">
                   <TableCell className="px-8 py-5">
                     <div className="flex items-center gap-4">
                       <div className="h-10 w-10 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600 font-bold shrink-0 shadow-sm border border-indigo-100">
@@ -195,7 +182,7 @@ export function TeamMembersTable({
                     </div>
                   </TableCell>
                   {isAdmin && (
-                    <TableCell className="px-8 py-5 text-right">
+                    <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-all transform translate-x-2 group-hover:translate-x-0">
                         <Popconfirm
                           title="Remove Member"
@@ -209,7 +196,7 @@ export function TeamMembersTable({
                             type="text"
                             danger
                             icon={<Trash2 className="h-4 w-4" />}
-                            className="hover:bg-red-50 flex items-center justify-center rounded-lg"
+                            className="hover:bg-slate-100 flex items-center justify-center rounded-lg h-8 w-8 p-0"
                           ></Button>
                         </Popconfirm>
                       </div>

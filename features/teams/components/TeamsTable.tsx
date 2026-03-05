@@ -80,25 +80,13 @@ export function TeamsTable({
 
       <div className="rounded-lg border border-slate-200 bg-white shadow-sm overflow-hidden">
         <Table>
-          <TableHeader className="bg-slate-50/50">
+          <TableHeader>
             <TableRow>
-              <TableHead className="w-[220px] text-[13px] font-semibold text-slate-600 py-2 px-4">
-                Display Name
-              </TableHead>
-              <TableHead className="text-[13px] font-semibold text-slate-600 py-2 px-4">
-                Email
-              </TableHead>
-              <TableHead className="text-[13px] font-semibold text-slate-600 py-2 px-4">
-                Type
-              </TableHead>
-              <TableHead className="text-[13px] font-semibold text-slate-600 py-2 px-4">
-                Status
-              </TableHead>
-              {isAdmin && (
-                <TableHead className="text-right text-[13px] font-semibold text-slate-600 py-2 px-4">
-                  Actions
-                </TableHead>
-              )}
+              <TableHead className="w-[220px]">Display Name</TableHead>
+              <TableHead>Email</TableHead>
+              <TableHead>Type</TableHead>
+              <TableHead>Status</TableHead>
+              {isAdmin && <TableHead className="text-right">Actions</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -128,10 +116,7 @@ export function TeamsTable({
               </TableRow>
             ) : (
               teams.map((team) => (
-                <TableRow
-                  key={team.id}
-                  className="hover:bg-slate-50/50 transition-colors group h-12"
-                >
+                <TableRow key={team.id} className="group">
                   <TableCell className="px-4 py-2">
                     <div className="flex flex-col">
                       <Link
@@ -172,13 +157,13 @@ export function TeamsTable({
                       </Badge>
                     )}
                   </TableCell>
-                  <TableCell className="px-4 py-2 text-right">
+                  <TableCell className="text-right">
                     <div className="flex items-center justify-end gap-1">
                       <Button
                         type="text"
                         icon={<Edit2 size={16} />}
                         onClick={() => onEditClick(team)}
-                        className="text-slate-400 hover:text-blue-600 hover:bg-blue-50 h-8 w-8 flex items-center justify-center rounded-lg"
+                        className="text-slate-400 hover:text-blue-600 hover:bg-slate-100 h-8 w-8 flex items-center justify-center rounded-lg p-0"
                       />
                       <Popconfirm
                         title="Delete Team"
@@ -193,7 +178,7 @@ export function TeamsTable({
                           type="text"
                           danger
                           icon={<Trash2 size={16} />}
-                          className="text-slate-400 hover:text-red-600 hover:bg-red-50 h-8 w-8 flex items-center justify-center rounded-lg"
+                          className="text-slate-400 hover:text-red-600 hover:bg-slate-100 h-8 w-8 flex items-center justify-center rounded-lg p-0"
                         />
                       </Popconfirm>
                     </div>

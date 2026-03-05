@@ -1,5 +1,13 @@
 import { api } from "@/shared/api/axios";
-import { AdminUser, GetUserParams } from "../types";
+import {
+  AdminUser,
+  CreateUserRequest,
+  GetUserParams,
+  UpdateUserRequest,
+  UserPolicy,
+  UserRole,
+  UserTeam,
+} from "../types";
 
 export const userService = {
   getAdminUsers: async (params: GetUserParams) => {
@@ -7,8 +15,38 @@ export const userService = {
     return response.data;
   },
 
-  createUser: async (data: any) => {
+  createUser: async (data: CreateUserRequest) => {
     const response = await api.post<AdminUser>("/admin/users", data);
+    return response.data;
+  },
+
+  updateUser: async (id: string, data: UpdateUserRequest) => {
+    const response = await api.put<AdminUser>(`/admin/users/${id}`, data);
+    return response.data;
+  },
+
+  deleteUser: async (id: string) => {
+    const response = await api.delete(`/admin/users/${id}`);
+    return response.data;
+  },
+
+  getUserById: async (id: string) => {
+    const response = await api.get<AdminUser>(`/admin/users/${id}`);
+    return response.data;
+  },
+
+  getUserTeams: async (id: string) => {
+    const response = await api.get<UserTeam[]>(`/admin/users/${id}/teams`);
+    return response.data;
+  },
+
+  getUserRoles: async (id: string) => {
+    const response = await api.get<UserRole[]>(`/admin/users/${id}/roles`);
+    return response.data;
+  },
+
+  getUserPolicies: async (id: string) => {
+    const response = await api.get<UserPolicy[]>(`/admin/users/${id}/policies`);
     return response.data;
   },
 };

@@ -82,17 +82,11 @@ export function TeamDetailsRoles({
 
       <div className="rounded-lg border border-slate-200 bg-white shadow-sm overflow-hidden">
         <Table>
-          <TableHeader className="bg-slate-50/50">
+          <TableHeader>
             <TableRow>
-              <TableHead className="w-[300px] text-[12px] font-bold text-slate-400 uppercase tracking-wider py-5 px-8">
-                Role Name
-              </TableHead>
-              <TableHead className="text-[12px] font-bold text-slate-400 uppercase tracking-wider py-5 px-8">
-                Description
-              </TableHead>
-              <TableHead className="text-right text-[12px] font-bold text-slate-400 uppercase tracking-wider py-5 px-8">
-                Actions
-              </TableHead>
+              <TableHead className="w-[300px]">Role Name</TableHead>
+              <TableHead>Description</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -125,10 +119,7 @@ export function TeamDetailsRoles({
               </TableRow>
             ) : (
               roles.map((role) => (
-                <TableRow
-                  key={role.id}
-                  className="hover:bg-slate-50/30 transition-colors group"
-                >
+                <TableRow key={role.id} className="group">
                   <TableCell className="px-8 py-5">
                     <div className="flex items-center gap-4">
                       <div className="h-10 w-10 rounded-lg bg-indigo-50 flex items-center justify-center shadow-sm border border-indigo-100">
@@ -136,7 +127,7 @@ export function TeamDetailsRoles({
                       </div>
                       <Link
                         href={`/settings/access-control/roles/${role.id}`}
-                        className="font-bold text-blue-600 hover:text-blue-700 hover:underline text-[15px] transition-colors"
+                        className="font-bold text-blue-600 hover:text-blue-700 text-[15px] transition-colors"
                       >
                         {role.name}
                       </Link>
@@ -145,7 +136,7 @@ export function TeamDetailsRoles({
                   <TableCell className="px-8 py-5 text-slate-500 text-[14px] font-medium">
                     {role.description || "No description provided."}
                   </TableCell>
-                  <TableCell className="px-8 py-5 text-right">
+                  <TableCell className="text-right">
                     <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-all transform translate-x-2 group-hover:translate-x-0">
                       <Tooltip title="View Permissions">
                         <Button
@@ -153,7 +144,7 @@ export function TeamDetailsRoles({
                           icon={
                             <ChevronRight className="h-4 w-4 text-slate-400" />
                           }
-                          className="hover:bg-slate-100 rounded-lg"
+                          className="hover:bg-slate-100 rounded-lg h-8 w-8 flex items-center justify-center p-0"
                         />
                       </Tooltip>
                       {isAdmin && (
@@ -168,7 +159,7 @@ export function TeamDetailsRoles({
                             type="text"
                             danger
                             icon={<Trash2 className="h-4 w-4" />}
-                            className="hover:bg-red-50 rounded-lg"
+                            className="hover:bg-slate-100 rounded-lg h-8 w-8 flex items-center justify-center p-0"
                           />
                         </Popconfirm>
                       )}
