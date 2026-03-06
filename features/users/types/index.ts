@@ -66,3 +66,7 @@ export interface UpdateUserRequest {
   role_ids: string[];
   domain_ids: string[];
 }
+export interface ResetPasswordRequest {
+  new_password: string;
+  confirm_password: string;
+}

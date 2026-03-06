@@ -10,6 +10,8 @@ import { useRouter } from "next/navigation";
 import { message } from "antd";
 import Link from "next/link";
 import { PageHeader } from "@/shared/components/layout/PageHeader";
+import { PasswordGuidance } from "@/shared/components/ui/PasswordGuidance";
+import { passwordValidator } from "@/shared/utils/validation";
 
 const domainOptions = [
   { label: "Finance", value: "finance" },
@@ -40,6 +42,8 @@ export default function CreateUserPage() {
     { label: "Create User" },
   ];
 
+  const router = useRouter();
+
   const handleSubmit = async (values: any) => {
     try {
       await createUser({
@@ -48,8 +52,19 @@ export default function CreateUserPage() {
         role_ids: values.role_ids || [],
         domain_ids: values.domain_ids || [],
       });
-    } catch (error) {
-      console.error("Failed to create user:", error);
+      message.success("User created successfully");
+      router.push("/settings/organization-team-user-management/users");
+    } catch (error: any) {
+      // Map API validation errors to form fields
+      if (error.errors) {
+        const fieldErrors = Object.entries(error.errors).map(
+          ([name, messages]) => ({
+            name,
+            errors: Array.isArray(messages) ? messages : [String(messages)],
+          }),
+        );
+        form.setFields(fieldErrors);
+      }
     }
   };
 
@@ -115,13 +130,16 @@ export default function CreateUserPage() {
                 }
                 rules={[
                   { required: true, message: "Password is required" },
-                  { min: 8, message: "Minimum 8 characters" },
+                  { validator: passwordValidator },
                 ]}
               >
-                <Input.Password
-                  placeholder="Min 8 characters"
-                  className="h-10 rounded-lg"
-                />
+                <div className="flex flex-col">
+                  <Input.Password
+                    placeholder="Min 8 characters"
+                    className="h-10 rounded-lg"
+                  />
+                  <PasswordGuidance />
+                </div>
               </Form.Item>
 
               <Form.Item

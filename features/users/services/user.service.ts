@@ -7,6 +7,7 @@ import {
   UserPolicy,
   UserRole,
   UserTeam,
+  ResetPasswordRequest,
 } from "../types";
 
 export const userService = {
@@ -47,6 +48,11 @@ export const userService = {
 
   getUserPolicies: async (id: string) => {
     const response = await api.get<UserPolicy[]>(`/admin/users/${id}/policies`);
+    return response.data;
+  },
+
+  resetPassword: async (id: string, data: ResetPasswordRequest) => {
+    const response = await api.post(`/admin/users/${id}/reset-password`, data);
     return response.data;
   },
 };

@@ -7,6 +7,7 @@ import {
 } from "@/features/users/hooks/useUserProfile";
 import { UserProfileHeader } from "@/features/users/components/UserProfileHeader";
 import { UserInfoCard } from "@/features/users/components/UserInfoCard";
+import { ResetPasswordModal } from "@/features/users/components/ResetPasswordModal";
 import {
   UserTeamsTable,
   UserRolesTable,
@@ -20,6 +21,7 @@ import {
 } from "@/shared/components/ui/tabs";
 import { Users, Shield, Lock } from "lucide-react";
 import { Spin } from "antd";
+import { useAuthContext } from "@/shared/contexts/auth-context";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -27,7 +29,11 @@ interface PageProps {
 
 export default function UserProfilePage({ params }: PageProps) {
   const { id } = use(params);
+  const { user: currentUser } = useAuthContext();
+  const isAdmin = !!(currentUser?.is_admin || currentUser?.is_global_admin);
+
   const [activeTab, setActiveTab] = useState<UserTabKey>("teams");
+  const [isResetModalOpen, setIsResetModalOpen] = useState(false);
 
   const {
     user,
@@ -62,7 +68,11 @@ export default function UserProfilePage({ params }: PageProps) {
 
   return (
     <div className="flex flex-col space-y-6 animate-in fade-in duration-500 pb-20">
-      <UserProfileHeader user={user} isLoading={isLoading} />
+      <UserProfileHeader
+        user={user}
+        isLoading={isLoading}
+        onResetPassword={isAdmin ? () => setIsResetModalOpen(true) : undefined}
+      />
 
       <UserInfoCard user={user} isLoading={isLoading} />
 
@@ -127,6 +137,15 @@ export default function UserProfilePage({ params }: PageProps) {
           />
         </TabsContent>
       </Tabs>
+
+      {user && (
+        <ResetPasswordModal
+          userId={user.id}
+          userName={user.display_name}
+          open={isResetModalOpen}
+          onCancel={() => setIsResetModalOpen(false)}
+        />
+      )}
     </div>
   );
 }

@@ -1,3 +1,21 @@
+export interface AuthTeam {
+  id: string;
+  name: string;
+  display_name: string;
+  team_type: string;
+}
+
+export interface AuthRole {
+  id: string;
+  name: string;
+  display_name: string;
+}
+
+export interface AuthPolicy {
+  id: string;
+  name: string;
+}
+
 export type AuthUser = {
   id: string;
   org_id?: string;
@@ -14,6 +32,9 @@ export type AuthUser = {
   last_login_at: string;
   created_at: string;
   updated_at: string;
+  teams?: AuthTeam[];
+  roles?: AuthRole[];
+  policies?: AuthPolicy[];
 };
 
 export type LoginResponse = {

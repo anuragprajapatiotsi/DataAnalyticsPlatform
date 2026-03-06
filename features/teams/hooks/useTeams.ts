@@ -18,11 +18,7 @@ export const useTeams = () => {
   const createMutation = useMutation({
     mutationFn: (data: CreateTeamRequest) => teamService.createTeam(data),
     onSuccess: () => {
-      message.success("Team created successfully");
       queryClient.invalidateQueries({ queryKey: ["teams"] });
-    },
-    onError: (error: any) => {
-      message.error(error.response?.data?.message || "Failed to create team");
     },
   });
 
@@ -33,9 +29,6 @@ export const useTeams = () => {
       message.success("Team updated successfully");
       queryClient.invalidateQueries({ queryKey: ["teams"] });
     },
-    onError: (error: any) => {
-      message.error(error.response?.data?.message || "Failed to update team");
-    },
   });
 
   const deleteMutation = useMutation({
@@ -43,9 +36,6 @@ export const useTeams = () => {
     onSuccess: () => {
       message.success("Team deleted successfully");
       queryClient.invalidateQueries({ queryKey: ["teams"] });
-    },
-    onError: (error: any) => {
-      message.error(error.response?.data?.message || "Failed to delete team");
     },
   });
 

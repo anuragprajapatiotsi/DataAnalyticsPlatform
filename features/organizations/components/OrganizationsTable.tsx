@@ -8,11 +8,11 @@ import {
   Trash2,
   CheckCircle2,
   XCircle,
-  ShieldCheck,
   Mail,
   Building2,
+  MoreVertical,
 } from "lucide-react";
-import { Popconfirm, Button } from "antd";
+import { Popconfirm, Button, Dropdown, MenuProps } from "antd";
 import {
   Table,
   TableBody,
@@ -147,29 +147,50 @@ export function OrganizationsTable({
                     )}
                   </TableCell>
                   <TableCell className="text-right">
-                    <div className="flex items-center justify-end gap-1">
+                    <Dropdown
+                      menu={{
+                        items: [
+                          {
+                            key: "edit",
+                            label: "Edit Organization",
+                            icon: <Edit2 size={14} />,
+                            onClick: () => onEditClick(org),
+                          },
+                          {
+                            type: "divider",
+                          },
+                          {
+                            key: "delete",
+                            label: (
+                              <Popconfirm
+                                title="Delete Organization"
+                                description="Are you sure you want to delete this organization?"
+                                onConfirm={() => onDeleteConfirm(org.id)}
+                                okText="Yes"
+                                cancelText="No"
+                                okButtonProps={{ danger: true }}
+                              >
+                                <span className="text-red-600 block w-full text-left">
+                                  Delete Organization
+                                </span>
+                              </Popconfirm>
+                            ),
+                            icon: <Trash2 size={14} className="text-red-600" />,
+                            danger: true,
+                          },
+                        ],
+                      }}
+                      trigger={["click"]}
+                      placement="bottomRight"
+                    >
                       <Button
                         type="text"
-                        icon={<Edit2 size={16} />}
-                        onClick={() => onEditClick(org)}
-                        className="text-slate-400 hover:text-blue-600 hover:bg-slate-100 h-8 w-8 flex items-center justify-center rounded-lg p-0"
+                        icon={
+                          <MoreVertical size={16} className="text-slate-400" />
+                        }
+                        className="hover:bg-slate-100 rounded-lg h-8 w-8 flex items-center justify-center p-0 ml-auto"
                       />
-                      <Popconfirm
-                        title="Delete Organization"
-                        description="Are you sure you want to delete this organization?"
-                        onConfirm={() => onDeleteConfirm(org.id)}
-                        okText="Yes"
-                        cancelText="No"
-                        okButtonProps={{ danger: true }}
-                      >
-                        <Button
-                          type="text"
-                          danger
-                          icon={<Trash2 size={16} />}
-                          className="text-slate-400 hover:text-red-600 hover:bg-slate-100 h-8 w-8 flex items-center justify-center rounded-lg p-0"
-                        />
-                      </Popconfirm>
-                    </div>
+                    </Dropdown>
                   </TableCell>
                 </TableRow>
               ))

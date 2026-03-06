@@ -1,29 +1,45 @@
 import { z } from "zod";
 
-export const passwordStrengthRegex =
-  /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d]).{8,}$/;
-
 export const loginSchema = z.object({
-  login: z.string().min(1, "Login is required."),
-  password: z.string().min(1, "Password is required."),
+  login: z.string().min(1, "Login is required"),
+  password: z.string().min(1, "Password is required"),
 });
 
 export const signupSchema = z
   .object({
-    name: z.string().trim().min(2, "Name must be at least 2 characters."),
-    email: z.email("Please enter a valid email address."),
-    password: z
-      .string()
-      .regex(
-        passwordStrengthRegex,
-        "Use 8+ chars with upper, lower, number, and special character.",
-      ),
-    confirmPassword: z.string().min(1, "Please confirm your password."),
+    name: z.string().min(2, "Name must be at least 2 characters"),
+    email: z.string().email("Invalid email address"),
+    password: z.string().min(8, "Password must be at least 8 characters"),
+    confirmPassword: z.string().min(1, "Please confirm your password"),
   })
   .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords do not match",
     path: ["confirmPassword"],
-    message: "Passwords do not match.",
   });
 
-export type LoginFormValues = z.infer<typeof loginSchema>;
-export type SignupFormValues = z.infer<typeof signupSchema>;
+export const PASSWORD_POLICY = {
+  minLength: 8,
+  rules: [
+    { label: "Minimum 8 characters", regex: /.{8,}/ },
+    { label: "At least one uppercase letter", regex: /[A-Z]/ },
+    { label: "At least one lowercase letter", regex: /[a-z]/ },
+    { label: "At least one number", regex: /\d/ },
+    { label: "At least one special character", regex: /[@$!%*?&]/ }, // Common special characters
+  ],
+};
+
+export const validatePassword = (password: string): boolean => {
+  return PASSWORD_POLICY.rules.every((rule) => rule.regex.test(password));
+};
+
+export const passwordValidator = (_: any, value: string) => {
+  if (!value) {
+    return Promise.resolve();
+  }
+  if (validatePassword(value)) {
+    return Promise.resolve();
+  }
+  return Promise.reject(
+    new Error("Password does not meet the required security criteria."),
+  );
+};

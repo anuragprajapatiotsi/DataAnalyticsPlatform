@@ -2,6 +2,7 @@
 
 import React, { useEffect } from "react";
 import { Form, Input, Switch, Select, Button, message } from "antd";
+import { useRouter } from "next/navigation";
 import { useTeams } from "@/features/teams/hooks/useTeams";
 import { useRoles } from "@/features/roles/hooks/useRoles";
 import { useUpdateUser } from "../hooks/useUpdateUser";
@@ -44,6 +45,8 @@ export function EditUserForm({ user }: EditUserFormProps) {
     }
   }, [user, form]);
 
+  const router = useRouter();
+
   const handleSubmit = async (values: any) => {
     try {
       await updateUser({
@@ -52,8 +55,19 @@ export function EditUserForm({ user }: EditUserFormProps) {
         role_ids: values.role_ids || [],
         domain_ids: values.domain_ids || [],
       });
-    } catch (error) {
-      console.error("Failed to update user:", error);
+      message.success("User updated successfully");
+      router.push("/settings/organization-team-user-management/users");
+    } catch (error: any) {
+      // Map API validation errors to form fields
+      if (error.errors) {
+        const fieldErrors = Object.entries(error.errors).map(
+          ([name, messages]) => ({
+            name,
+            errors: Array.isArray(messages) ? messages : [String(messages)],
+          }),
+        );
+        form.setFields(fieldErrors);
+      }
     }
   };
 

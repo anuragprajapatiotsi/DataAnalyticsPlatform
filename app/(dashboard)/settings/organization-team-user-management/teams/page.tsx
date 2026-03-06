@@ -64,8 +64,7 @@ export default function TeamsPage() {
   );
 
   const handleCreate = () => {
-    setEditingTeam(null);
-    setIsModalOpen(true);
+    router.push("/settings/organization-team-user-management/teams/create");
   };
 
   const handleEdit = (team: Team) => {

@@ -15,6 +15,7 @@ export interface Team {
 }
 
 export interface CreateTeamRequest {
+  org_id: string;
   name: string;
   display_name: string;
   email: string;

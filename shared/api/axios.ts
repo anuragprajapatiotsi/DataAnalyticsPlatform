@@ -1,4 +1,6 @@
 import axios from "axios";
+import { message } from "antd";
+import { parseError } from "../utils/error-handler";
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL ||
@@ -127,6 +129,9 @@ api.interceptors.response.use(
       }
     }
 
-    return Promise.reject(error);
+    // Global Error Handling
+    const parsed = parseError(error);
+
+    return Promise.reject(parsed);
   },
 );
