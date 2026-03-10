@@ -3,7 +3,7 @@ import { roleService } from "../services/role.service";
 import { GetRolesParams, CreateRolePayload } from "../types";
 import { message } from "antd";
 
-export const useRoles = (params: GetRolesParams = { skip: 0, limit: 100 }) => {
+export const useRoles = (params: GetRolesParams = { skip: 0, limit: 50 }) => {
   const queryClient = useQueryClient();
 
   const rolesQuery = useQuery({
@@ -46,7 +46,7 @@ export const useRoles = (params: GetRolesParams = { skip: 0, limit: 100 }) => {
   });
 
   return {
-    data: rolesQuery.data?.data || [],
+    roles: rolesQuery.data?.data || [],
     total: rolesQuery.data?.total || 0,
     isLoading: rolesQuery.isLoading,
     isError: rolesQuery.isError,
@@ -56,5 +56,6 @@ export const useRoles = (params: GetRolesParams = { skip: 0, limit: 100 }) => {
     isUpdating: updateRoleMutation.isPending,
     deleteRole: deleteRoleMutation.mutateAsync,
     isDeleting: deleteRoleMutation.isPending,
+    refetch: rolesQuery.refetch,
   };
 };

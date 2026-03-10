@@ -16,6 +16,7 @@ import type {
   AuthUser,
   LoginRequest,
   SignupRequest,
+  UpdateProfileRequest,
 } from "@/shared/types";
 
 type AuthContextValue = {
@@ -27,6 +28,7 @@ type AuthContextValue = {
   login: (payload: LoginRequest) => Promise<void>;
   signup: (payload: SignupRequest) => Promise<void>;
   logout: () => Promise<void>;
+  updateProfile: (payload: UpdateProfileRequest) => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -141,6 +143,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
   });
 
+  const updateProfileMutation = useMutation({
+    mutationFn: authApi.updateProfile,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: SESSION_QUERY_KEY });
+    },
+    onError: (error: any) => {
+      const message =
+        error.response?.data?.message || "Failed to update profile.";
+      setErrorMessage(message);
+    },
+  });
+
   const value = useMemo<AuthContextValue>(
     () => ({
       user: sessionQuery.data ?? null,
@@ -161,6 +175,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       logout: async () => {
         await logoutMutation.mutateAsync();
       },
+      updateProfile: async (payload) => {
+        await updateProfileMutation.mutateAsync(payload);
+      },
     }),
     [
       isMounted,
@@ -172,6 +189,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       sessionQuery.isLoading,
       sessionQuery.isFetching,
       signupMutation,
+      updateProfileMutation,
     ],
   );
 
@@ -185,4 +203,3 @@ export function useAuthContext() {
   }
   return context;
 }
-

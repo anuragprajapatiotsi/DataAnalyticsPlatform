@@ -1,215 +1,219 @@
 "use client";
 
+import React from "react";
 import Link from "next/link";
-import {
-  Plus,
-  Search,
-  Edit2,
-  Trash2,
-  Users,
-  Mail,
-  Calendar,
-  MoreVertical,
-} from "lucide-react";
-import { Popconfirm, Button, Dropdown, MenuProps } from "antd";
+import { Shield, Edit2, Trash2, MoreVertical, Mail, Users } from "lucide-react";
 import {
   Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/shared/components/ui/table";
-import { Input } from "@/shared/components/ui/input";
-import { Badge } from "@/shared/components/ui/badge";
+  Button,
+  Popconfirm,
+  Badge as AntBadge,
+  Spin,
+  Empty,
+  Dropdown,
+  MenuProps,
+} from "antd";
 import type { Team } from "../types";
 
 interface TeamsTableProps {
   teams: Team[];
   isLoading: boolean;
   isAdmin: boolean;
-  searchQuery: string;
-  onSearchChange: (value: string) => void;
-  onCreateClick: () => void;
   onEditClick: (team: Team) => void;
   onDeleteConfirm: (id: string) => void;
+  total: number;
+  current: number;
+  pageSize: number;
+  onPageChange: (page: number) => void;
 }
 
 export function TeamsTable({
   teams,
   isLoading,
   isAdmin,
-  searchQuery,
-  onSearchChange,
-  onCreateClick,
   onEditClick,
   onDeleteConfirm,
+  total,
+  current,
+  pageSize,
+  onPageChange,
 }: TeamsTableProps) {
-  return (
-    <div className="flex flex-col gap-6 animate-in fade-in duration-500">
-      <div className="flex items-center justify-between">
-        {/* Search Input */}
-        <div className="relative group">
-          <div className="absolute left-3 top-2 bottom-2 flex items-center pointer-events-none">
-            <Search
-              size={16}
-              className="text-slate-400 group-focus-within:text-blue-500 transition-colors"
-            />
+  const columns = [
+    {
+      title: "Display Name",
+      key: "display_name",
+      width: 250,
+      render: (team: Team) => (
+        <div className="flex items-center gap-2.5">
+          <div className="h-7 w-7 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600 shadow-sm border border-blue-100 flex-shrink-0">
+            <Users size={14} />
           </div>
-
-          <Input
-            placeholder="Search teams..."
-            value={searchQuery}
-            onChange={(e) => onSearchChange(e.target.value)}
-            className="w-[320px] h-9 pl-9 rounded-lg border-slate-200 shadow-none focus-visible:ring-1 focus-visible:ring-blue-500"
-          />
-        </div>
-
-        {/* Add Team Button */}
-        {isAdmin && (
-          <Button
-            type="primary"
-            icon={<Plus size={16} />}
-            onClick={onCreateClick}
-            className="bg-blue-600 hover:bg-blue-700 h-9 flex items-center gap-2 rounded-lg font-semibold"
+          <Link
+            href={`/settings/organization-team-user-management/teams/${team.id}`}
+            className="font-semibold text-slate-900 text-[14px] truncate hover:text-blue-600 transition-colors"
           >
-            Add Team
-          </Button>
-        )}
-      </div>
+            {team.display_name}
+          </Link>
+        </div>
+      ),
+    },
+    {
+      title: "Email",
+      dataIndex: "email",
+      key: "email",
+      width: 200,
+      render: (email: string) => (
+        <div className="flex items-center gap-2 text-slate-600">
+          <Mail size={13} className="text-slate-400 flex-shrink-0" />
+          <span className="text-[14px] font-medium truncate">{email}</span>
+        </div>
+      ),
+    },
+    {
+      title: "Type",
+      dataIndex: "team_type",
+      key: "team_type",
+      width: 120,
+      render: (type: string) => (
+        <AntBadge
+          className="capitalize"
+          count={type}
+          style={{
+            backgroundColor: "#f8fafc",
+            color: "#475569",
+            borderColor: "#e2e8f0",
+            fontSize: "10.5px",
+            height: "18px",
+            lineHeight: "18px",
+            fontWeight: 600,
+          }}
+        />
+      ),
+    },
+    {
+      title: "Status",
+      dataIndex: "is_active",
+      key: "status",
+      width: 100,
+      render: (isActive: boolean) => (
+        <AntBadge
+          count={isActive ? "Active" : "Inactive"}
+          style={{
+            backgroundColor: isActive ? "#ecfdf5" : "#fff1f2",
+            color: isActive ? "#059669" : "#e11d48",
+            borderColor: isActive ? "#d1fae5" : "#ffe4e6",
+            fontSize: "10.5px",
+            height: "18px",
+            lineHeight: "18px",
+            fontWeight: 600,
+          }}
+        />
+      ),
+    },
+    {
+      title: "Actions",
+      key: "actions",
+      align: "right" as const,
+      width: 80,
+      render: (team: Team) => {
+        if (!isAdmin) return null;
 
-      <div className="rounded-lg border border-slate-200 bg-white shadow-sm overflow-hidden">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-[220px]">Display Name</TableHead>
-              <TableHead>Email</TableHead>
-              <TableHead>Type</TableHead>
-              <TableHead>Status</TableHead>
-              {isAdmin && <TableHead className="text-right">Actions</TableHead>}
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {isLoading ? (
-              <TableRow>
-                <TableCell
-                  colSpan={isAdmin ? 6 : 5}
-                  className="h-32 text-center text-slate-500"
-                >
-                  <div className="flex items-center justify-center gap-2">
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600" />
-                    <span>Loading...</span>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ) : teams.length === 0 ? (
-              <TableRow>
-                <TableCell
-                  colSpan={isAdmin ? 6 : 5}
-                  className="h-32 text-center text-slate-500"
-                >
-                  <div className="flex flex-col items-center gap-1">
-                    <Users className="h-8 w-8 text-slate-300" />
-                    <span>No teams found</span>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ) : (
-              teams.map((team) => (
-                <TableRow key={team.id} className="group">
-                  <TableCell className="px-4 py-2">
-                    <div className="flex flex-col">
-                      <Link
-                        href={`/settings/organization-team-user-management/teams/${team.id}`}
-                        className="font-semibold text-slate-900 text-[13px] hover:text-blue-600 transition-colors"
-                      >
-                        {team.display_name}
-                      </Link>
-                    </div>
-                  </TableCell>
-                  <TableCell className="px-4 py-2">
-                    <div className="flex items-center gap-2 text-slate-600">
-                      <Mail size={14} className="text-slate-400" />
-                      <span className="text-[13px] font-medium">
-                        {team.email}
-                      </span>
-                    </div>
-                  </TableCell>
-                  <TableCell className="px-4 py-2">
-                    <Badge
-                      variant="outline"
-                      className="capitalize text-[11px] bg-slate-50 border-slate-200 text-slate-600 font-semibold py-0 px-1.5 h-5 flex items-center w-fit"
-                    >
-                      {team.team_type}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="px-4 py-2">
-                    {team.is_active ? (
-                      <Badge className="bg-emerald-50 text-emerald-700 border-emerald-100 text-[11px] font-semibold py-0 px-2 h-5 flex items-center w-fit">
-                        Active
-                      </Badge>
-                    ) : (
-                      <Badge
-                        variant="secondary"
-                        className="bg-rose-50 text-rose-700 border-rose-100 text-[11px] font-semibold py-0 px-2 h-5 flex items-center w-fit"
-                      >
-                        Inactive
-                      </Badge>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <Dropdown
-                      menu={{
-                        items: [
-                          {
-                            key: "edit",
-                            label: "Edit Team",
-                            icon: <Edit2 size={14} />,
-                            onClick: () => onEditClick(team),
-                          },
-                          {
-                            type: "divider",
-                          },
-                          {
-                            key: "delete",
-                            label: (
-                              <Popconfirm
-                                title="Delete Team"
-                                description="Are you sure you want to delete this team?"
-                                onConfirm={() => onDeleteConfirm(team.id)}
-                                okType="danger"
-                                okText="Delete"
-                                cancelText="Cancel"
-                                okButtonProps={{ danger: true }}
-                              >
-                                <span className="text-red-600 block w-full text-left">
-                                  Delete Team
-                                </span>
-                              </Popconfirm>
-                            ),
-                            icon: <Trash2 size={14} className="text-red-600" />,
-                            danger: true,
-                          },
-                        ],
-                      }}
-                      trigger={["click"]}
-                      placement="bottomRight"
-                    >
-                      <Button
-                        type="text"
-                        icon={
-                          <MoreVertical size={16} className="text-slate-400" />
-                        }
-                        className="hover:bg-slate-100 rounded-lg h-8 w-8 flex items-center justify-center p-0 ml-auto"
-                      />
-                    </Dropdown>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </div>
+        const menuItems: MenuProps["items"] = [
+          {
+            key: "edit",
+            label: "Edit Team",
+            icon: <Edit2 size={13} />,
+            onClick: () => onEditClick(team),
+          },
+          {
+            key: "delete",
+            label: (
+              <Popconfirm
+                title="Delete Team"
+                description="Are you sure you want to delete this team?"
+                onConfirm={() => onDeleteConfirm(team.id)}
+                okText="Yes"
+                cancelText="No"
+                okType="danger"
+              >
+                <span className="text-red-600 block w-full text-left text-[13px]">
+                  Delete Team
+                </span>
+              </Popconfirm>
+            ),
+            icon: <Trash2 size={13} className="text-red-600" />,
+            danger: true,
+          },
+        ];
+
+        return (
+          <Dropdown
+            menu={{ items: menuItems }}
+            trigger={["click"]}
+            placement="bottomRight"
+          >
+            <Button
+              type="text"
+              icon={<MoreVertical size={14} className="text-slate-400" />}
+              className="hover:bg-slate-100 rounded-lg h-7 w-7 flex items-center justify-center p-0 ml-auto"
+            />
+          </Dropdown>
+        );
+      },
+    },
+  ];
+
+  return (
+    <div className="rounded-lg border border-slate-200 bg-white shadow-sm overflow-hidden flex flex-col min-h-0 flex-1">
+      <Table<Team>
+        columns={columns}
+        dataSource={teams}
+        rowKey="id"
+        loading={isLoading && { indicator: <Spin className="text-blue-600" /> }}
+        scroll={{ y: "calc(100vh - 420px)" }}
+        pagination={{
+          current,
+          pageSize,
+          total,
+          onChange: onPageChange,
+          showSizeChanger: false,
+          className:
+            "px-4 py-2.5 border-t border-slate-100 m-0 bg-white sticky bottom-0 z-10",
+        }}
+        locale={{
+          emptyText: (
+            <Empty
+              image={Empty.PRESENTED_IMAGE_SIMPLE}
+              description={
+                <span className="text-slate-400 font-medium text-[13px]">
+                  No teams found
+                </span>
+              }
+            />
+          ),
+        }}
+        className="custom-table"
+      />
+      <style jsx global>{`
+        .custom-table .ant-table-thead > tr > th {
+          background-color: #f8fafc !important;
+          color: #475569 !important;
+          font-weight: 600 !important;
+          font-size: 12px !important;
+          text-transform: none !important;
+          padding: 8px 12px !important;
+          border-bottom: 1px solid #e2e8f0 !important;
+        }
+        .custom-table .ant-table-tbody > tr > td {
+          padding: 8px 12px !important;
+          border-bottom: 1px solid #f1f5f9 !important;
+          font-size: 14px !important;
+          color: #334155 !important;
+        }
+        .custom-table .ant-table-tbody > tr:hover > td {
+          background-color: #f8fafc !important;
+        }
+      `}</style>
     </div>
   );
 }

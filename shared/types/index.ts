@@ -108,3 +108,52 @@ export interface UpdateOrgRequest {
   owner_id: string;
   is_active: boolean;
 }
+
+export interface UpdateProfileRequest {
+  name: string;
+  display_name: string;
+  description: string;
+  image: string;
+  default_org_id: string;
+}
+
+// SQL Editor Types
+export type SchemaNodeType =
+  | "database"
+  | "schema"
+  | "table"
+  | "view"
+  | "function"
+  | "index"
+  | "sequence"
+  | "data-type"
+  | "aggregate-function"
+  | "column";
+
+export interface SchemaNode {
+  id: string;
+  name: string;
+  type: SchemaNodeType;
+  hasChildren: boolean;
+  parentId?: string;
+  schemaName?: string;
+  tableName?: string;
+}
+
+export interface QueryRequest {
+  query: string;
+  limit: number;
+  offset: number;
+}
+
+export interface QueryResponse {
+  query_id: string;
+  columns: string[];
+  data: any[][];
+  total_rows: number;
+  execution_time_ms: number;
+}
+
+export interface QueryCancelRequest {
+  query_id: string;
+}

@@ -8,21 +8,28 @@ import {
 } from "../types";
 
 export const policyService = {
-  async getPolicies(
-    params: GetPoliciesParams = { skip: 0, limit: 50, name: "primary" },
-  ) {
+  async getPolicies(params: GetPoliciesParams = { skip: 0, limit: 50 }) {
     const response = await api.get<Policy[]>("/policies", {
       params: {
         skip: params.skip,
         limit: params.limit,
-        name: params.name || "primary",
+        name: params.name,
+        search: params.search,
+        resource: params.resource,
+        role_id: params.role_id,
+        team_id: params.team_id,
+        user_id: params.user_id,
+        org_id_assigned: params.org_id_assigned,
       },
     });
 
-    // The API returns an array directly based on user's description
     return {
       data: response.data,
-      total: response.data.length, // Fallback if total isn't returned in headers
+      total:
+        response.data.length === (params.limit || 50)
+          ? (Math.floor((params.skip || 0) / (params.limit || 50)) + 2) *
+            (params.limit || 50)
+          : (params.skip || 0) + response.data.length,
     };
   },
 

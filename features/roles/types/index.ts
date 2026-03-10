@@ -20,8 +20,8 @@ export interface Role {
 }
 
 export interface GetRolesParams {
-  skip: number;
-  limit: number;
+  skip?: number;
+  limit?: number;
   search?: string;
   is_system_role?: boolean;
   user_id?: string;

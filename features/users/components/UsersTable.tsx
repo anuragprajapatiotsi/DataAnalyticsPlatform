@@ -75,7 +75,7 @@ export function UsersTable({ users, isLoading }: UsersTableProps) {
         <div className="bg-slate-50 p-3 rounded-full mb-3">
           <UserIcon size={24} className="text-slate-300" />
         </div>
-        <h3 className="text-[15px] font-semibold text-slate-900 m-0">
+        <h3 className="text-[14px] font-semibold text-slate-900 m-0">
           No users found
         </h3>
         <p className="text-[13px] text-slate-500 m-0 mt-1 font-medium text-center max-w-[300px]">
@@ -112,7 +112,7 @@ export function UsersTable({ users, isLoading }: UsersTableProps) {
                     className="group-hover:text-blue-600 transition-colors"
                   >
                     <div className="flex flex-col">
-                      <span className="text-[13px] text-slate-900 font-bold leading-tight">
+                      <span className="text-[14px] text-slate-900 font-bold leading-tight">
                         {user.username}
                       </span>
                     </div>
@@ -124,7 +124,7 @@ export function UsersTable({ users, isLoading }: UsersTableProps) {
                   href={`/settings/organization-team-user-management/users/${user.id}`}
                   className="group-hover:text-blue-600"
                 >
-                  <span className="text-[13px] text-slate-500 font-bold italic">
+                  <span className="text-[14px] text-slate-500 font-bold italic">
                     {user.display_name}
                   </span>
                 </Link>

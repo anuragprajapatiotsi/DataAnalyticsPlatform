@@ -7,5 +7,5 @@ export const settingsApi = {
       `/settings/tree?parent=${parent}&name=primary`,
     );
     return response.data;
-  },
+  },  
 };

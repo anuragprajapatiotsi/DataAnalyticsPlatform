@@ -15,13 +15,22 @@ import { useRoles } from "@/features/roles/hooks/useRoles";
 import { Skeleton, Empty } from "antd";
 
 export function RolesList() {
-  const { data: rolesData, isLoading } = useRoles({ skip: 0, limit: 100 });
-  const roles = rolesData?.data || [];
+  const { roles, isLoading, isError } = useRoles({ skip: 0, limit: 100 });
 
   if (isLoading) {
     return (
       <div className="flex flex-col gap-6 p-4">
         <Skeleton active paragraph={{ rows: 4 }} />
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="flex flex-col gap-6 p-4 text-center">
+        <p className="text-red-500 font-medium">
+          Failed to load roles. Please try again later.
+        </p>
       </div>
     );
   }

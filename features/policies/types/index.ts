@@ -64,6 +64,12 @@ export interface GetPoliciesParams {
   skip?: number;
   limit?: number;
   name?: string;
+  search?: string;
+  resource?: string;
+  role_id?: string;
+  team_id?: string;
+  user_id?: string;
+  org_id_assigned?: string;
 }
 
 export interface GetPoliciesResponse {

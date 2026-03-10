@@ -77,7 +77,7 @@ export function RoleUsersTable({
                         {user.name?.charAt(0) || user.username?.charAt(0)}
                       </Avatar>
                       <div className="flex flex-col">
-                        <span className="font-semibold text-slate-900 text-[13px] leading-tight">
+                        <span className="font-semibold text-slate-900 text-[14px] leading-tight">
                           {user.display_name || user.name || user.username}
                         </span>
                         <span className="text-[12px] text-slate-400 font-medium">
@@ -87,7 +87,7 @@ export function RoleUsersTable({
                     </div>
                   </TableCell>
                   <TableCell className="px-4 py-2">
-                    <p className="text-[13px] text-slate-600 m-0 line-clamp-1 max-w-md font-medium">
+                    <p className="text-[14px] text-slate-600 m-0 line-clamp-1 max-w-md font-medium">
                       {user.description || "No description provided"}
                     </p>
                   </TableCell>

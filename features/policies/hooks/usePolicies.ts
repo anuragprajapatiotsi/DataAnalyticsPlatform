@@ -3,9 +3,7 @@ import { policyService } from "../services/policy.service";
 import { GetPoliciesParams } from "../types";
 import { message } from "antd";
 
-export const usePolicies = (
-  params: GetPoliciesParams = { skip: 0, limit: 50 },
-) => {
+export const usePolicies = (params: GetPoliciesParams) => {
   const queryClient = useQueryClient();
 
   const policiesQuery = useQuery({

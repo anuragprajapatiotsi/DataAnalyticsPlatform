@@ -67,24 +67,24 @@ export function UserInfoCard({ user, isLoading }: UserInfoCardProps) {
   ];
 
   return (
-    <div className="rounded-lg border border-slate-200 bg-white shadow-sm p-6 transition-all hover:shadow-md">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
-        <div className="flex items-center gap-5">
-          <div className="h-20 w-20 rounded-2xl bg-gradient-to-br from-indigo-500 to-blue-600 flex items-center justify-center text-white text-3xl font-bold shadow-lg shadow-indigo-100">
+    <div className="rounded-lg border border-slate-200 bg-white shadow-sm p-4 transition-all hover:shadow-md">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
+        <div className="flex items-center gap-4">
+          <div className="h-14 w-14 rounded-xl bg-gradient-to-br from-indigo-500 to-blue-600 flex items-center justify-center text-white text-xl font-bold shadow-lg shadow-indigo-100">
             {user.display_name.charAt(0)}
           </div>
           <div>
-            <h2 className="text-2xl font-bold text-slate-900 mb-1">
+            <h2 className="text-lg font-bold text-slate-900 mb-0.5">
               {user.display_name}
             </h2>
-            <p className="text-slate-500 font-medium">
+            <p className="text-slate-500 text-sm font-medium">
               {user.description || "No description provided."}
             </p>
           </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 border-t border-slate-100 pt-8 mt-2">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 border-t border-slate-100 pt-4 mt-1">
         {infoItems.map((item, idx) => (
           <div
             key={idx}
@@ -111,8 +111,8 @@ export function UserInfoCard({ user, isLoading }: UserInfoCardProps) {
         ))}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6 border-t border-slate-100 pt-6">
-        <div className="flex items-center gap-3 text-slate-400 font-medium text-[13px]">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 border-t border-slate-100 pt-4">
+        <div className="flex items-center gap-3 text-slate-400 font-medium text-[12px]">
           <Calendar className="h-4 w-4" />
           <span>
             Created:{" "}

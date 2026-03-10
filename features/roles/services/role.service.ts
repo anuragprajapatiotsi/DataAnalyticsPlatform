@@ -9,11 +9,11 @@ import {
 } from "../types";
 
 export const roleService = {
-  async getRoles(params: GetRolesParams = { skip: 0, limit: 10 }) {
+  async getRoles(params: GetRolesParams = { skip: 0, limit: 50 }) {
     const response = await api.get<Role[]>("/roles", {
       params: {
-        skip: params.skip,
-        limit: params.limit,
+        skip: params.skip || 0,
+        limit: params.limit || 50,
         search: params.search,
         is_system_role: params.is_system_role,
         user_id: params.user_id,
@@ -24,7 +24,11 @@ export const roleService = {
 
     return {
       data: response.data,
-      total: response.data.length, // Fallback
+      total:
+        response.data.length === (params.limit || 50)
+          ? (Math.floor((params.skip || 0) / (params.limit || 50)) + 2) *
+            (params.limit || 50)
+          : (params.skip || 0) + response.data.length,
     };
   },
 
@@ -62,6 +66,13 @@ export const roleService = {
 
   async detachPolicy(roleId: string, policyId: string) {
     const response = await api.delete(`/roles/${roleId}/policies/${policyId}`);
+    return response.data;
+  },
+
+  async assignUsers(roleId: string, userIds: string[]) {
+    const response = await api.post(`/roles/${roleId}/assign`, {
+      user_ids: userIds,
+    });
     return response.data;
   },
 

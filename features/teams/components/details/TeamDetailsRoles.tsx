@@ -43,7 +43,7 @@ export function TeamDetailsRoles({
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Fetch all available roles for the selection modal
-  const { data: rolesData, isLoading: isLoadingAvailable } = useRoles({
+  const { roles: rolesData, isLoading: isLoadingAvailable } = useRoles({
     skip: 0,
     limit: 100,
   });
@@ -127,7 +127,7 @@ export function TeamDetailsRoles({
                       </div>
                       <Link
                         href={`/settings/access-control/roles/${role.id}`}
-                        className="font-bold text-blue-600 hover:text-blue-700 text-[15px] transition-colors"
+                        className="font-bold text-blue-600 hover:text-blue-700 text-[14px] transition-colors"
                       >
                         {role.name}
                       </Link>

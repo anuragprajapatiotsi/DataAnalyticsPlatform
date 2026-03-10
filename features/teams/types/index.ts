@@ -65,3 +65,18 @@ export interface TeamDetail extends Team {
   subscription?: string;
   total_users: number;
 }
+export interface GetTeamsParams {
+  org_id?: string;
+  team_type?: string;
+  parent_team_id?: string;
+  root_only?: boolean;
+  domain_id?: string;
+  public_team_view?: boolean;
+  search?: string;
+  is_active?: boolean;
+  member_user_id?: string;
+  role_id?: string;
+  policy_id?: string;
+  skip?: number;
+  limit?: number;
+}

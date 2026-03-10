@@ -67,7 +67,7 @@ export default function UserProfilePage({ params }: PageProps) {
   }
 
   return (
-    <div className="flex flex-col space-y-6 animate-in fade-in duration-500 pb-20">
+    <div className="flex flex-col space-y-4 animate-in fade-in duration-500 pb-20">
       <UserProfileHeader
         user={user}
         isLoading={isLoading}
@@ -77,7 +77,7 @@ export default function UserProfilePage({ params }: PageProps) {
       <UserInfoCard user={user} isLoading={isLoading} />
 
       <Tabs defaultValue="teams" className="w-full">
-        <TabsList className="mb-6 bg-slate-100/50 p-1 rounded-lg h-10 w-fit">
+        <TabsList className="mb-4 bg-slate-100/50 p-1 rounded-lg h-10 w-fit">
           <TabsTrigger
             value="teams"
             active={activeTab === "teams"}
@@ -123,11 +123,21 @@ export default function UserProfilePage({ params }: PageProps) {
         </TabsList>
 
         <TabsContent value="teams" activeValue={activeTab}>
-          <UserTeamsTable teams={teams} isLoading={isLoadingTeams} />
+          <UserTeamsTable
+            teams={teams}
+            isLoading={isLoadingTeams}
+            userId={id}
+            isAdmin={isAdmin}
+          />
         </TabsContent>
 
         <TabsContent value="roles" activeValue={activeTab}>
-          <UserRolesTable roles={roles} isLoading={isLoadingRoles} />
+          <UserRolesTable
+            roles={roles}
+            isLoading={isLoadingRoles}
+            userId={id}
+            isAdmin={isAdmin}
+          />
         </TabsContent>
 
         <TabsContent value="policies" activeValue={activeTab}>

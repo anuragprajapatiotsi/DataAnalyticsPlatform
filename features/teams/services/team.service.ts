@@ -11,9 +11,23 @@ import {
 } from "../types";
 
 export const teamService = {
-  async getTeams() {
-    const response = await api.get<Team[]>("/teams");
-    return response.data;
+  async getTeams(params: GetTeamsParams = { skip: 0, limit: 50 }) {
+    const response = await api.get<Team[]>("/teams", {
+      params: {
+        ...params,
+        skip: params.skip || 0,
+        limit: params.limit || 50,
+      },
+    });
+
+    return {
+      data: response.data,
+      total:
+        response.data.length === (params.limit || 50)
+          ? (Math.floor((params.skip || 0) / (params.limit || 50)) + 2) *
+            (params.limit || 50)
+          : (params.skip || 0) + response.data.length,
+    };
   },
 
   async createTeam(data: CreateTeamRequest) {

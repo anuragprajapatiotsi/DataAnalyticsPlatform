@@ -97,13 +97,13 @@ export function RolePoliciesTable({
                   <TableCell className="px-4 py-2">
                     <Link
                       href={`/settings/access-control/policies/${policy.id}`}
-                      className="text-blue-600 hover:text-blue-700  cursor-pointer font-semibold text-[13px] transition-colors"
+                      className="text-blue-600 hover:text-blue-700  cursor-pointer font-semibold text-[14px] transition-colors"
                     >
                       {policy.name}
                     </Link>
                   </TableCell>
                   <TableCell className="px-4 py-2">
-                    <p className="text-[13px] text-slate-600 m-0 line-clamp-1 max-w-md font-medium">
+                    <p className="text-[14px] text-slate-600 m-0 line-clamp-1 max-w-md font-medium">
                       {policy.description || "No description provided"}
                     </p>
                   </TableCell>

@@ -5,6 +5,7 @@ import type {
   LoginResponse,
   SessionResponse,
   SignupRequest,
+  UpdateProfileRequest,
 } from "@/shared/types";
 
 export const authApi = {
@@ -32,6 +33,24 @@ export const authApi = {
   async logout() {
     const response = await api.post<AuthMessageResponse>(
       "/auth/logout?name=primary",
+    );
+    return response.data;
+  },
+  async updateProfile(payload: UpdateProfileRequest) {
+    const response = await api.put<SessionResponse>("/auth/me", payload);
+    return response.data;
+  },
+  async uploadAvatar(file: File) {
+    const formData = new FormData();
+    formData.append("image", file);
+    const response = await api.post<{ url: string }>(
+      "/auth/upload-avatar",
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      },
     );
     return response.data;
   },

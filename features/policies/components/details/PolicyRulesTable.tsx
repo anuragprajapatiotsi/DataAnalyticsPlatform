@@ -71,12 +71,12 @@ export function PolicyRulesTable({
             ) : (
               <TableRow className="group h-12">
                 <TableCell className="px-4 py-2">
-                  <span className="font-semibold text-slate-900 text-[13px]">
+                  <span className="font-semibold text-slate-900 text-[14px]">
                     {ruleName || "--"}
                   </span>
                 </TableCell>
                 <TableCell className="px-4 py-2">
-                  <span className="text-[13px] text-slate-600 font-medium font-mono">
+                  <span className="text-[14px] text-slate-600 font-medium font-mono">
                     {resource || "--"}
                   </span>
                 </TableCell>

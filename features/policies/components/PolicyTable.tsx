@@ -22,6 +22,10 @@ interface PolicyTableProps {
   onEdit: (policy: Policy) => void;
   onDelete: (id: string) => void;
   isDeleting: boolean;
+  total: number;
+  current: number;
+  pageSize: number;
+  onPageChange: (page: number) => void;
 }
 
 export function PolicyTable({
@@ -30,6 +34,10 @@ export function PolicyTable({
   onEdit,
   onDelete,
   isDeleting,
+  total,
+  current,
+  pageSize,
+  onPageChange,
 }: PolicyTableProps) {
   const columns: TableProps<Policy>["columns"] = [
     {
@@ -111,29 +119,38 @@ export function PolicyTable({
   ];
 
   return (
-    <div className="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden">
-      <Table
+    <div className="rounded-lg border border-slate-200 bg-white shadow-sm overflow-hidden flex flex-col min-h-0 flex-1">
+      <Table<Policy>
         columns={columns}
         dataSource={policies}
         rowKey="id"
         loading={isLoading && { indicator: <Spin className="text-blue-600" /> }}
+        scroll={{ y: "calc(100vh - 400px)" }}
         pagination={{
-          pageSize: 50,
-          hideOnSinglePage: true,
-          className: "px-6 py-4 border-t border-slate-100",
+          current,
+          pageSize,
+          total,
+          onChange: onPageChange,
+          showSizeChanger: false,
+          className:
+            "px-6 py-4 border-t border-slate-100 m-0 bg-white sticky bottom-0 z-10",
         }}
         locale={{
           emptyText: (
             <Empty
               image={Empty.PRESENTED_IMAGE_SIMPLE}
-              description="No policies found."
+              description={
+                <span className="text-slate-400 font-medium">
+                  No policies found
+                </span>
+              }
             />
           ),
         }}
-        className="custom-policy-table"
+        className="custom-table"
       />
       <style jsx global>{`
-        .custom-policy-table .ant-table-thead > tr > th {
+        .custom-table .ant-table-thead > tr > th {
           background-color: #f8fafc !important;
           color: #475569 !important;
           font-weight: 600 !important;
@@ -142,13 +159,13 @@ export function PolicyTable({
           padding: 12px 16px !important;
           border-bottom: 1px solid #e2e8f0 !important;
         }
-        .custom-policy-table .ant-table-tbody > tr > td {
+        .custom-table .ant-table-tbody > tr > td {
           padding: 12px 16px !important;
           border-bottom: 1px solid #f1f5f9 !important;
           font-size: 14px !important;
           color: #334155 !important;
         }
-        .custom-policy-table .ant-table-tbody > tr:hover > td {
+        .custom-table .ant-table-tbody > tr:hover > td {
           background-color: #f8fafc !important;
         }
       `}</style>

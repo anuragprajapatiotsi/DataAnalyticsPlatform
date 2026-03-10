@@ -9,13 +9,14 @@ import {
   UserRolesTable,
   UserPoliciesTable,
 } from "@/features/users/components/UserDetailTabs";
+import { UserProfileForm } from "@/features/users/components/UserProfileForm";
 import {
   Tabs,
   TabsList,
   TabsTrigger,
   TabsContent,
 } from "@/shared/components/ui/tabs";
-import { Users, Shield, Lock } from "lucide-react";
+import { Users, Shield, Lock, UserPen } from "lucide-react";
 import { Spin } from "antd";
 
 export default function CurrentUserProfilePage() {
@@ -117,6 +118,20 @@ export default function CurrentUserProfilePage() {
             />
             Policies ({policies.length})
           </TabsTrigger>
+          <TabsTrigger
+            value="edit"
+            active={activeTab === "edit"}
+            onClick={() => setActiveTab("edit")}
+            className="px-4 py-2 rounded-md gap-2 text-[13px] font-bold"
+          >
+            <UserPen
+              size={16}
+              className={
+                activeTab === "edit" ? "text-blue-600" : "text-slate-400"
+              }
+            />
+            Edit Profile
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="teams" activeValue={activeTab}>
@@ -129,6 +144,10 @@ export default function CurrentUserProfilePage() {
 
         <TabsContent value="policies" activeValue={activeTab}>
           <UserPoliciesTable policies={policies as any} isLoading={isLoading} />
+        </TabsContent>
+
+        <TabsContent value="edit" activeValue={activeTab}>
+          <UserProfileForm />
         </TabsContent>
       </Tabs>
     </div>

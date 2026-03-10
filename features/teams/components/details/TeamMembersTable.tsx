@@ -158,7 +158,7 @@ export function TeamMembersTable({
                         {member.name.charAt(0)}
                       </div>
                       <div className="flex flex-col">
-                        <span className="font-bold text-slate-900 text-[15px]">
+                        <span className="font-bold text-slate-900 text-[14px]">
                           {member.name}
                         </span>
                         <span className="text-[12px] text-slate-400 font-semibold tracking-tight">

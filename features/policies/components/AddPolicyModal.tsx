@@ -93,7 +93,7 @@ export function AddPolicyModal({
       setSelectedResource(found);
       form.setFieldsValue({
         resource: (found as Resource).key || (found as Resource).label,
-        operations: (found as Resource).operations,
+        operations: [], // Clear previously selected operations
       });
     }
   };
@@ -281,47 +281,38 @@ export function AddPolicyModal({
         </div>
 
         <Form.Item
-          noStyle
-          shouldUpdate={(prevValues, currentValues) =>
-            prevValues.operations !== currentValues.operations
+          name="operations"
+          label={
+            <span className="flex items-center gap-2 font-semibold text-[13px] text-slate-700">
+              <Shield size={14} className="text-blue-500" /> Operations
+            </span>
           }
+          rules={[
+            { required: true, message: "Please select at least one operation" },
+          ]}
         >
-          {({ getFieldValue }) => (
-            <Form.Item
-              name="operations"
-              label={
-                <div className="flex items-center justify-between w-full">
-                  <span className="flex items-center gap-2 font-semibold text-[13px] text-slate-700">
-                    <Shield size={14} className="text-blue-500" /> Operations
-                  </span>
-                  <span className="text-[10px] font-semibold text-blue-600 bg-blue-50 px-2 py-0.5 rounded uppercase tracking-tight">
-                    Auto-populated
-                  </span>
-                </div>
-              }
-              rules={[{ required: true, message: "Operations are required" }]}
-            >
-              <div className="min-h-[36px] p-2 border border-slate-200 rounded-lg bg-slate-50/50 flex flex-wrap gap-2">
-                {getFieldValue("operations")?.length > 0 ? (
-                  getFieldValue("operations").map((op: string) => (
-                    <Tag
-                      key={op}
-                      color="blue"
-                      className="rounded-md px-2 py-0.5 m-0 border-blue-100 text-blue-600 font-semibold uppercase text-[10px] tracking-tight"
-                    >
-                      {op}
-                    </Tag>
-                  ))
-                ) : (
-                  <span className="text-slate-400 text-sm italic ml-1">
-                    Select a resource to load operations...
-                  </span>
-                )}
-                {/* Hidden select to satisfy Form.Item validation */}
-                <Select mode="multiple" style={{ display: "none" }} />
-              </div>
-            </Form.Item>
-          )}
+          <Select
+            mode="multiple"
+            placeholder={
+              selectedResource
+                ? "Select specific operations"
+                : "Select a resource first..."
+            }
+            disabled={!selectedResource}
+            loading={isLoadingResources}
+            className="h-11 custom-select w-full"
+            classNames={{
+              popup: {
+                root: "rounded-lg border-slate-200 shadow-xl",
+              },
+            }}
+          >
+            {selectedResource?.operations?.map((op) => (
+              <Option key={op} value={op}>
+                {op.toUpperCase()}
+              </Option>
+            ))}
+          </Select>
         </Form.Item>
 
         <Divider className="my-6 opacity-30" />

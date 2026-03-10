@@ -1,19 +1,18 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { message } from "antd";
 import { teamService } from "../services/team.service";
-import { CreateTeamRequest, UpdateTeamRequest } from "../types";
+import { GetTeamsParams, CreateTeamRequest, UpdateTeamRequest } from "../types";
 
-export const useTeams = () => {
+export const useTeams = (params: GetTeamsParams = { skip: 0, limit: 50 }) => {
   const queryClient = useQueryClient();
 
-  const {
-    data: teams = [],
-    isLoading,
-    isError,
-  } = useQuery({
-    queryKey: ["teams"],
-    queryFn: teamService.getTeams,
+  const teamsQuery = useQuery({
+    queryKey: ["teams", params],
+    queryFn: () => teamService.getTeams(params),
   });
+
+  const teams = teamsQuery.data?.data || [];
+  const total = teamsQuery.data?.total || 0;
 
   const createMutation = useMutation({
     mutationFn: (data: CreateTeamRequest) => teamService.createTeam(data),
@@ -41,13 +40,15 @@ export const useTeams = () => {
 
   return {
     teams,
-    isLoading,
-    isError,
+    total,
+    isLoading: teamsQuery.isLoading,
+    isError: teamsQuery.isError,
     createTeam: createMutation.mutateAsync,
     updateTeam: updateMutation.mutateAsync,
     deleteTeam: deleteMutation.mutateAsync,
     isCreating: createMutation.isPending,
     isUpdating: updateMutation.isPending,
     isDeleting: deleteMutation.isPending,
+    refetch: teamsQuery.refetch,
   };
 };
