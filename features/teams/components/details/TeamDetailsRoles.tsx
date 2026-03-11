@@ -3,14 +3,21 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import {
-  Shield,
   Plus,
   Trash2,
   MoreVertical,
-  Lock,
   ChevronRight,
 } from "lucide-react";
-import { Button, Empty, Badge, Popconfirm, Tooltip, message } from "antd";
+import {
+  Button,
+  Empty,
+  Badge,
+  Popconfirm,
+  Tooltip,
+  message,
+  Dropdown,
+} from "antd";
+import type { MenuProps } from "antd";
 import {
   Table,
   TableBody,
@@ -82,11 +89,17 @@ export function TeamDetailsRoles({
 
       <div className="rounded-lg border border-slate-200 bg-white shadow-sm overflow-hidden">
         <Table>
-          <TableHeader>
+          <TableHeader className="bg-slate-50/50">
             <TableRow>
-              <TableHead className="w-[300px]">Role Name</TableHead>
-              <TableHead>Description</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
+              <TableHead className="w-[300px] text-[13px] font-bold text-slate-500 uppercase py-3 px-6">
+                Role Name
+              </TableHead>
+              <TableHead className="text-[13px] font-bold text-slate-500 uppercase py-3 px-6">
+                Description
+              </TableHead>
+              <TableHead className="text-right text-[13px] font-bold text-slate-500 uppercase py-3 px-6">
+                Actions
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -119,51 +132,53 @@ export function TeamDetailsRoles({
               </TableRow>
             ) : (
               roles.map((role) => (
-                <TableRow key={role.id} className="group">
-                  <TableCell className="px-8 py-5">
+                <TableRow key={role.id} className="group hover:bg-slate-50/50">
+                  <TableCell className="px-6 py-4">
                     <div className="flex items-center gap-4">
-                      <div className="h-10 w-10 rounded-lg bg-indigo-50 flex items-center justify-center shadow-sm border border-indigo-100">
-                        <Shield className="h-5 w-5 text-indigo-600" />
-                      </div>
                       <Link
                         href={`/settings/access-control/roles/${role.id}`}
-                        className="font-bold text-blue-600 hover:text-blue-700 text-[14px] transition-colors"
+                        className="text-blue-600 hover:text-blue-700 text-[14px] font-medium transition-colors"
                       >
                         {role.name}
                       </Link>
                     </div>
                   </TableCell>
-                  <TableCell className="px-8 py-5 text-slate-500 text-[14px] font-medium">
+                  <TableCell className="px-6 py-4 text-slate-500 text-[14px] font-medium">
                     {role.description || "No description provided."}
                   </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-all transform translate-x-2 group-hover:translate-x-0">
-                      <Tooltip title="View Permissions">
-                        <Button
-                          type="text"
-                          icon={
-                            <ChevronRight className="h-4 w-4 text-slate-400" />
-                          }
-                          className="hover:bg-slate-100 rounded-lg h-8 w-8 flex items-center justify-center p-0"
-                        />
-                      </Tooltip>
-                      {isAdmin && (
-                        <Popconfirm
-                          title="Remove Role"
-                          description="Are you sure you want to remove this role from the team?"
-                          onConfirm={() => onRemoveRole(role.id)}
-                          okType="danger"
-                          okText="Remove"
-                        >
-                          <Button
-                            type="text"
-                            danger
-                            icon={<Trash2 className="h-4 w-4" />}
-                            className="hover:bg-slate-100 rounded-lg h-8 w-8 flex items-center justify-center p-0"
-                          />
-                        </Popconfirm>
-                      )}
-                    </div>
+                  <TableCell className="px-6 py-4 text-right">
+                    <Dropdown
+                      menu={{
+                        items: [
+                          {
+                            key: "view",
+                            label: "View Permissions",
+                            icon: <ChevronRight className="h-4 w-4" />,
+                          },
+                          isAdmin && {
+                            key: "remove",
+                            label: (
+                              <Popconfirm
+                                title="Remove Role"
+                                description="Are you sure you want to remove this role?"
+                                onConfirm={() => onRemoveRole(role.id)}
+                                okType="danger"
+                                okText="Remove"
+                              >
+                                <span className="text-red-500">Remove Role</span>
+                              </Popconfirm>
+                            ),
+                            icon: <Trash2 className="h-4 w-4 text-red-500" />,
+                          },
+                        ].filter(Boolean) as MenuProps["items"],
+                      }}
+                      trigger={["click"]}
+                    >
+                      <Button
+                        type="text"
+                        icon={<MoreVertical className="h-4 w-4 text-slate-400" />}
+                      />
+                    </Dropdown>
                   </TableCell>
                 </TableRow>
               ))

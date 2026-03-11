@@ -2,7 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
-import { Users, Trash2 } from "lucide-react";
+import { ChevronRight, MoreVertical, Users, Trash2 } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -11,7 +11,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/shared/components/ui/table";
-import { Button } from "antd";
+import { Button, Dropdown, Popconfirm } from "antd";
+import type { MenuProps } from "antd";
 import { PolicyTeam } from "../../types";
 
 interface PolicyTeamsTableProps {
@@ -33,11 +34,17 @@ export function PolicyTeamsTable({ teams, isLoading }: PolicyTeamsTableProps) {
 
       <div className="rounded-lg border border-slate-200 bg-white shadow-sm overflow-hidden animate-in fade-in duration-500">
         <Table>
-          <TableHeader>
+          <TableHeader className="bg-slate-50/50">
             <TableRow>
-              <TableHead>Team Name</TableHead>
-              <TableHead>Description</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
+              <TableHead className="w-[200px] text-[13px] font-bold text-slate-500 uppercase py-3 px-6">
+                Team Name
+              </TableHead>
+              <TableHead className="text-[13px] font-bold text-slate-500 uppercase py-3 px-6">
+                Description
+              </TableHead>
+              <TableHead className="text-right text-[13px] font-bold text-slate-500 uppercase py-3 px-6">
+                Actions
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -63,8 +70,8 @@ export function PolicyTeamsTable({ teams, isLoading }: PolicyTeamsTableProps) {
               </TableRow>
             ) : (
               teams.map((team) => (
-                <TableRow key={team.id} className="group h-12">
-                  <TableCell className="px-4 py-2">
+                <TableRow key={team.id} className="group hover:bg-slate-50/50">
+                  <TableCell className="px-6 py-4">
                     <Link
                       href={`/settings/organization-team-user-management/teams/${team.id}`}
                       className="text-blue-600 hover:text-blue-700 cursor-pointer font-semibold text-[14px] transition-colors"
@@ -72,18 +79,43 @@ export function PolicyTeamsTable({ teams, isLoading }: PolicyTeamsTableProps) {
                       {team.name}
                     </Link>
                   </TableCell>
-                  <TableCell className="px-4 py-2">
+                  <TableCell className="px-6 py-4">
                     <p className="text-[14px] text-slate-600 m-0 line-clamp-1 max-w-md font-medium">
                       {team.description || "No description provided"}
                     </p>
                   </TableCell>
-                  <TableCell className="text-right">
-                    <Button
-                      type="text"
-                      danger
-                      icon={<Trash2 size={16} />}
-                      className="hover:bg-slate-100 rounded-lg flex items-center justify-center ml-auto h-8 w-8 p-0"
-                    />
+                  <TableCell className="px-6 py-4 text-right">
+                    <Dropdown
+                      menu={{
+                        items: [
+                          {
+                            key: "view",
+                            label: "View Team",
+                            icon: <ChevronRight className="h-4 w-4" />,
+                          },
+                          {
+                            key: "remove",
+                            label: (
+                              <Popconfirm
+                                title="Remove Association"
+                                description="Are you sure you want to remove this team association?"
+                                okType="danger"
+                                okText="Remove"
+                              >
+                                <span className="text-red-500">Remove Association</span>
+                              </Popconfirm>
+                            ),
+                            icon: <Trash2 className="h-4 w-4 text-red-500" />,
+                          },
+                        ],
+                      }}
+                      trigger={["click"]}
+                    >
+                      <Button
+                        type="text"
+                        icon={<MoreVertical className="h-4 w-4 text-slate-400" />}
+                      />
+                    </Dropdown>
                   </TableCell>
                 </TableRow>
               ))

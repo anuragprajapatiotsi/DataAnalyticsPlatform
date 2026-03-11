@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import Link from "next/link";
 import {
   Search,
   Plus,
@@ -18,7 +19,10 @@ import {
   Tooltip,
   Empty,
   message,
+  Dropdown,
 } from "antd";
+import type { MenuProps } from "antd";
+import { ChevronRight, MoreVertical } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -107,12 +111,22 @@ export function TeamMembersTable({
 
       <div className="rounded-lg border border-slate-200 bg-white shadow-sm overflow-hidden">
         <Table>
-          <TableHeader>
+          <TableHeader className="bg-slate-50/50">
             <TableRow>
-              <TableHead className="w-[300px]">User</TableHead>
-              <TableHead>Email</TableHead>
-              <TableHead>Team Role</TableHead>
-              {isAdmin && <TableHead className="text-right">Actions</TableHead>}
+              <TableHead className="w-[300px] text-[13px] font-bold text-slate-500 uppercase py-3 px-6">
+                User
+              </TableHead>
+              <TableHead className="text-[13px] font-bold text-slate-500 uppercase py-3 px-6">
+                Email
+              </TableHead>
+              <TableHead className="text-[13px] font-bold text-slate-500 uppercase py-3 px-6">
+                Team Role
+              </TableHead>
+              {isAdmin && (
+                <TableHead className="text-right text-[13px] font-bold text-slate-500 uppercase py-3 px-6">
+                  Actions
+                </TableHead>
+              )}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -152,28 +166,25 @@ export function TeamMembersTable({
             ) : (
               filteredMembers.map((member) => (
                 <TableRow key={member.id} className="group">
-                  <TableCell className="px-8 py-5">
+                  <TableCell className="px-6 py-4">
                     <div className="flex items-center gap-4">
-                      <div className="h-10 w-10 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600 font-bold shrink-0 shadow-sm border border-indigo-100">
-                        {member.name.charAt(0)}
-                      </div>
                       <div className="flex flex-col">
-                        <span className="font-bold text-slate-900 text-[14px]">
+                        <Link
+                          href={`/settings/organization-team-user-management/users/${member.id}`}
+                          className="text-blue-600 hover:text-blue-700 text-[14px] transition-colors"
+                        >
                           {member.name}
-                        </span>
-                        <span className="text-[12px] text-slate-400 font-semibold tracking-tight">
-                          @{member.username}
-                        </span>
+                        </Link>
                       </div>
                     </div>
                   </TableCell>
-                  <TableCell className="px-8 py-5">
+                  <TableCell className="px-6 py-4">
                     <div className="flex items-center gap-2 text-slate-600 text-[14px] font-medium">
                       <Mail className="h-3.5 w-3.5 text-slate-300" />
                       {member.email}
                     </div>
                   </TableCell>
-                  <TableCell className="px-8 py-5">
+                  <TableCell className="px-6 py-4">
                     <div className="flex items-center gap-2">
                       <ShieldCheck className="h-4 w-4 text-emerald-500" />
                       <Badge className="bg-emerald-50 text-emerald-700 border-none text-[11px] font-bold py-0.5 px-2.5 uppercase tracking-wide">
@@ -182,24 +193,45 @@ export function TeamMembersTable({
                     </div>
                   </TableCell>
                   {isAdmin && (
-                    <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-all transform translate-x-2 group-hover:translate-x-0">
-                        <Popconfirm
-                          title="Remove Member"
-                          description={`Are you sure you want to remove ${member.name} from this team?`}
-                          onConfirm={() => onRemoveMember(member.id)}
-                          okText="Remove"
-                          cancelText="Cancel"
-                          okType="danger"
-                        >
-                          <Button
-                            type="text"
-                            danger
-                            icon={<Trash2 className="h-4 w-4" />}
-                            className="hover:bg-slate-100 flex items-center justify-center rounded-lg h-8 w-8 p-0"
-                          ></Button>
-                        </Popconfirm>
-                      </div>
+                    <TableCell className="px-6 py-4 text-right">
+                      <Dropdown
+                        menu={{
+                          items: [
+                            {
+                              key: "view",
+                              label: (
+                                <Link
+                                  href={`/settings/organization-team-user-management/users/${member.id}`}
+                                >
+                                  View Profile
+                                </Link>
+                              ),
+                              icon: <ChevronRight className="h-4 w-4" />,
+                            },
+                            {
+                              key: "remove",
+                              label: (
+                                <Popconfirm
+                                  title="Remove Member"
+                                  description={`Are you sure you want to remove ${member.name}?`}
+                                  onConfirm={() => onRemoveMember(member.id)}
+                                  okType="danger"
+                                  okText="Remove"
+                                >
+                                  <span className="text-red-500">Remove Member</span>
+                                </Popconfirm>
+                              ),
+                              icon: <Trash2 className="h-4 w-4 text-red-500" />,
+                            },
+                          ].filter(Boolean) as MenuProps["items"],
+                        }}
+                        trigger={["click"]}
+                      >
+                        <Button
+                          type="text"
+                          icon={<MoreVertical className="h-4 w-4 text-slate-400" />}
+                        />
+                      </Dropdown>
                     </TableCell>
                   )}
                 </TableRow>

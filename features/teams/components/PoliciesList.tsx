@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { FileText, MoreHorizontal } from "lucide-react";
+import { ChevronRight, MoreVertical } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -10,11 +10,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/shared/components/ui/table";
-import { Button } from "antd";
-
+import { Button, Skeleton, Empty, Dropdown } from "antd";
+import type { MenuProps } from "antd";
 import { useQuery } from "@tanstack/react-query";
 import { teamService } from "../services/team.service";
-import { Skeleton, Empty } from "antd";
 
 export function PoliciesList() {
   const { data: policies = [], isLoading } = useQuery({
@@ -68,7 +67,6 @@ export function PoliciesList() {
                 <TableRow key={policy.id} className="hover:bg-slate-50/50">
                   <TableCell className="px-6 py-4">
                     <div className="flex items-center gap-2">
-                      <FileText className="h-4 w-4 text-emerald-500" />
                       <span className="font-semibold text-slate-800">
                         {policy.name}
                       </span>
@@ -78,12 +76,25 @@ export function PoliciesList() {
                     {policy.description}
                   </TableCell>
                   <TableCell className="px-6 py-4 text-right">
-                    <Button
-                      type="text"
-                      icon={
-                        <MoreHorizontal className="h-4 w-4 text-slate-400" />
-                      }
-                    />
+                    <Dropdown
+                      menu={{
+                        items: [
+                          {
+                            key: "view",
+                            label: "View Details",
+                            icon: <ChevronRight className="h-4 w-4" />,
+                          },
+                        ],
+                      }}
+                      trigger={["click"]}
+                    >
+                      <Button
+                        type="text"
+                        icon={
+                          <MoreVertical className="h-4 w-4 text-slate-400" />
+                        }
+                      />
+                    </Dropdown>
                   </TableCell>
                 </TableRow>
               ))

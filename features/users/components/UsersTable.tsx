@@ -14,7 +14,7 @@ import { Trash2, User as UserIcon, MoreVertical, Edit2 } from "lucide-react";
 import Link from "next/link";
 import { AdminUser } from "../types";
 import { Skeleton } from "@/shared/components/ui/skeleton";
-import { Dropdown, MenuProps, Popconfirm, message } from "antd";
+import { Dropdown, MenuProps, Popconfirm, message, Popover } from "antd";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { userService } from "../services/user.service";
 
@@ -133,37 +133,87 @@ export function UsersTable({ users, isLoading }: UsersTableProps) {
                 <div className="flex items-center gap-2">
                   {user.teams.length > 0 ? (
                     <>
-                      <span className="text-[11px] text-slate-600 font-semibold bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200/50">
+                      <span className="text-[12px] text-slate-700 font-semibold bg-slate-100 px-2.5 py-1 rounded-md border border-slate-200/60 shadow-sm">
                         {user.teams[0].display_name || user.teams[0].name}
                       </span>
                       {user.teams.length > 1 && (
-                        <span className="text-[10px] text-slate-400 font-semibold uppercase tracking-tight">
-                          +{user.teams.length - 1} more
-                        </span>
+                        <Popover
+                          title={
+                            <div className="border-b border-slate-100 pb-2 mb-2 font-bold text-slate-900">
+                              Teams
+                            </div>
+                          }
+                          content={
+                            <div className="flex flex-col gap-1.5 min-w-[150px] p-0.5">
+                              {user.teams.map((team) => (
+                                <Link
+                                  key={team.id}
+                                  href={`/settings/organization-team-user-management/teams/${team.id}`}
+                                  className="text-[13px] text-slate-600 font-semibold hover:text-blue-600 hover:bg-slate-50 px-2 py-1 rounded transition-all"
+                                >
+                                  {team.display_name || team.name}
+                                </Link>
+                              ))}
+                            </div>
+                          }
+                          trigger="click"
+                          placement="bottomLeft"
+                        >
+                          <span className="text-blue-600 cursor-pointer text-xs font-bold hover:underline transition-all flex items-center gap-0.5 ml-1">
+                            +{user.teams.length - 1}
+                          </span>
+                        </Popover>
                       )}
                     </>
                   ) : (
                     <span className="text-[12px] text-slate-300 font-medium italic">
-                      No teams
+                      —
                     </span>
                   )}
                 </div>
               </TableCell>
               <TableCell className="px-4 py-2">
-                <div className="flex flex-wrap gap-2">
+                <div className="flex items-center gap-2">
                   {user.roles.length > 0 ? (
-                    user.roles.map((role) => (
+                    <>
                       <Link
-                        key={role.id}
-                        href={`/settings/access-control/roles/${role.id}`}
-                        className="text-[12px] text-blue-600 hover:text-blue-800 font-semibold hover:underline transition-all"
+                        href={`/settings/access-control/roles/${user.roles[0].id}`}
+                        className="text-[12px] text-blue-600 hover:text-blue-800 font-bold hover:underline transition-all"
                       >
-                        {role.display_name || role.name}
+                        {user.roles[0].display_name || user.roles[0].name}
                       </Link>
-                    ))
+                      {user.roles.length > 1 && (
+                        <Popover
+                          title={
+                            <div className="border-b border-slate-100 pb-2 mb-2 font-bold text-slate-900">
+                              Roles
+                            </div>
+                          }
+                          content={
+                            <div className="flex flex-col gap-1.5 min-w-[150px] p-0.5">
+                              {user.roles.map((role) => (
+                                <Link
+                                  key={role.id}
+                                  href={`/settings/access-control/roles/${role.id}`}
+                                  className="text-[13px] text-slate-600 font-semibold hover:text-blue-600 hover:bg-slate-50 px-2 py-1 rounded transition-all"
+                                >
+                                  {role.display_name || role.name}
+                                </Link>
+                              ))}
+                            </div>
+                          }
+                          trigger="click"
+                          placement="bottomLeft"
+                        >
+                          <span className="text-blue-600 cursor-pointer text-xs font-bold hover:underline transition-all flex items-center gap-0.5 ml-1">
+                            +{user.roles.length - 1}
+                          </span>
+                        </Popover>
+                      )}
+                    </>
                   ) : (
                     <span className="text-[12px] text-slate-300 font-medium italic">
-                      No roles
+                      —
                     </span>
                   )}
                 </div>

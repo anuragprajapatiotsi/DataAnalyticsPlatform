@@ -1,5 +1,4 @@
-import React from "react";
-import { User, Trash2 } from "lucide-react";
+import { ChevronRight, MoreVertical, User, Trash2 } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -8,7 +7,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/shared/components/ui/table";
-import { Button, Avatar, Popconfirm } from "antd";
+import { Button, Avatar, Popconfirm, Dropdown } from "antd";
+import type { MenuProps } from "antd";
+import Link from "next/link";
 import { RoleUser } from "../../types";
 
 interface RoleUsersTableProps {
@@ -37,11 +38,17 @@ export function RoleUsersTable({
 
       <div className="rounded-lg border border-slate-200 bg-white shadow-sm overflow-hidden animate-in fade-in duration-500">
         <Table>
-          <TableHeader>
+          <TableHeader className="bg-slate-50/50">
             <TableRow>
-              <TableHead>User</TableHead>
-              <TableHead>Description</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
+              <TableHead className="w-[300px] text-[13px] font-bold text-slate-500 uppercase py-3 px-6">
+                User
+              </TableHead>
+              <TableHead className="text-[13px] font-bold text-slate-500 uppercase py-3 px-6">
+                Description
+              </TableHead>
+              <TableHead className="text-right text-[13px] font-bold text-slate-500 uppercase py-3 px-6">
+                Actions
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -67,8 +74,8 @@ export function RoleUsersTable({
               </TableRow>
             ) : (
               users.map((user) => (
-                <TableRow key={user.id} className="group h-12">
-                  <TableCell className="px-4 py-2">
+                <TableRow key={user.id} className="group hover:bg-slate-50/50">
+                  <TableCell className="px-6 py-4">
                     <div className="flex items-center gap-3">
                       <Avatar
                         size={32}
@@ -86,27 +93,51 @@ export function RoleUsersTable({
                       </div>
                     </div>
                   </TableCell>
-                  <TableCell className="px-4 py-2">
+                  <TableCell className="px-6 py-4">
                     <p className="text-[14px] text-slate-600 m-0 line-clamp-1 max-w-md font-medium">
                       {user.description || "No description provided"}
                     </p>
                   </TableCell>
-                  <TableCell className="text-right">
-                    <Popconfirm
-                      title="Remove User"
-                      description="Are you sure you want to remove this user from the role?"
-                      onConfirm={() => onUnassignUser(user.id)}
-                      okText="Yes"
-                      cancelText="No"
-                      okButtonProps={{ danger: true, loading: isUnassigning }}
+                  <TableCell className="px-6 py-4 text-right">
+                    <Dropdown
+                      menu={{
+                        items: [
+                          {
+                            key: "view",
+                            label: (
+                              <Link
+                                href={`/settings/organization-team-user-management/users/${user.id}`}
+                              >
+                                View Profile
+                              </Link>
+                            ),
+                            icon: <ChevronRight className="h-4 w-4" />,
+                          },
+                          {
+                            key: "remove",
+                            label: (
+                              <Popconfirm
+                                title="Remove User"
+                                description="Are you sure you want to remove this user from the role?"
+                                onConfirm={() => onUnassignUser(user.id)}
+                                okText="Yes"
+                                cancelText="No"
+                                okButtonProps={{ danger: true, loading: isUnassigning }}
+                              >
+                                <span className="text-red-500">Remove User</span>
+                              </Popconfirm>
+                            ),
+                            icon: <Trash2 className="h-4 w-4 text-red-500" />,
+                          },
+                        ],
+                      }}
+                      trigger={["click"]}
                     >
                       <Button
                         type="text"
-                        danger
-                        icon={<Trash2 size={16} />}
-                        className="hover:bg-slate-100 rounded-lg flex items-center justify-center ml-auto h-8 w-8 p-0"
+                        icon={<MoreVertical className="h-4 w-4 text-slate-400" />}
                       />
-                    </Popconfirm>
+                    </Dropdown>
                   </TableCell>
                 </TableRow>
               ))

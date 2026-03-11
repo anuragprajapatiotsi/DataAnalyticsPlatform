@@ -132,19 +132,21 @@ export function OrganizationsTable({
                       </span>
                     </div>
                   </TableCell>
-                  <TableCell className="px-4 py-2">
-                    {org.is_active ? (
-                      <Badge className="bg-emerald-50 text-emerald-700 border-emerald-100 text-[11px] font-semibold py-0 px-2 h-5 flex items-center w-fit">
-                        Active
-                      </Badge>
-                    ) : (
-                      <Badge
-                        variant="secondary"
-                        className="bg-rose-50 text-rose-700 border-rose-100 text-[11px] font-semibold py-0 px-2 h-5 flex items-center w-fit"
+                  <TableCell className="px-4">
+                    <div className="flex items-center gap-2 text-sm font-medium">
+                      <span
+                        className={`h-2 w-2 rounded-full ${
+                          org.is_active ? "bg-emerald-500" : "bg-slate-400"
+                        }`}
+                      />
+                      <span
+                        className={
+                          org.is_active ? "text-emerald-600" : "text-slate-500"
+                        }
                       >
-                        Inactive
-                      </Badge>
-                    )}
+                        {org.is_active ? "Active" : "Inactive"}
+                      </span>
+                    </div>
                   </TableCell>
                   <TableCell className="text-right">
                     <Dropdown

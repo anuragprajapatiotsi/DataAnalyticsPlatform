@@ -45,9 +45,6 @@ export function TeamsTable({
       width: 250,
       render: (team: Team) => (
         <div className="flex items-center gap-2.5">
-          <div className="h-7 w-7 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600 shadow-sm border border-blue-100 flex-shrink-0">
-            <Users size={14} />
-          </div>
           <Link
             href={`/settings/organization-team-user-management/teams/${team.id}`}
             className="font-semibold text-slate-900 text-[14px] truncate hover:text-blue-600 transition-colors"

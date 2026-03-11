@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Shield, Lock } from "lucide-react";
+import { ChevronRight, MoreVertical } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -10,9 +10,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/shared/components/ui/table";
+import { Button, Skeleton, Empty, Dropdown } from "antd";
+import type { MenuProps } from "antd";
 
 import { useRoles } from "@/features/roles/hooks/useRoles";
-import { Skeleton, Empty } from "antd";
 
 export function RolesList() {
   const { roles, isLoading, isError } = useRoles({ skip: 0, limit: 100 });
@@ -71,7 +72,6 @@ export function RolesList() {
                 <TableRow key={role.id} className="hover:bg-slate-50/50">
                   <TableCell className="px-6 py-4">
                     <div className="flex items-center gap-2">
-                      <Shield className="h-4 w-4 text-blue-500" />
                       <span className="font-semibold text-slate-800">
                         {role.name}
                       </span>
@@ -81,7 +81,23 @@ export function RolesList() {
                     {role.description}
                   </TableCell>
                   <TableCell className="px-6 py-4 text-right">
-                    <Lock className="h-4 w-4 text-slate-300 ml-auto" />
+                    <Dropdown
+                      menu={{
+                        items: [
+                          {
+                            key: "view",
+                            label: "View Details",
+                            icon: <ChevronRight className="h-4 w-4" />,
+                          },
+                        ],
+                      }}
+                      trigger={["click"]}
+                    >
+                      <Button
+                        type="text"
+                        icon={<MoreVertical className="h-4 w-4 text-slate-400" />}
+                      />
+                    </Dropdown>
                   </TableCell>
                 </TableRow>
               ))

@@ -3,16 +3,21 @@
 import React from "react";
 import Link from "next/link";
 import {
-  FileText,
   Plus,
-  Trash2,
   MinusCircle,
   ChevronRight,
-  Eye,
-  Edit2,
-  Users as UsersIcon,
+  MoreVertical,
 } from "lucide-react";
-import { Button, Empty, Badge, Popconfirm, Tooltip, message } from "antd";
+import {
+  Button,
+  Empty,
+  Badge,
+  Popconfirm,
+  Tooltip,
+  message,
+  Dropdown,
+} from "antd";
+import type { MenuProps } from "antd";
 import {
   Table,
   TableBody,
@@ -85,11 +90,17 @@ export function TeamDetailsPolicies({
 
       <div className="rounded-lg border border-slate-200 bg-white shadow-sm overflow-hidden">
         <Table>
-          <TableHeader>
+          <TableHeader className="bg-slate-50/50">
             <TableRow>
-              <TableHead className="w-[300px]">Name</TableHead>
-              <TableHead>Description</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
+              <TableHead className="w-[300px] text-[13px] font-bold text-slate-500 uppercase py-3 px-6">
+                Name
+              </TableHead>
+              <TableHead className="text-[13px] font-bold text-slate-500 uppercase py-3 px-6">
+                Description
+              </TableHead>
+              <TableHead className="text-right text-[13px] font-bold text-slate-500 uppercase py-3 px-6">
+                Actions
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -122,7 +133,7 @@ export function TeamDetailsPolicies({
               </TableRow>
             ) : (
               policies.map((policy) => (
-                <TableRow key={policy.id} className="group">
+                <TableRow key={policy.id} className="group hover:bg-slate-50/50">
                   <TableCell className="px-6 py-4">
                     <Link
                       href={`/settings/access-control/policies/${policy.id}`}
@@ -131,32 +142,42 @@ export function TeamDetailsPolicies({
                       {policy.name}
                     </Link>
                   </TableCell>
-                  <TableCell className="px-6 py-4 text-slate-600 text-[14px]">
+                  <TableCell className="px-6 py-4 text-slate-600 text-[14px] font-medium">
                     {policy.description || "No description provided."}
                   </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      {isAdmin && (
-                        <Popconfirm
-                          title="Detach Policy"
-                          description="Are you sure you want to detach this policy from the team?"
-                          onConfirm={() => onDetachPolicy(policy.id)}
-                          okType="danger"
-                          okText="Detach"
-                        >
-                          <Button
-                            type="text"
-                            icon={
-                              <MinusCircle
-                                size={20}
-                                className="text-slate-400 hover:text-red-500 transition-colors leading-none"
-                              />
-                            }
-                            className="flex items-center justify-center hover:bg-slate-100 rounded-lg h-8 w-8 p-0 ml-auto"
-                          />
-                        </Popconfirm>
-                      )}
-                    </div>
+                  <TableCell className="px-6 py-4 text-right">
+                    <Dropdown
+                      menu={{
+                        items: [
+                          {
+                            key: "view",
+                            label: "View Details",
+                            icon: <ChevronRight className="h-4 w-4" />,
+                          },
+                          isAdmin && {
+                            key: "detach",
+                            label: (
+                              <Popconfirm
+                                title="Detach Policy"
+                                description="Are you sure you want to detach this policy?"
+                                onConfirm={() => onDetachPolicy(policy.id)}
+                                okType="danger"
+                                okText="Detach"
+                              >
+                                <span className="text-red-500">Detach Policy</span>
+                              </Popconfirm>
+                            ),
+                            icon: <MinusCircle className="h-4 w-4 text-red-500" />,
+                          },
+                        ].filter(Boolean) as MenuProps["items"],
+                      }}
+                      trigger={["click"]}
+                    >
+                      <Button
+                        type="text"
+                        icon={<MoreVertical className="h-4 w-4 text-slate-400" />}
+                      />
+                    </Dropdown>
                   </TableCell>
                 </TableRow>
               ))
