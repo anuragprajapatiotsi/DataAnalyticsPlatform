@@ -6,8 +6,6 @@ import { OrganizationsTable } from "@/features/organizations/components/Organiza
 import { OrgModal } from "@/features/organizations/components/OrgModal";
 import { PageHeader } from "@/shared/components/layout/PageHeader";
 import type { Organization } from "@/shared/types";
-
-
 export default function OrganizationsPage() {
   const {
     organizations,

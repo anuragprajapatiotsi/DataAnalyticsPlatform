@@ -15,8 +15,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "OpenMetadata-style SaaS Dashboard",
-  description: "Modern enterprise dashboard built with Next.js and shadcn/ui",
+  title: "Deltameta",
+  description: "Data Analytics Platform",
 };
 
 export default function RootLayout({

@@ -26,32 +26,38 @@ export default function EditUserPage() {
   ];
 
   return (
-    <div className="flex flex-col space-y-6 animate-in fade-in duration-500 max-w-[1200px] mx-auto">
+    <div className="flex flex-col space-y-4 animate-in fade-in duration-300 max-w-[1100px] mx-auto">
+
       <PageHeader
         title="Edit User"
         description="Modify user details and access permissions."
         breadcrumbItems={breadcrumbItems}
       />
 
-      <Card className="rounded-lg border border-slate-200 bg-white shadow-sm p-6">
+      <Card className="rounded-lg border border-slate-200 bg-white shadow-sm p-5">
+
         {isLoading ? (
-          <div className="space-y-6">
-            <div className="grid grid-cols-2 gap-6">
-              <Skeleton className="h-20 w-full" />
-              <Skeleton className="h-20 w-full" />
-              <Skeleton className="h-20 w-full" />
-              <Skeleton className="h-20 w-full" />
+          <div className="space-y-4">
+
+            <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+              <Skeleton className="h-14 w-full" />
+              <Skeleton className="h-14 w-full" />
+              <Skeleton className="h-14 w-full" />
+              <Skeleton className="h-14 w-full" />
             </div>
-            <Skeleton className="h-32 w-full" />
-            <Skeleton className="h-32 w-full" />
+
+            <Skeleton className="h-24 w-full" />
+            <Skeleton className="h-24 w-full" />
+
           </div>
         ) : user ? (
           <EditUserForm user={user} />
         ) : (
-          <div className="text-center py-12">
-            <p className="text-slate-500">User not found</p>
+          <div className="text-center py-8">
+            <p className="text-sm text-slate-500">User not found</p>
           </div>
         )}
+
       </Card>
     </div>
   );

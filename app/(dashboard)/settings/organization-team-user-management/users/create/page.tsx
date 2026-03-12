@@ -28,6 +28,7 @@ export default function CreateUserPage() {
     limit: 100,
   });
   const { mutateAsync: createUser, isPending } = useCreateUser();
+  const router = useRouter();
 
   const breadcrumbItems = [
     { label: "Settings", href: "/settings" },
@@ -42,8 +43,6 @@ export default function CreateUserPage() {
     { label: "Create User" },
   ];
 
-  const router = useRouter();
-
   const handleSubmit = async (values: any) => {
     try {
       await createUser({
@@ -52,16 +51,16 @@ export default function CreateUserPage() {
         role_ids: values.role_ids || [],
         domain_ids: values.domain_ids || [],
       });
+
       message.success("User created successfully");
       router.push("/settings/organization-team-user-management/users");
     } catch (error: any) {
-      // Map API validation errors to form fields
       if (error.errors) {
         const fieldErrors = Object.entries(error.errors).map(
           ([name, messages]) => ({
             name,
             errors: Array.isArray(messages) ? messages : [String(messages)],
-          }),
+          })
         );
         form.setFields(fieldErrors);
       }
@@ -69,14 +68,15 @@ export default function CreateUserPage() {
   };
 
   return (
-    <div className="flex flex-col space-y-6 animate-in fade-in duration-500 max-w-[1200px] mx-auto">
+    <div className="flex flex-col space-y-4 animate-in fade-in duration-500 max-w-[1100px] mx-auto">
+
       <PageHeader
         title="Create User"
         description="Add a new user to your organization."
         breadcrumbItems={breadcrumbItems}
       />
 
-      <Card className="rounded-lg border border-slate-200 bg-white shadow-sm p-6">
+      <Card className="rounded-lg border border-slate-200 bg-white shadow-sm p-5">
         <Form
           form={form}
           layout="vertical"
@@ -84,17 +84,18 @@ export default function CreateUserPage() {
           initialValues={{ is_admin: false }}
           requiredMark={false}
         >
-          {/* User Info Section */}
+
+          {/* USER INFO */}
           <div>
-            <h3 className="text-base font-bold text-slate-800 ">User Info</h3>
-            <div className="grid grid-cols-2 gap-6">
+            <h3 className="text-sm font-semibold text-slate-800 mb-2">
+              User Info
+            </h3>
+
+            <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+
               <Form.Item
                 name="email"
-                label={
-                  <span className="font-semibold text-slate-700">
-                    Email Address
-                  </span>
-                }
+                label={<span className="font-medium text-slate-700">Email</span>}
                 rules={[
                   { required: true, message: "Email is required" },
                   { type: "email", message: "Invalid email format" },
@@ -102,32 +103,24 @@ export default function CreateUserPage() {
               >
                 <Input
                   placeholder="user@example.com"
-                  className="h-10 rounded-lg"
+                  className="h-9 rounded-md"
                 />
               </Form.Item>
 
               <Form.Item
                 name="display_name"
-                label={
-                  <span className="font-semibold text-slate-700">
-                    Display Name
-                  </span>
-                }
-                rules={[
-                  { required: true, message: "Display name is required" },
-                ]}
+                label={<span className="font-medium text-slate-700">Display Name</span>}
+                rules={[{ required: true, message: "Display name required" }]}
               >
                 <Input
-                  placeholder="e.g. John Doe"
-                  className="h-10 rounded-lg"
+                  placeholder="John Doe"
+                  className="h-9 rounded-md"
                 />
               </Form.Item>
 
               <Form.Item
                 name="password"
-                label={
-                  <span className="font-semibold text-slate-700">Password</span>
-                }
+                label={<span className="font-medium text-slate-700">Password</span>}
                 rules={[
                   { required: true, message: "Password is required" },
                   { validator: passwordValidator },
@@ -136,7 +129,7 @@ export default function CreateUserPage() {
                 <div className="flex flex-col">
                   <Input.Password
                     placeholder="Min 8 characters"
-                    className="h-10 rounded-lg"
+                    className="h-9 rounded-md"
                   />
                   <PasswordGuidance />
                 </div>
@@ -144,21 +137,17 @@ export default function CreateUserPage() {
 
               <Form.Item
                 name="confirm_password"
-                label={
-                  <span className="font-semibold text-slate-700">
-                    Confirm Password
-                  </span>
-                }
+                label={<span className="font-medium text-slate-700">Confirm Password</span>}
                 dependencies={["password"]}
                 rules={[
-                  { required: true, message: "Please confirm password" },
+                  { required: true, message: "Confirm password" },
                   ({ getFieldValue }) => ({
                     validator(_, value) {
                       if (!value || getFieldValue("password") === value) {
                         return Promise.resolve();
                       }
                       return Promise.reject(
-                        new Error("Passwords do not match"),
+                        new Error("Passwords do not match")
                       );
                     },
                   }),
@@ -166,30 +155,30 @@ export default function CreateUserPage() {
               >
                 <Input.Password
                   placeholder="Repeat password"
-                  className="h-10 rounded-lg"
+                  className="h-9 rounded-md"
                 />
               </Form.Item>
+
             </div>
           </div>
 
-          {/* Role Assignment Section */}
-          <div className="mt-6">
-            <h3 className="text-base font-bold text-slate-800 mb-4">
+          {/* ROLE SECTION */}
+          <div className="mt-4">
+            <h3 className="text-sm font-semibold text-slate-800 mb-2">
               Role Assignment
             </h3>
-            <div className="grid grid-cols-2 gap-6">
+
+            <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+
               <Form.Item
                 name="role_ids"
-                label={
-                  <span className="font-semibold text-slate-700">Roles</span>
-                }
+                label={<span className="font-medium text-slate-700">Roles</span>}
               >
                 <Select
                   mode="multiple"
                   placeholder="Select roles"
                   loading={isLoadingRoles}
-                  size="large"
-                  className="w-full rounded-lg"
+                  size="middle"
                   options={rolesData?.map((r: any) => ({
                     label: r.name,
                     value: r.id,
@@ -199,97 +188,88 @@ export default function CreateUserPage() {
 
               <Form.Item
                 name="domain_ids"
-                label={
-                  <span className="font-semibold text-slate-700">Domains</span>
-                }
+                label={<span className="font-medium text-slate-700">Domains</span>}
               >
                 <Select
                   mode="multiple"
                   placeholder="Select domains"
-                  size="large"
-                  className="w-full rounded-lg"
+                  size="middle"
                   options={domainOptions}
                 />
               </Form.Item>
 
               <Form.Item
                 name="is_admin"
-                label={
-                  <span className="font-semibold text-slate-700">
-                    Grant Admin Access
-                  </span>
-                }
+                label={<span className="font-medium text-slate-700">Admin Access</span>}
                 valuePropName="checked"
               >
-                <Switch className="bg-slate-200" />
+                <Switch />
               </Form.Item>
+
             </div>
           </div>
 
-          {/* Team Assignment Section */}
-          <div className="mt-6">
-            <h3 className="text-base font-bold text-slate-800 mb-4">
+          {/* TEAM SECTION */}
+          <div className="mt-4">
+            <h3 className="text-sm font-semibold text-slate-800 mb-2">
               Team Assignment
             </h3>
-            <div className="grid grid-cols-2 gap-6">
-              <Form.Item
-                name="team_ids"
-                label={
-                  <span className="font-semibold text-slate-700">Teams</span>
-                }
-                className="col-span-2"
-              >
-                <Select
-                  mode="multiple"
-                  placeholder="Select teams"
-                  loading={isLoadingTeams}
-                  size="large"
-                  className="w-full rounded-lg"
-                  options={teams.map((t: any) => ({
-                    label: t.display_name,
-                    value: t.id,
-                  }))}
-                />
-              </Form.Item>
-            </div>
-          </div>
 
-          {/* Additional Info Section */}
-          <div className="mt-6">
-            <h3 className="text-base font-bold text-slate-800 mb-4">
-              Additional Info
-            </h3>
             <Form.Item
-              name="description"
-              label={
-                <span className="font-semibold text-slate-700">
-                  Description / Job Title
-                </span>
-              }
+              name="team_ids"
+              label={<span className="font-medium text-slate-700">Teams</span>}
             >
-              <Input.TextArea
-                placeholder="e.g. Data Engineer"
-                rows={4}
-                className="rounded-lg"
+              <Select
+                mode="multiple"
+                placeholder="Select teams"
+                loading={isLoadingTeams}
+                size="middle"
+                options={teams.map((t: any) => ({
+                  label: t.display_name,
+                  value: t.id,
+                }))}
               />
             </Form.Item>
           </div>
 
-          <div className="flex justify-end gap-3 pt-6 border-t border-slate-100 mt-6">
+          {/* ADDITIONAL INFO */}
+          <div className="mt-4">
+            <h3 className="text-sm font-semibold text-slate-800 mb-2">
+              Additional Info
+            </h3>
+
+            <Form.Item
+              name="description"
+              label={<span className="font-medium text-slate-700">Description</span>}
+            >
+              <Input.TextArea
+                placeholder="e.g. Data Engineer"
+                rows={2}
+                className="rounded-md"
+              />
+            </Form.Item>
+          </div>
+
+          {/* ACTION BUTTONS */}
+          <div className="flex justify-end gap-3 pt-4 border-t border-slate-100 mt-4">
+
             <Link href="/settings/organization-team-user-management/users">
-              <Button className="h-10 rounded-lg px-6 font-semibold">
+              <Button className="h-9 rounded-md px-5 font-semibold">
                 Cancel
               </Button>
             </Link>
+
             <Button
               type="primary"
               htmlType="submit"
               loading={isPending}
-              className="h-10 rounded-lg px-8 bg-blue-600 hover:bg-blue-700 font-bold shadow-md"
+              className="h-9 rounded-md px-6 bg-blue-600 hover:bg-blue-700 font-semibold"
             >
               Create User
             </Button>
+
           </div>
+
         </Form>
       </Card>
     </div>
