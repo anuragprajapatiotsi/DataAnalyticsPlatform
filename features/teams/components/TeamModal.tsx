@@ -74,7 +74,7 @@ export function TeamModal({
       <Form
         form={form}
         layout="vertical"
-        className="mt-4 grid grid-cols-2 gap-x-4"
+        className="grid grid-cols-2"
         initialValues={{
           team_type: "group",
           is_active: true,

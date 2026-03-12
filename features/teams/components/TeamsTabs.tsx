@@ -36,7 +36,7 @@ export function TeamsTabs({ activeTab, onTabChange, isAdmin }: TeamsTabsProps) {
   ];
 
   return (
-    <div className="flex items-center gap-1 border-b border-slate-200 mb-8">
+    <div className="flex items-center gap-1 border-b border-slate-200">
       {tabs.map((tab) => {
         const isActive = activeTab === tab.id;
         const Icon = tab.icon;

@@ -126,7 +126,7 @@ export default function TeamDetailsPage({ params }: PageProps) {
   };
 
   return (
-    <div className="flex flex-col animate-in fade-in duration-500 pb-20">
+    <div className="flex flex-col animate-in fade-in duration-500 pb-10">
       <TeamDetailsHeader
         team={team}
         isAdmin={isAdmin}

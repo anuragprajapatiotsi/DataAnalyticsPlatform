@@ -129,15 +129,12 @@ export function AddPolicyModal({
   return (
     <Modal
       title={
-        <div className="flex items-center gap-3 py-1">
-          <div className="bg-blue-50 p-2 rounded-lg border border-blue-100">
-            <Shield size={18} className="text-blue-600" />
-          </div>
-          <div className="flex flex-col gap-0.5">
+        <div className="flex items-center">
+          <div className="flex flex-col">
             <h3 className="text-[18px] font-semibold text-slate-900 m-0 leading-tight">
               {isEdit ? "Edit Policy" : "Create New Policy"}
             </h3>
-            <p className="text-[12px] text-slate-500 font-medium m-0">
+            <p className="text-[12px] text-slate-500 font-medium mb-2">
               {isEdit
                 ? "Update access rules and permissions."
                 : "Define access rules and permissions for resources."}
@@ -152,21 +149,19 @@ export function AddPolicyModal({
       forceRender
       className="policy-modal"
     >
-      <Divider className="my-4 opacity-50" />
-
       <Form
         form={form}
         layout="vertical"
         onFinish={onFinish}
         requiredMark={false}
-        className="mt-4"
         initialValues={{ operations: [] }}
       >
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-1">
+          {" "}
           <Form.Item
             name="name"
             label={
-              <span className="flex items-center gap-2 font-semibold text-[13px] text-slate-700">
+              <span className="flex items-center gap-1 font-semibold text-[13px] text-slate-700">
                 <Shield size={14} className="text-blue-500" /> Policy Name
               </span>
             }
@@ -174,14 +169,13 @@ export function AddPolicyModal({
           >
             <Input
               placeholder="e.g. Admin Access"
-              className="h-9 rounded-lg border-slate-200 text-[13px]"
+              className="h-8 rounded-lg border-slate-200 text-[13px]"
             />
           </Form.Item>
-
           <Form.Item
             name="rule_name"
             label={
-              <span className="flex items-center gap-2 font-semibold text-[13px] text-slate-700">
+              <span className="flex items-center gap-1 font-semibold text-[13px] text-slate-700">
                 <ListTree size={14} className="text-purple-500" /> Rule Name
               </span>
             }
@@ -189,7 +183,7 @@ export function AddPolicyModal({
           >
             <Input
               placeholder="e.g. read_all_data"
-              className="h-9 rounded-lg border-slate-200 text-[13px]"
+              className="h-8 rounded-lg border-slate-200 text-[13px]"
             />
           </Form.Item>
         </div>
@@ -210,13 +204,8 @@ export function AddPolicyModal({
           />
         </Form.Item>
 
-        <Divider className="my-6 opacity-30">
-          <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-widest bg-white px-2">
-            Resource & Permissions
-          </span>
-        </Divider>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-1">
+          {" "}
           <Form.Item
             name="resource"
             label={
@@ -231,7 +220,7 @@ export function AddPolicyModal({
               placeholder="Select resource"
               loading={isLoadingResources}
               onChange={handleResourceChange}
-              className="h-11 custom-select"
+              className="h-8 custom-select"
               classNames={{
                 popup: {
                   root: "rounded-lg border-slate-200 shadow-xl",
@@ -252,7 +241,6 @@ export function AddPolicyModal({
               ))}
             </Select>
           </Form.Item>
-
           <Form.Item
             name="condition"
             label={
@@ -264,7 +252,7 @@ export function AddPolicyModal({
           >
             <Select
               placeholder="Select condition"
-              className="h-11 custom-select"
+              className="h-8 custom-select"
               classNames={{
                 popup: {
                   root: "rounded-lg border-slate-200 shadow-xl",
@@ -300,7 +288,7 @@ export function AddPolicyModal({
             }
             disabled={!selectedResource}
             loading={isLoadingResources}
-            className="h-11 custom-select w-full"
+            className="h-8 custom-select w-full"
             classNames={{
               popup: {
                 root: "rounded-lg border-slate-200 shadow-xl",
@@ -321,14 +309,14 @@ export function AddPolicyModal({
           <button
             type="button"
             onClick={onClose}
-            className="h-9 px-4 rounded-lg font-semibold border border-slate-200 hover:bg-slate-50 transition-colors text-[13px]"
+            className="h-8 px-4 rounded-lg font-semibold border border-slate-200 hover:bg-slate-50 transition-colors text-[13px]"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={isCreating || isUpdating}
-            className="h-9 px-4 rounded-lg font-semibold bg-blue-600 hover:bg-blue-700 text-white shadow-sm transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed text-[13px]"
+            className="h-8 px-4 rounded-lg font-semibold bg-blue-600 hover:bg-blue-700 text-white shadow-sm transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed text-[13px]"
           >
             {isCreating || isUpdating ? (
               <>

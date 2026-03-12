@@ -24,13 +24,12 @@ export function CreateTeamForm({ teams }: CreateTeamFormProps) {
       message.success("Team created successfully");
       router.push("/settings/organization-team-user-management/teams");
     } catch (error: any) {
-      // Map API validation errors to form fields
       if (error.errors) {
         const fieldErrors = Object.entries(error.errors).map(
           ([name, messages]) => ({
             name,
             errors: Array.isArray(messages) ? messages : [String(messages)],
-          }),
+          })
         );
         form.setFields(fieldErrors);
       }
@@ -49,20 +48,20 @@ export function CreateTeamForm({ teams }: CreateTeamFormProps) {
         public_team_view: false,
       }}
     >
-      <div className="grid grid-cols-2 gap-6">
+      <div className="grid grid-cols-2 gap-x-4">
+
+        {/* Organization */}
         <Form.Item
           name="org_id"
-          label={
-            <span className="font-semibold text-slate-700">Organization</span>
-          }
+          label={<span className="font-semibold text-slate-700 text-sm">Organization</span>}
           rules={[{ required: true, message: "Please select an organization" }]}
-          className="col-span-2"
+          className="col-span-2 "
         >
           <Select
             placeholder="Select an organization"
             loading={isLoadingOrgs}
-            size="large"
-            className="w-full rounded-lg"
+            className="w-full"
+            size="middle"
             options={organizations.map((org: any) => ({
               label: org.name,
               value: org.id,
@@ -70,47 +69,47 @@ export function CreateTeamForm({ teams }: CreateTeamFormProps) {
           />
         </Form.Item>
 
+        {/* Display Name */}
         <Form.Item
           name="display_name"
-          label={
-            <span className="font-semibold text-slate-700">Display Name</span>
-          }
+          label={<span className="font-semibold text-slate-700 text-sm">Display Name</span>}
           rules={[{ required: true, message: "Please enter display name" }]}
+          className="mb-0"
         >
-          <Input placeholder="e.g. Engineering" className="h-10 rounded-lg" />
+          <Input placeholder="Engineering" className="h-8 rounded-md" />
         </Form.Item>
 
+        {/* Unique Name */}
         <Form.Item
           name="name"
-          label={
-            <span className="font-semibold text-slate-700">Unique Name</span>
-          }
+          label={<span className="font-semibold text-slate-700 text-sm">Unique Name</span>}
           rules={[{ required: true, message: "Please enter unique name" }]}
+          className="mb-2"
         >
-          <Input placeholder="e.g. engineering" className="h-10 rounded-lg" />
+          <Input placeholder="engineering" className="h-8 rounded-md" />
         </Form.Item>
 
+        {/* Team Email */}
         <Form.Item
           name="email"
-          label={
-            <span className="font-semibold text-slate-700">Team Email</span>
-          }
+          label={<span className="font-semibold text-slate-700 text-sm">Team Email</span>}
           rules={[
             { required: true, message: "Please enter team email" },
             { type: "email", message: "Please enter a valid email" },
           ]}
+          className="mb-2"
         >
-          <Input placeholder="team@example.com" className="h-10 rounded-lg" />
+          <Input placeholder="team@example.com" className="h-8 rounded-md" />
         </Form.Item>
 
+        {/* Team Type */}
         <Form.Item
           name="team_type"
-          label={
-            <span className="font-semibold text-slate-700">Team Type</span>
-          }
+          label={<span className="font-semibold text-slate-700 text-sm">Team Type</span>}
           rules={[{ required: true, message: "Please select team type" }]}
+          className="mb-2"
         >
-          <Select size="large" className="w-full rounded-lg">
+          <Select size="middle" className="w-full">
             <Select.Option value="group">Group</Select.Option>
             <Select.Option value="organization">Organization</Select.Option>
             <Select.Option value="department">Department</Select.Option>
@@ -118,18 +117,16 @@ export function CreateTeamForm({ teams }: CreateTeamFormProps) {
           </Select>
         </Form.Item>
 
+        {/* Parent Team */}
         <Form.Item
           name="parent_team_id"
-          label={
-            <span className="font-semibold text-slate-700">Parent Team</span>
-          }
-          className="col-span-2"
+          label={<span className="font-semibold text-slate-700 text-sm">Parent Team</span>}
+          className="col-span-2 mb-2"
         >
           <Select
             placeholder="Select parent team (optional)"
             allowClear
-            size="large"
-            className="w-full rounded-lg"
+            size="middle"
           >
             {teams.map((t) => (
               <Select.Option key={t.id} value={t.id}>
@@ -139,16 +136,16 @@ export function CreateTeamForm({ teams }: CreateTeamFormProps) {
           </Select>
         </Form.Item>
 
+        {/* Domain */}
         <Form.Item
           name="domain_id"
-          label={<span className="font-semibold text-slate-700">Domain</span>}
-          className="col-span-2"
+          label={<span className="font-semibold text-slate-700 text-sm">Domain</span>}
+          className="col-span-2 mb-2"
         >
           <Select
-            placeholder="Select a domain (optional)"
+            placeholder="Select domain (optional)"
             allowClear
-            size="large"
-            className="w-full rounded-lg"
+            size="middle"
             options={[
               { label: "Finance", value: "finance" },
               { label: "Marketing", value: "marketing" },
@@ -158,26 +155,24 @@ export function CreateTeamForm({ teams }: CreateTeamFormProps) {
           />
         </Form.Item>
 
+        {/* Description */}
         <Form.Item
           name="description"
-          label={
-            <span className="font-semibold text-slate-700">Description</span>
-          }
-          className="col-span-2"
+          label={<span className="font-semibold text-slate-700">Description</span>}
+          className="col-span-2 mb-2"
         >
           <Input.TextArea
-            placeholder="Enter team description"
-            rows={4}
-            className="rounded-lg"
+            placeholder="Team description"
+            rows={2}
+            className="rounded-md"
           />
         </Form.Item>
 
-        <div className="col-span-2 flex gap-8 bg-slate-50 p-4 rounded-lg border border-slate-100 mb-6">
+        {/* Switches */}
+        <div className="col-span-2 flex gap-8 mt-2">
           <Form.Item
             name="public_team_view"
-            label={
-              <span className="font-semibold text-slate-700">Public View</span>
-            }
+            label={<span className="font-semibold text-slate-700">Public View</span>}
             valuePropName="checked"
             className="mb-0"
           >
@@ -186,11 +181,7 @@ export function CreateTeamForm({ teams }: CreateTeamFormProps) {
 
           <Form.Item
             name="is_active"
-            label={
-              <span className="font-semibold text-slate-700">
-                Active Status
-              </span>
-            }
+            label={<span className="font-semibold text-slate-700">Active</span>}
             valuePropName="checked"
             className="mb-0"
           >
@@ -199,15 +190,19 @@ export function CreateTeamForm({ teams }: CreateTeamFormProps) {
         </div>
       </div>
 
-      <div className="flex justify-end gap-3 pt-6 border-t border-slate-100 mt-6">
+      {/* Buttons */}
+      <div className="flex justify-end gap-3 pt-4 border-t border-slate-100 mt-4">
         <Link href="/settings/organization-team-user-management/teams">
-          <Button className="h-10 rounded-lg px-6 font-semibold">Cancel</Button>
+          <Button className="h-9 rounded-md px-5 font-semibold">
+            Cancel
+          </Button>
         </Link>
+
         <Button
           type="primary"
           htmlType="submit"
           loading={isCreating}
-          className="h-10 rounded-lg px-8 bg-blue-600 hover:bg-blue-700 font-bold shadow-md"
+          className="h-9 rounded-md px-6 bg-blue-600 hover:bg-blue-700 font-semibold"
         >
           Create Team
         </Button>

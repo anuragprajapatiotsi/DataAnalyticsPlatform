@@ -86,7 +86,7 @@ export function TeamMembersTable({
   };
 
   return (
-    <div className="flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
+    <div className="flex flex-col gap-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
       <div className="flex items-center justify-between">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
@@ -94,7 +94,7 @@ export function TeamMembersTable({
             placeholder="Search members by name, username or email..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-[450px] h-11 pl-10 rounded-lg border-slate-200 shadow-sm focus-visible:ring-2 focus-visible:ring-blue-500 transition-all font-medium"
+            className="w-[450px] h-9 pl-10 rounded-lg border-slate-200 shadow-sm focus-visible:ring-2 focus-visible:ring-blue-500 transition-all font-medium"
           />
         </div>
         {isAdmin && (
@@ -102,7 +102,7 @@ export function TeamMembersTable({
             type="primary"
             icon={<Plus className="h-4 w-4" />}
             onClick={() => setIsAddModalOpen(true)}
-            className="bg-blue-600 hover:bg-blue-700 h-11 px-8 rounded-lg font-bold shadow-lg flex items-center gap-2 transform transition-transform active:scale-95"
+            className="bg-blue-600 hover:bg-blue-700 h-9 px-6 rounded-lg font-bold shadow-md flex items-center gap-2 transform transition-transform active:scale-95"
           >
             Add Member
           </Button>
@@ -166,7 +166,7 @@ export function TeamMembersTable({
             ) : (
               filteredMembers.map((member) => (
                 <TableRow key={member.id} className="group">
-                  <TableCell className="px-6 py-4">
+                  <TableCell className="px-6 py-3">
                     <div className="flex items-center gap-4">
                       <div className="flex flex-col">
                         <Link
@@ -178,13 +178,13 @@ export function TeamMembersTable({
                       </div>
                     </div>
                   </TableCell>
-                  <TableCell className="px-6 py-4">
+                  <TableCell className="px-6 py-3">
                     <div className="flex items-center gap-2 text-slate-600 text-[14px] font-medium">
                       <Mail className="h-3.5 w-3.5 text-slate-300" />
                       {member.email}
                     </div>
                   </TableCell>
-                  <TableCell className="px-6 py-4">
+                  <TableCell className="px-6 py-3">
                     <div className="flex items-center gap-2">
                       <ShieldCheck className="h-4 w-4 text-emerald-500" />
                       <Badge className="bg-emerald-50 text-emerald-700 border-none text-[11px] font-bold py-0.5 px-2.5 uppercase tracking-wide">
@@ -193,7 +193,7 @@ export function TeamMembersTable({
                     </div>
                   </TableCell>
                   {isAdmin && (
-                    <TableCell className="px-6 py-4 text-right">
+                    <TableCell className="px-6 py-3 text-right">
                       <Dropdown
                         menu={{
                           items: [

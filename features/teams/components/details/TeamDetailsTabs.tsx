@@ -77,7 +77,7 @@ export function TeamDetailsTabs({
   ];
 
   return (
-    <div className="team-details-tabs mb-8 border-b border-slate-200">
+    <div className="team-details-tabs mb-4 border-b border-slate-200">
       <Tabs
         activeKey={activeTab}
         onChange={(key) => onTabChange(key as TeamTabKey)}
@@ -92,7 +92,7 @@ export function TeamDetailsTabs({
           border-bottom: none !important;
         }
         .custom-antd-tabs .ant-tabs-tab {
-          padding: 16px 24px !important;
+          padding: 12px 20px !important;
           margin: 0 !important;
           transition: all 0.3s ease;
         }

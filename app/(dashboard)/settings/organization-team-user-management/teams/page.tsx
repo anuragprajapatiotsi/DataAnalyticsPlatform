@@ -154,7 +154,7 @@ export default function TeamsPage() {
         )}
       </div>
 
-      <div className="flex flex-col space-y-3">
+      <div className="flex flex-col space-y-2">
         <TeamsTabs
           activeTab={activeTab}
           onTabChange={handleTabChange}
@@ -162,9 +162,9 @@ export default function TeamsPage() {
         />
 
         {activeTab === "teams" && (
-          <div className="flex flex-col space-y-3 bg-white p-3 rounded-lg border border-slate-200 shadow-sm transition-all overflow-x-auto">
+          <div className="flex flex-col space-y-2 bg-white p-2 rounded-lg border border-slate-200 shadow-sm transition-all overflow-x-auto">
             {/* Row 1: Search */}
-            <div className="flex flex-row gap-3 items-center">
+            <div className="flex flex-row gap-2 items-center">
               <Input
                 placeholder="Search teams..."
                 allowClear
@@ -191,8 +191,8 @@ export default function TeamsPage() {
             </div>
 
             {/* Row 2: Filters */}
-            <div className="flex flex-row gap-3 items-center justify-between">
-              <div className="flex flex-row gap-3 items-center flex-1 min-w-0">
+            <div className="flex flex-row gap-2 items-center justify-between">
+              <div className="flex flex-row gap-2 items-center flex-1 min-w-0">
                 <Select
                   placeholder="Team Type"
                   allowClear
@@ -250,7 +250,7 @@ export default function TeamsPage() {
                   <Select.Option value={false}>Inactive</Select.Option>
                 </Select>
 
-                <div className="flex items-center gap-2 px-2.5 h-9 bg-slate-50 rounded-lg border border-slate-200 flex-shrink-0">
+                <div className="flex items-center gap-1.5 px-2 h-9 bg-slate-50 rounded-lg border border-slate-200 flex-shrink-0">
                   <span className="text-[12px] text-slate-600 font-medium">
                     Root Only
                   </span>
@@ -267,7 +267,7 @@ export default function TeamsPage() {
                   <Button
                     type="text"
                     onClick={handleClearFilters}
-                    className="text-slate-500 hover:text-blue-600 font-semibold text-[12.5px] px-2 h-8 flex items-center flex-shrink-0"
+                    className="text-slate-500 hover:text-blue-600 font-semibold text-[12.5px] px-1.5 h-8 flex items-center flex-shrink-0"
                   >
                     Clear All
                   </Button>

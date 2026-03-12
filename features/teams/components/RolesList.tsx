@@ -37,7 +37,7 @@ export function RolesList() {
   }
 
   return (
-    <div className="flex flex-col gap-6 animate-in fade-in duration-500">
+    <div className="flex flex-col gap-4 animate-in fade-in duration-500">
       <div className="flex flex-col gap-1">
         <h2 className="text-[18px] font-semibold text-slate-900 m-0">Roles</h2>
         <p className="text-[14px] text-slate-500 m-0">
@@ -70,17 +70,17 @@ export function RolesList() {
             ) : (
               roles.map((role) => (
                 <TableRow key={role.id} className="hover:bg-slate-50/50">
-                  <TableCell className="px-6 py-4">
+                  <TableCell className="px-6 py-3">
                     <div className="flex items-center gap-2">
                       <span className="font-semibold text-slate-800">
                         {role.name}
                       </span>
                     </div>
                   </TableCell>
-                  <TableCell className="px-6 py-4 text-slate-500">
+                  <TableCell className="px-6 py-3 text-slate-500">
                     {role.description}
                   </TableCell>
-                  <TableCell className="px-6 py-4 text-right">
+                  <TableCell className="px-6 py-3 text-right">
                     <Dropdown
                       menu={{
                         items: [

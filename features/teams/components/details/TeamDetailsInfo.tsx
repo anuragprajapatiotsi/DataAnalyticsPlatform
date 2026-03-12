@@ -39,9 +39,9 @@ export function TeamDetailsInfo({
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-4">
         {[...Array(6)].map((_, i) => (
-          <Skeleton.Button key={i} active block className="h-24 rounded-lg" />
+          <Skeleton.Button key={i} active block className="h-20 rounded-lg" />
         ))}
       </div>
     );
@@ -77,10 +77,10 @@ export function TeamDetailsInfo({
   ];
 
   return (
-    <div className="flex flex-col gap-6 mb-8">
+    <div className="flex flex-col gap-6 mb-4">
       <div className="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden animate-in fade-in slide-in-from-top-4 duration-700">
-        <div className="px-8 py-5">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-y-5 xl:gap-0 mb-6">
+        <div className="px-6 py-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-y-4 xl:gap-0 mb-4">
             {statCards.map((card, index) => (
               <div
                 key={index}
@@ -103,8 +103,8 @@ export function TeamDetailsInfo({
             ))}
           </div>
 
-          <div className="border-t border-slate-100 pt-5 mt-1">
-            <div className="flex items-center justify-between mb-4">
+          <div className="border-t border-slate-100 pt-4 mt-0.5">
+            <div className="flex items-center justify-between mb-3">
               <h4 className="text-[13px] font-bold text-slate-400  tracking-widest flex items-center gap-2">
                 <Edit3 className="h-3.5 w-3.5" />
                 Description

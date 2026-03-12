@@ -28,7 +28,9 @@ export function OrgModal({
         form.setFieldsValue(initialValues);
       } else {
         form.resetFields();
-        form.setFieldsValue({ is_active: true, is_default: false });
+        form.setFieldsValue({
+          is_active: true,
+        });
       }
     }
   }, [open, initialValues, form]);
@@ -45,14 +47,14 @@ export function OrgModal({
   return (
     <Modal
       title={
-        <div className="flex flex-col gap-0.5">
+        <div className="flex flex-col ">
           <span className="text-[18px] font-semibold text-slate-900 leading-tight">
             {isEdit ? "Update Organization" : "Add Organization"}
           </span>
           <span className="text-[12px] text-slate-500 font-medium">
             {isEdit
-              ? "Update organizational entity details"
-              : "Create a new organizational entity"}
+              ? "Update organization information and settings"
+              : "Create a new organization entity"}
           </span>
         </div>
       }
@@ -62,107 +64,58 @@ export function OrgModal({
       confirmLoading={isLoading}
       destroyOnHidden
       mask={{ closable: false }}
-      width={520}
+      width={560}
       className="custom-modal"
     >
       <Form
         form={form}
         layout="vertical"
-        className="mt-4"
-        initialValues={{ is_active: true, is_default: false }}
+        className="mt-1"
+        initialValues={{
+          is_active: true,
+        }}
       >
-        <Form.Item
-          name="name"
-          label={
-            <span className="text-[13px] font-semibold text-slate-700">
-              Name
-            </span>
-          }
-          rules={[
-            { required: true, message: "Please enter organization name" },
-          ]}
-        >
-          <AntInput
-            placeholder="Enter organization name"
-            className="h-9 text-[13px]"
-          />
-        </Form.Item>
-
-        <Form.Item
-          name="slug"
-          label={
-            <span className="text-[13px] font-semibold text-slate-700">
-              Slug
-            </span>
-          }
-          rules={[{ required: true, message: "Please enter slug" }]}
-        >
-          <AntInput
-            placeholder="e.g. engineering-unit"
-            disabled={isEdit}
-            className="h-9 text-[13px]"
-          />
-        </Form.Item>
-
-        <Form.Item
-          name="description"
-          label={
-            <span className="text-[13px] font-semibold text-slate-700">
-              Description
-            </span>
-          }
-        >
-          <AntInput.TextArea
-            placeholder="Enter description"
-            rows={3}
-            className="text-[13px]"
-          />
-        </Form.Item>
-
-        <Form.Item
-          name="contact_email"
-          label={
-            <span className="text-[13px] font-semibold text-slate-700">
-              Contact Email
-            </span>
-          }
-          rules={[
-            { required: true, message: "Please enter contact email" },
-            { type: "email", message: "Please enter a valid email" },
-          ]}
-        >
-          <AntInput
-            placeholder="email@example.com"
-            className="h-9 text-[13px]"
-          />
-        </Form.Item>
-
-        <div className="flex gap-8 bg-slate-50 p-4 rounded-lg border border-slate-100">
+        <div className="grid grid-cols-2 ">
           <Form.Item
-            name="is_active"
-            label={
-              <span className="text-[13px] font-semibold text-slate-700">
-                Active
-              </span>
-            }
-            valuePropName="checked"
-            className="mb-0"
+            name="name"
+            label="Name"
+            rules={[
+              { required: true, message: "Please enter organization name" },
+            ]}
+            className="col-span-2"
           >
-            <Switch />
+            <AntInput placeholder="e.g. Acme Corp" />
           </Form.Item>
 
           <Form.Item
-            name="is_default"
-            label={
-              <span className="text-[13px] font-semibold text-slate-700">
-                Default
-              </span>
-            }
-            valuePropName="checked"
-            className="mb-0"
+            name="contact_email"
+            label="Contact Email"
+            rules={[
+              { required: true, message: "Please enter contact email" },
+              { type: "email", message: "Please enter a valid email" },
+            ]}
+            className="col-span-2"
           >
-            <Switch />
+            <AntInput placeholder="admin@acme.com" />
           </Form.Item>
+
+          <Form.Item
+            name="description"
+            label="Description"
+            className="col-span-2"
+          >
+            <AntInput.TextArea placeholder="Enter description" rows={3} />
+          </Form.Item>
+
+          <div className="col-span-2 flex  bg-slate-50 rounded-lg border border-slate-100">
+            <Form.Item
+              name="is_active"
+              label="Active Status"
+              valuePropName="checked"
+            >
+              <Switch />
+            </Form.Item>
+          </div>
         </div>
       </Form>
     </Modal>
