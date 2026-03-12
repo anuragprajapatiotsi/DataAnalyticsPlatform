@@ -42,6 +42,7 @@ function SelectionCard({
               : "text-slate-900 group-hover:text-blue-600",
           )}
         >
+          
           {title}
         </h3>
         <p className="max-w-[280px] text-[13px] leading-relaxed text-slate-500 font-medium line-clamp-2">
