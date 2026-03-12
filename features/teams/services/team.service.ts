@@ -8,6 +8,7 @@ import {
   Role,
   Policy,
   TeamAsset,
+  GetTeamsParams,
 } from "../types";
 
 export const teamService = {

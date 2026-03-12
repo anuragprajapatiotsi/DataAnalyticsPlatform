@@ -36,7 +36,7 @@ function SelectionCard({
       <div className="space-y-1.5 pt-0.5">
         <h3
           className={cn(
-            "text-[1px] font-semibold transition-colors",
+            "text-[16px] font-semibold transition-colors",
             active
               ? "text-blue-600"
               : "text-slate-900 group-hover:text-blue-600",

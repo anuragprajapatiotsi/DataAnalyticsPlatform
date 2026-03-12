@@ -23,7 +23,7 @@ const domainOptions = [
 export default function CreateUserPage() {
   const [form] = Form.useForm();
   const { teams, isLoading: isLoadingTeams } = useTeams();
-  const { data: rolesData, isLoading: isLoadingRoles } = useRoles({
+  const { roles: rolesData, isLoading: isLoadingRoles } = useRoles({
     skip: 0,
     limit: 100,
   });
