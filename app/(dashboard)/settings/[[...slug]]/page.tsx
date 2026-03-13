@@ -96,7 +96,7 @@ export default function SettingsCatchAllPage() {
   });
 
   return (
-    <div className="h-full overflow-y-auto px-6 py-6 pb-20 custom-scrollbar animate-in fade-in slide-in-from-bottom-2 duration-500">
+    <div className="h-full overflow-y-auto px-6 pt-2 pb-20 custom-scrollbar animate-in fade-in slide-in-from-bottom-2 duration-500">
       <div className="w-full">
         <PageHeader
           title={
@@ -114,7 +114,7 @@ export default function SettingsCatchAllPage() {
           breadcrumbItems={breadcrumbItems}
         />
 
-        <div className="mt-8 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
           {sortedSettings.map((item) => {
             const IconComponent = getIcon(item.icon);
             return (

@@ -66,7 +66,7 @@ export default function RolesPage() {
   ];
 
   return (
-    <div className="flex flex-col h-[calc(100vh-80px)] px-6 py-6 space-y-4 animate-in fade-in duration-500 max-w-[1400px] mx-auto overflow-hidden">
+    <div className="flex flex-col h-[calc(100vh-80px)] px-6 pt-2 pb-6 space-y-4 animate-in fade-in duration-500 max-w-[1400px] mx-auto overflow-hidden">
       <div className="flex justify-between items-start">
         <PageHeader
           title="Roles"

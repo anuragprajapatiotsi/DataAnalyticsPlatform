@@ -32,7 +32,7 @@ export default function LoginPage() {
         fields={[
           {
             name: "login",
-            label: "Login",
+            label: "Email",
             type: "text",
             placeholder: "Your username or email",
           },

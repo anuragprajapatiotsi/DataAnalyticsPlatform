@@ -65,7 +65,7 @@ export default function CurrentUserProfilePage() {
   ];
 
   return (
-    <div className="flex flex-col px-6 py-6  space-y-6 animate-in fade-in duration-500 pb-20">
+    <div className="flex flex-col px-6 pt-2 pb-20 space-y-4 animate-in fade-in duration-500">
       <UserProfileHeader
         user={mappedUser as any}
         isLoading={isLoading}

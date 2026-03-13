@@ -31,7 +31,7 @@ export default function ExplorePage() {
   return (
     <div className="flex flex-col h-full bg-white animate-in fade-in duration-700 overflow-hidden">
       {/* Top Header Section - More compact and integrated */}
-      <div className="px-6 py-4 border-b border-slate-200 flex-shrink-0">
+      <div className="px-6 pt-2 pb-2 border-b border-slate-200 flex-shrink-0">
         <PageHeader
           title="Explore"
           description="Browse and discover different data assets across your organization."
@@ -49,7 +49,7 @@ export default function ExplorePage() {
         />
 
         {/* Right Content Area - Expands to fill available space */}
-        <main className="flex-1 p-6 overflow-y-auto">
+        <main className="flex-1 p-4 overflow-y-auto">
           <div className="h-full min-h-[600px] bg-white rounded-xl border border-slate-200 shadow-sm flex flex-col items-center justify-center p-12 text-center group transition-all duration-300 hover:border-slate-300 hover:shadow-md">
             {(activeView === "catalog" ||
               activeView === "data" ||

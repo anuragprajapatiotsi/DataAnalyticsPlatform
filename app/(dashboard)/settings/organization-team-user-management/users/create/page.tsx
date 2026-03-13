@@ -68,7 +68,7 @@ export default function CreateUserPage() {
   };
 
   return (
-    <div className="flex flex-col space-y-4 animate-in fade-in duration-500 max-w-[1100px] mx-auto">
+    <div className="flex flex-col space-y-4 animate-in fade-in duration-500 max-w-[1400px] mx-auto">
 
       <PageHeader
         title="Create User"

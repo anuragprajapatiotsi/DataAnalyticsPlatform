@@ -17,7 +17,7 @@ export default function DataQualityPage() {
   ];
 
   return (
-    <div className="flex flex-col px-6 py-6 space-y-6 animate-in fade-in duration-500">
+    <div className="flex flex-col px-6 pt-2 pb-6 space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-500 max-w-[1400px] mx-auto">
       <PageHeader
         title="Data Quality"
         description="Build trust in your data with quality tests and create reliable data products."

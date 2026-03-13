@@ -22,10 +22,10 @@ const domainOptions = [
 
 export function DashboardHero() {
   return (
-    <section className="space-y-5">
+    <section className="space-y-4">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
-          Welcome, admin!
+        <h1 className="text-[18px] font-bold tracking-tight text-slate-900">
+            Welcome, admin!
         </h1>
         <p className="mt-1 text-sm text-slate-600">
           Search and manage metadata for tables, databases, schemas, and

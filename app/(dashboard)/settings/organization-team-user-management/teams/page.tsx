@@ -135,7 +135,7 @@ export default function TeamsPage() {
   ];
 
   return (
-    <div className="flex flex-col h-[calc(100vh-80px)] space-y-3 animate-in fade-in duration-500 max-w-[1400px] mx-auto overflow-hidden">
+    <div className="flex flex-col h-full space-y-3 animate-in fade-in duration-500 max-w-[1400px] mx-auto overflow-hidden">
       <div className="flex justify-between items-start">
         <PageHeader
           title="Teams"

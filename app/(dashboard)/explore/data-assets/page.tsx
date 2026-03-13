@@ -26,7 +26,7 @@ export default function ExploreDataAssetsPage() {
 
         {/* Main Content Area */}
         <div className="flex flex-1 flex-col min-w-0 overflow-hidden">
-          <div className="px-6 py-6 pb-0">
+          <div className="px-6 pt-2 pb-2">
             <PageHeader
               title="Explore"
               description="Discover and manage your data assets across the organization."
@@ -34,7 +34,7 @@ export default function ExploreDataAssetsPage() {
             />
           </div>
 
-          <div className="flex flex-1 flex-col h-full min-w-0 space-y-4 overflow-hidden p-6 pt-4">
+          <div className="flex flex-1 flex-col h-full min-w-0 space-y-4 overflow-hidden p-4 pt-2">
             <div className="shrink-0">
               <AssetFilters />
             </div>

@@ -8,7 +8,7 @@ import { TotalDataAssetsCard } from "@/features/dashboard/components/total-data-
 
 export default function Home() {
   return (
-    <div className="flex h-full flex-col gap-6 overflow-y-auto p-6 pb-12 custom-scrollbar animate-in fade-in slide-in-from-bottom-3 duration-500">
+    <div className="flex h-full flex-col gap-3 overflow-y-auto pt-2 px-4 pb-12 custom-scrollbar animate-in fade-in slide-in-from-bottom-3 duration-500">
       <DashboardHero />
 
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">

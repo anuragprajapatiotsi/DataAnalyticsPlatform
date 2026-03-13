@@ -8,7 +8,7 @@ import { TotalDataAssetsCard } from "@/features/dashboard/components/total-data-
 
 export default function DashboardPage() {
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <DashboardHero />
 
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">

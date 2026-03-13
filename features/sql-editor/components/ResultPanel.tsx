@@ -33,6 +33,8 @@ export function ResultPanel() {
     );
   }
 
+  
+
   const activeResult =
     activeTab.results.find(
       (r: QueryResultState) => r.id === activeTab.activeResultTabId,

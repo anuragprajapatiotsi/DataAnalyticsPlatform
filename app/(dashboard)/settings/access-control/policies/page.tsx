@@ -69,7 +69,7 @@ export default function PoliciesPage() {
   const isFiltered = params.search || params.resource;
 
   return (
-    <div className="flex flex-col h-[calc(100vh-80px)] px-6 py-6 space-y-4 animate-in fade-in duration-500 max-w-[1400px] mx-auto overflow-hidden">
+    <div className="flex flex-col h-[calc(100vh-80px)] px-6 pt-2 pb-6 space-y-4 animate-in fade-in duration-500 max-w-[1400px] mx-auto overflow-hidden">
       <PolicyHeader onAddPolicy={handleAddPolicy} />
 
       <div className="flex flex-row gap-4 items-center justify-between bg-white p-3 px-4 rounded-lg border border-slate-200 shadow-sm transition-all overflow-x-auto whitespace-nowrap">

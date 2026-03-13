@@ -37,7 +37,7 @@ export default function UsersManagementPage() {
   ];
 
   return (
-    <div className="flex flex-col  space-y-6 animate-in fade-in duration-500 max-w-[1400px] mx-auto">
+    <div className="flex flex-col space-y-4 animate-in fade-in duration-500 max-w-[1400px] mx-auto">
       <PageHeader
         title="Users"
         description="View and manage regular users in your organization."

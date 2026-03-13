@@ -29,7 +29,7 @@ export function PageHeader({
   children,
 }: PageHeaderProps) {
   return (
-    <div className="space-y-2">
+    <div className="space-y-1">
       <Breadcrumb>
         <BreadcrumbList>
           {breadcrumbItems.map((item, index) => (
@@ -57,13 +57,13 @@ export function PageHeader({
         </BreadcrumbList>
       </Breadcrumb>
 
-      <div className="flex items-start justify-between gap-4 mt-4">
+      <div className="flex items-start justify-between gap-4 mt-1">
         <div className="flex flex-col gap-1">
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight m-0">
+          <h1 className="text-[16px] font-semibold text-slate-900 tracking-tight m-0">
             {title}
           </h1>
           {description && (
-            <p className="text-sm text-slate-500 font-medium m-0 max-w-[800px]">
+            <p className="text-[14px] text-slate-500 font-medium m-0 max-w-[800px]">
               {description}
             </p>
           )}
