@@ -22,7 +22,7 @@ export function UserProfileHeader({
   const defaultBreadcrumbs = [
     { label: "Settings", href: "/settings" },
     {
-      label: "Organization, Team & User Management",
+      label: "Team & User Management",
       href: "/settings/organization-team-user-management",
     },
     {

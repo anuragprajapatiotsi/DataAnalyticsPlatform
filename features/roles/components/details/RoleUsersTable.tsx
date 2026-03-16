@@ -84,9 +84,12 @@ export function RoleUsersTable({
                         {user.name?.charAt(0) || user.username?.charAt(0)}
                       </Avatar>
                       <div className="flex flex-col">
-                        <span className="font-semibold text-slate-900 text-[14px] leading-tight">
+                        <Link
+                          href={`/settings/organization-team-user-management/users/${user.id}`}
+                          className="text-blue-600 hover:text-blue-700  cursor-pointer font-semibold text-[14px] transition-colors"
+                        >
                           {user.display_name || user.name || user.username}
-                        </span>
+                        </Link>
                         <span className="text-[12px] text-slate-400 font-medium">
                           {user.email}
                         </span>
@@ -122,9 +125,14 @@ export function RoleUsersTable({
                                 onConfirm={() => onUnassignUser(user.id)}
                                 okText="Yes"
                                 cancelText="No"
-                                okButtonProps={{ danger: true, loading: isUnassigning }}
+                                okButtonProps={{
+                                  danger: true,
+                                  loading: isUnassigning,
+                                }}
                               >
-                                <span className="text-red-500">Remove User</span>
+                                <span className="text-red-500">
+                                  Remove User
+                                </span>
                               </Popconfirm>
                             ),
                             icon: <Trash2 className="h-4 w-4 text-red-500" />,
@@ -135,7 +143,9 @@ export function RoleUsersTable({
                     >
                       <Button
                         type="text"
-                        icon={<MoreVertical className="h-4 w-4 text-slate-400" />}
+                        icon={
+                          <MoreVertical className="h-4 w-4 text-slate-400" />
+                        }
                       />
                     </Dropdown>
                   </TableCell>

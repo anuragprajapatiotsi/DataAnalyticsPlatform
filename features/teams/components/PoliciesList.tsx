@@ -32,7 +32,7 @@ export function PoliciesList() {
   return (
     <div className="flex flex-col gap-4 animate-in fade-in duration-500">
       <div className="flex flex-col gap-1">
-        <h2 className="text-[18px] font-semibold text-slate-900 m-0">
+        <h2 className="text-[16px] font-semibold text-slate-900 m-0">
           Policies
         </h2>
         <p className="text-[14px] text-slate-500 m-0">

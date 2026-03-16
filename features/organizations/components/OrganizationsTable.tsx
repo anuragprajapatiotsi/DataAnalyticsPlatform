@@ -33,6 +33,7 @@ interface OrganizationsTableProps {
   onCreateClick: () => void;
   onEditClick: (org: Organization) => void;
   onDeleteConfirm: (id: string) => void;
+  onRowClick?: (id: string) => void;
 }
 
 export function OrganizationsTable({
@@ -43,6 +44,7 @@ export function OrganizationsTable({
   onCreateClick,
   onEditClick,
   onDeleteConfirm,
+  onRowClick,
 }: OrganizationsTableProps) {
   return (
     <div className="flex flex-col gap-4 animate-in fade-in duration-500">
@@ -106,7 +108,11 @@ export function OrganizationsTable({
               </TableRow>
             ) : (
               organizations.map((org) => (
-                <TableRow key={org.id} className="group">
+                <TableRow
+                  key={org.id}
+                  className="group cursor-pointer hover:bg-slate-50/50 transition-colors"
+                  onClick={() => onRowClick?.(org.id)}
+                >
                   <TableCell className="px-4 py-2">
                     <div className="flex flex-col">
                       <div className="flex items-center gap-2">
@@ -156,7 +162,10 @@ export function OrganizationsTable({
                             key: "edit",
                             label: "Edit Organization",
                             icon: <Edit2 size={14} />,
-                            onClick: () => onEditClick(org),
+                            onClick: (e) => {
+                              e.domEvent.stopPropagation();
+                              onEditClick(org);
+                            },
                           },
                           {
                             type: "divider",
@@ -167,12 +176,24 @@ export function OrganizationsTable({
                               <Popconfirm
                                 title="Delete Organization"
                                 description="Are you sure you want to delete this organization?"
-                                onConfirm={() => onDeleteConfirm(org.id)}
+                                onConfirm={(e) => {
+                                  e?.stopPropagation();
+                                  onDeleteConfirm(org.id);
+                                }}
                                 okText="Yes"
                                 cancelText="No"
-                                okButtonProps={{ danger: true }}
+                                okButtonProps={{
+                                  danger: true,
+                                  onClick: (e) => e.stopPropagation(),
+                                }}
+                                cancelButtonProps={{
+                                  onClick: (e) => e.stopPropagation(),
+                                }}
                               >
-                                <span className="text-red-600 block w-full text-left">
+                                <span
+                                  className="text-red-600 block w-full text-left"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
                                   Delete Organization
                                 </span>
                               </Popconfirm>
@@ -191,6 +212,7 @@ export function OrganizationsTable({
                           <MoreVertical size={16} className="text-slate-400" />
                         }
                         className="hover:bg-slate-100 rounded-lg h-8 w-8 flex items-center justify-center p-0 ml-auto"
+                        onClick={(e) => e.stopPropagation()}
                       />
                     </Dropdown>
                   </TableCell>

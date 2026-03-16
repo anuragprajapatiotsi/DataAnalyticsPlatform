@@ -1,10 +1,12 @@
 "use client";
 
-import React from "react";
+import React, { Suspense } from "react";
 import { Edit2, Trash2, MoreVertical, UserPlus } from "lucide-react";
-import { Button, Dropdown, MenuProps, Popconfirm } from "antd";
+import { Button, Dropdown, MenuProps, Popconfirm, Spin } from "antd";
 import type { TeamDetail } from "../../types";
-import { PageHeader } from "@/shared/components/layout/PageHeader";
+import { PageHeader, type BreadcrumbItem } from "@/shared/components/layout/PageHeader";
+import { useSearchParams } from "next/navigation";
+import { useOrgDetails } from "@/features/organizations/hooks/useOrgDetails";
 
 interface TeamDetailsHeaderProps {
   team: TeamDetail;
@@ -15,7 +17,7 @@ interface TeamDetailsHeaderProps {
   onJoin: () => void;
 }
 
-export function TeamDetailsHeader({
+function TeamDetailsHeaderContent({
   team,
   isAdmin,
   isMember,
@@ -49,22 +51,47 @@ export function TeamDetailsHeader({
     },
   ];
 
-  const breadcrumbItems = [
+  const searchParams = useSearchParams();
+  const orgId = searchParams.get("org_id");
+  const { data: organization } = useOrgDetails(orgId || "");
+
+  const breadcrumbItems: BreadcrumbItem[] = [
     { label: "Settings", href: "/settings" },
     {
       label: "Team & User Management",
       href: "/settings/organization-team-user-management",
     },
-    {
-      label: "Teams",
-      href: "/settings/organization-team-user-management/teams",
-    },
-    { label: team.display_name },
   ];
+
+  if (orgId && organization) {
+    breadcrumbItems.push(
+      {
+        label: "Organizations",
+        href: "/settings/organization-team-user-management/organizations",
+      },
+      {
+        label: organization?.name || "Organization",
+        href: `/settings/organization-team-user-management/organizations/${orgId}/teams`,
+      },
+      { 
+        label: "Teams", 
+        href: `/settings/organization-team-user-management/organizations/${orgId}/teams` 
+      },
+    );
+  } else {
+    breadcrumbItems.push(
+      {
+        label: "Teams",
+        href: "/settings/organization-team-user-management/teams",
+      },
+    );
+  }
+
+  breadcrumbItems.push({ label: team?.display_name || "Team Details" });
 
   return (
     <PageHeader
-      title={team.display_name}
+      title={team?.display_name || "Team Details"}
       breadcrumbItems={breadcrumbItems}
     >
       <div className="flex items-center gap-3 py-2">
@@ -94,5 +121,17 @@ export function TeamDetailsHeader({
         )}
       </div>
     </PageHeader>
+  );
+}
+
+export function TeamDetailsHeader(props: TeamDetailsHeaderProps) {
+  return (
+    <Suspense fallback={
+      <div className="h-20 flex items-center justify-center">
+        <Spin />
+      </div>
+    }>
+      <TeamDetailsHeaderContent {...props} />
+    </Suspense>
   );
 }

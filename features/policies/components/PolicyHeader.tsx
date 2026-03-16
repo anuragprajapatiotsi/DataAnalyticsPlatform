@@ -26,7 +26,7 @@ export function PolicyHeader({ onAddPolicy }: PolicyHeaderProps) {
         type="primary"
         icon={<Plus size={16} />}
         onClick={onAddPolicy}
-        className="bg-blue-600 hover:bg-blue-700 h-9 px-6 rounded-lg font-semibold shadow-sm transition-all flex items-center gap-2"
+        className="bg-blue-600 hover:bg-blue-700 h-9 px-6 rounded-lg font-semibold shadow-sm transition-all flex items-center gap-2 mt-4"
       >
         Add Policy
       </Button>

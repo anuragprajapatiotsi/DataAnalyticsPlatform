@@ -31,7 +31,7 @@ export default function ExplorePage() {
   return (
     <div className="flex flex-col h-full bg-white animate-in fade-in duration-700 overflow-hidden">
       {/* Top Header Section - More compact and integrated */}
-      <div className="px-6 pt-2 pb-2 border-b border-slate-200 flex-shrink-0">
+      <div className="px-6 pt-2 pb-1 border-b border-slate-200 flex-shrink-0">
         <PageHeader
           title="Explore"
           description="Browse and discover different data assets across your organization."

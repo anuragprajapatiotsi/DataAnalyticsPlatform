@@ -25,6 +25,7 @@ interface TeamsTableProps {
   current: number;
   pageSize: number;
   onPageChange: (page: number) => void;
+  orgId?: string;
 }
 
 export function TeamsTable({
@@ -37,6 +38,7 @@ export function TeamsTable({
   current,
   pageSize,
   onPageChange,
+  orgId,
 }: TeamsTableProps) {
   const columns = [
     {
@@ -46,7 +48,7 @@ export function TeamsTable({
       render: (team: Team) => (
         <div className="flex items-center gap-2.5">
           <Link
-            href={`/settings/organization-team-user-management/teams/${team.id}`}
+            href={`/settings/organization-team-user-management/teams/${team.id}${orgId ? `?org_id=${orgId}` : ""}`}
             className="font-semibold text-slate-900 text-[14px] truncate hover:text-blue-600 transition-colors"
           >
             {team.display_name}

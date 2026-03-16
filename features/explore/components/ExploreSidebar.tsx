@@ -59,29 +59,27 @@ export function ExploreSidebar({
   onViewChange,
   onCategoryChange,
 }: ExploreSidebarProps) {
-  const [catalogExpanded, setCatalogExpanded] = useState(true);
+  const [catalogExpanded, setCatalogExpanded] = useState(false);
+  const [sourcesExpanded, setSourcesExpanded] = useState(false);
 
   return (
-    <aside className="w-[260px] flex-shrink-0 border-r border-slate-200 px-4 py-6 flex flex-col h-full bg-white transition-all duration-300">
+    <aside className="w-[260px] flex-shrink-0 border-r border-slate-200 px-4 py-2  flex flex-col h-full bg-white transition-all duration-300">
       <nav className="flex flex-col gap-1.5 overflow-y-auto pr-2 custom-scrollbar h-full">
         {/* Catalog Section */}
         <div className="flex flex-col">
           <button
-            onClick={() => {
-              onViewChange("catalog");
-              setCatalogExpanded(!catalogExpanded);
-            }}
+            onClick={() => setCatalogExpanded(!catalogExpanded)}
             className={cn(
               "group flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
-              activeView === "catalog"
-                ? "bg-blue-50 text-blue-600 shadow-sm shadow-blue-100/30"
+              activeView === "catalog" || activeView === "data"
+                ? "bg-blue-50/50 text-blue-600"
                 : "text-slate-600 hover:bg-slate-100 hover:text-slate-900",
             )}
           >
             <Library
               size={18}
               className={
-                activeView === "catalog" ? "text-blue-600" : "text-slate-400"
+                activeView === "catalog" || activeView === "data" ? "text-blue-600" : "text-slate-400"
               }
             />
             <span className="flex-1 text-left">Catalog</span>
@@ -92,111 +90,145 @@ export function ExploreSidebar({
             )}
           </button>
 
-          {/* Nested Assets Menu */}
+          {/* Nested Catalog Menu */}
           {catalogExpanded && (
-            <div className="flex flex-col gap-0.5 mt-1 ml-3 px-1">
+            <div className="flex flex-col gap-0.5 mt-1 ml-3 pl-2 border-l border-slate-100 px-1">
               <button
                 onClick={() => onViewChange("data")}
                 className={cn(
                   "group flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium transition-all duration-200",
                   activeView === "data"
-                    ? "text-blue-600 font-bold"
+                    ? "text-blue-600 font-bold bg-blue-50/30"
                     : "text-slate-500 hover:text-slate-800 hover:bg-slate-50",
                 )}
               >
-                <div className="w-1.5 h-1.5 rounded-full bg-slate-300 group-hover:bg-blue-400" />
+                <div className={cn(
+                  "w-1.5 h-1.5 rounded-full transition-colors",
+                  activeView === "data" ? "bg-blue-600" : "bg-slate-300 group-hover:bg-blue-400"
+                )} />
                 Data
               </button>
             </div>
           )}
         </div>
 
-        {/* Root Level Asset Menu */}
-        {ASSET_CATEGORIES.map((category) => {
-          const Icon = category.icon;
-          const isActive = activeView === category.id;
+        {/* Sources Section */}
+        <div className="flex flex-col mt-1">
+          <button
+            onClick={() => setSourcesExpanded(!sourcesExpanded)}
+            className={cn(
+              "group flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
+              activeView === "kpis" || activeView === "drives" || activeView === "ftp-servers" || ASSET_CATEGORIES.some(c => c.id === activeView)
+                ? "bg-blue-50/50 text-blue-600"
+                : "text-slate-600 hover:bg-slate-100 hover:text-slate-900",
+            )}
+          >
+            <Zap
+              size={18}
+              className={
+                activeView === "kpis" || activeView === "drives" || activeView === "ftp-servers" || ASSET_CATEGORIES.some(c => c.id === activeView) ? "text-blue-600" : "text-slate-400"
+              }
+            />
+            <span className="flex-1 text-left">Sources</span>
+            {sourcesExpanded ? (
+              <ChevronDown size={14} className="text-slate-400" />
+            ) : (
+              <ChevronRight size={14} className="text-slate-400" />
+            )}
+          </button>
 
-          return (
-            <button
-              key={category.id}
-              onClick={() => {
-                onViewChange(category.id as ExploreView);
-              }}
-              className={cn(
-                "group flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
-                isActive
-                  ? "bg-blue-50 text-blue-600 shadow-sm shadow-blue-100/30"
-                  : "text-slate-600 hover:bg-slate-100 hover:text-slate-900",
-              )}
-            >
-              <Icon
-                size={18}
+          {/* Nested Sources Menu */}
+          {sourcesExpanded && (
+            <div className="flex flex-col gap-0.5 mt-1 ml-3 pl-2 border-l border-slate-100 px-1">
+              {ASSET_CATEGORIES.map((category) => {
+                const Icon = category.icon;
+                const isActive = activeView === category.id;
+
+                return (
+                  <button
+                    key={category.id}
+                    onClick={() => onViewChange(category.id as ExploreView)}
+                    className={cn(
+                      "group flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium transition-all duration-200",
+                      isActive
+                        ? "text-blue-600 font-bold bg-blue-50/30"
+                        : "text-slate-500 hover:text-slate-800 hover:bg-slate-50",
+                    )}
+                  >
+                    <Icon
+                      size={14}
+                      className={cn(
+                        "transition-colors",
+                        isActive ? "text-blue-600" : "text-slate-400",
+                      )}
+                    />
+                    {category.label}
+                  </button>
+                );
+              })}
+
+              {/* Drives */}
+              <button
+                onClick={() => onViewChange("drives")}
                 className={cn(
-                  "transition-colors",
-                  isActive ? "text-blue-600" : "text-slate-400",
+                  "group flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium transition-all duration-200",
+                  activeView === "drives"
+                    ? "text-blue-600 font-bold bg-blue-50/30"
+                    : "text-slate-500 hover:text-slate-800 hover:bg-slate-50",
                 )}
-              />
-              {category.label}
-            </button>
-          );
-        })}
+              >
+                <HardDrive
+                  size={14}
+                  className={cn(
+                    "transition-colors",
+                    activeView === "drives" ? "text-blue-600" : "text-slate-400",
+                  )}
+                />
+                Drives
+              </button>
 
-        {/* KPIs */}
-        <button
-          onClick={() => onViewChange("kpis")}
-          className={cn(
-            "group flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
-            activeView === "kpis"
-              ? "bg-blue-50 text-blue-600 shadow-sm shadow-blue-100/30"
-              : "text-slate-600 hover:bg-slate-100 hover:text-slate-900",
-          )}
-        >
-          <TrendingUp
-            size={18}
-            className={
-              activeView === "kpis" ? "text-blue-600" : "text-slate-400"
-            }
-          />
-          KPIs
-        </button>
+              {/* FTP Servers */}
+              <button
+                onClick={() => onViewChange("ftp-servers")}
+                className={cn(
+                  "group flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium transition-all duration-200",
+                  activeView === "ftp-servers"
+                    ? "text-blue-600 font-bold bg-blue-50/30"
+                    : "text-slate-500 hover:text-slate-800 hover:bg-slate-50",
+                )}
+              >
+                <Globe
+                  size={14}
+                  className={cn(
+                    "transition-colors",
+                    activeView === "ftp-servers" ? "text-blue-600" : "text-slate-400",
+                  )}
+                />
+                FTP Servers
+              </button>
 
-        {/* Drives */}
-        <button
-          onClick={() => onViewChange("drives")}
-          className={cn(
-            "group flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
-            activeView === "drives"
-              ? "bg-blue-50 text-blue-600 shadow-sm shadow-blue-100/30"
-              : "text-slate-600 hover:bg-slate-100 hover:text-slate-900",
+              {/* KPIs */}
+              <button
+                onClick={() => onViewChange("kpis")}
+                className={cn(
+                  "group flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium transition-all duration-200",
+                  activeView === "kpis"
+                    ? "text-blue-600 font-bold bg-blue-50/30"
+                    : "text-slate-500 hover:text-slate-800 hover:bg-slate-50",
+                )}
+              >
+                <TrendingUp
+                  size={14}
+                  className={cn(
+                    "transition-colors",
+                    activeView === "kpis" ? "text-blue-600" : "text-slate-400",
+                  )}
+                />
+                KPIs
+              </button>
+            </div>
           )}
-        >
-          <HardDrive
-            size={18}
-            className={
-              activeView === "drives" ? "text-blue-600" : "text-slate-400"
-            }
-          />
-          Drives
-        </button>
-
-        {/* FTP Servers */}
-        <button
-          onClick={() => onViewChange("ftp-servers")}
-          className={cn(
-            "group flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
-            activeView === "ftp-servers"
-              ? "bg-blue-50 text-blue-600 shadow-sm shadow-blue-100/30"
-              : "text-slate-600 hover:bg-slate-100 hover:text-slate-900",
-          )}
-        >
-          <Globe
-            size={18}
-            className={
-              activeView === "ftp-servers" ? "text-blue-600" : "text-slate-400"
-            }
-          />
-          FTP Servers
-        </button>
+        </div>
 
         {/* Files */}
         <button

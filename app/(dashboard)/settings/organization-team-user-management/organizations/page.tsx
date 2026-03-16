@@ -6,7 +6,10 @@ import { OrganizationsTable } from "@/features/organizations/components/Organiza
 import { OrgModal } from "@/features/organizations/components/OrgModal";
 import { PageHeader } from "@/shared/components/layout/PageHeader";
 import type { Organization } from "@/shared/types";
+import { useRouter } from "next/navigation";
+
 export default function OrganizationsPage() {
+  const router = useRouter();
   const {
     organizations,
     isLoading,
@@ -72,6 +75,11 @@ export default function OrganizationsPage() {
           onCreateClick={handleCreate}
           onEditClick={handleEdit}
           onDeleteConfirm={deleteOrganization}
+          onRowClick={(id) =>
+            router.push(
+              `/settings/organization-team-user-management/organizations/${id}/teams`,
+            )
+          }
         />
 
         <OrgModal

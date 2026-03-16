@@ -77,7 +77,7 @@ export default function RolesPage() {
           type="primary"
           icon={<Plus size={16} />}
           onClick={handleAddClick}
-          className="bg-blue-600 hover:bg-blue-700 h-10 px-6 rounded-lg font-semibold shadow-sm transition-all flex items-center gap-2 mt-1"
+          className="bg-blue-600 hover:bg-blue-700 h-10 px-6 rounded-lg font-semibold shadow-sm transition-all flex items-center gap-2 mt-10"
         >
           Add Role
         </Button>

@@ -12,6 +12,7 @@ import {
   Empty,
   Dropdown,
   MenuProps,
+  Popover,
 } from "antd";
 import { Role } from "../types";
 
@@ -86,21 +87,41 @@ export function RolesTable({
       title: "Policies",
       key: "policies",
       render: (role: Role) => (
-        <div className="flex flex-wrap gap-1.5 max-w-xs">
+        <div className="flex flex-wrap gap-1.5 max-w-xs items-center">
           {role.policies && role.policies.length > 0 ? (
             <>
-              {role.policies.slice(0, 2).map((policy) => (
-                <div
-                  key={policy.id}
-                  className="bg-slate-100/80 text-slate-600 text-[11px] font-bold py-0.5 px-2 rounded-md"
+              <div className="bg-slate-100/80 text-slate-600 text-[11px] font-bold py-0.5 px-2 rounded-md border border-slate-200/50">
+                {role.policies[0].name}
+              </div>
+              
+              {role.policies.length > 1 && (
+                <Popover
+                  content={
+                    <div className="w-64 max-h-60 overflow-y-auto custom-scrollbar p-1">
+                      <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2 px-1">Associated Policies ({role.policies.length})</p>
+                      <div className="flex flex-col gap-1">
+                        {role.policies.map((policy) => (
+                          <div 
+                            key={policy.id}
+                            className="flex items-center gap-2 px-1 py-1.5 hover:bg-slate-50 rounded transition-colors group cursor-default"
+                          >
+                            <div className="h-1.5 w-1.5 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)] flex-shrink-0" />
+                            <span className="text-[13px] font-medium text-slate-600 group-hover:text-slate-900 transition-colors truncate">
+                              {policy.name}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  }
+                  trigger="click"
+                  placement="rightTop"
+                  overlayClassName="policy-popover"
                 >
-                  {policy.name}
-                </div>
-              ))}
-              {role.policies.length > 2 && (
-                <div className="bg-blue-50/50 text-blue-600 text-[11px] font-bold py-0.5 px-2 rounded-md">
-                  +{role.policies.length - 2} more
-                </div>
+                  <div className="bg-blue-50/50 text-blue-600 text-[11px] font-bold py-0.5 px-2 rounded-md border border-blue-100/50 cursor-pointer hover:bg-blue-100 hover:text-blue-700 hover:border-blue-200 transition-all active:scale-95 select-none">
+                    +{role.policies.length - 1} more
+                  </div>
+                </Popover>
               )}
             </>
           ) : (

@@ -11,10 +11,11 @@ import {
   TableRow,
 } from "@/shared/components/ui/table";
 import { UserTeam, UserRole, UserPolicy } from "../types";
-import { Users, Shield, Lock, ChevronRight, Plus } from "lucide-react";
-import { Empty, Select, Button, message } from "antd";
+import { MinusCircle, Plus, Shield, Users, Lock, ChevronRight, Search } from "lucide-react";
+import { Empty, Select, Button, message, Pagination, Modal } from "antd";
 import { useRoles } from "@/features/roles/hooks/useRoles";
 import { useTeams } from "@/features/teams/hooks/useTeams";
+import { usePolicies } from "../../policies/hooks/usePolicies";
 import { useUserAssignments } from "../hooks/useUserAssignments";
 
 // --- UserTeamsTable ---
@@ -32,6 +33,10 @@ export function UserTeamsTable({
   isAdmin,
 }: UserTeamsTableProps) {
   const [selectedTeam, setSelectedTeam] = React.useState<string>();
+  const [currentPage, setCurrentPage] = React.useState(1);
+  const [isModalOpen, setIsModalOpen] = React.useState(false);
+  const pageSize = 5;
+
   const { teams: availableTeams, isLoading: isLoadingTeams } = useTeams({
     limit: 200,
   });
@@ -45,6 +50,7 @@ export function UserTeamsTable({
     try {
       await assignTeam(selectedTeam);
       setSelectedTeam(undefined);
+      setIsModalOpen(false);
     } catch (error) {
       // Error handled in hook
     }
@@ -52,31 +58,19 @@ export function UserTeamsTable({
 
   if (isLoading) return <LoadingState />;
 
+  const paginatedTeams = teams.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize,
+  );
+
   return (
     <div className="flex flex-col gap-4 animate-in fade-in duration-500">
       {isAdmin && (
-        <div className="flex items-center gap-3 bg-white p-3 rounded-lg border border-slate-200 shadow-sm">
-          <Select
-            placeholder="Select a team to add"
-            className="flex-1"
-            style={{ height: "36px" }}
-            value={selectedTeam}
-            onChange={setSelectedTeam}
-            loading={isLoadingTeams}
-            showSearch
-            optionFilterProp="label"
-            options={(availableTeams as any[])
-              ?.filter((t) => !teams.some((existing) => existing.id === t.id))
-              .map((t) => ({
-                label: t.display_name || t.name,
-                value: t.id,
-              }))}
-          />
+        <div className="flex justify-end">
           <Button
             type="primary"
             icon={<Plus size={16} />}
-            onClick={handleAssignTeam}
-            loading={isAssigningTeam}
+            onClick={() => setIsModalOpen(true)}
             className="bg-blue-600 hover:bg-blue-700 h-9 px-4 rounded-lg font-semibold flex items-center gap-2 text-sm"
           >
             Add to Team
@@ -91,13 +85,13 @@ export function UserTeamsTable({
           <Table>
             <TableHeader className="bg-slate-50/50">
               <TableRow>
-                <TableHead className="px-4 py-2">Team Name</TableHead>
-                <TableHead className="px-4 py-2">Description</TableHead>
-                <TableHead className="px-4 py-2 text-right">Actions</TableHead>
+                <TableHead className="px-4 py-2.5 text-[13px] font-bold text-slate-500">Team Name</TableHead>
+                <TableHead className="px-4 py-2.5 text-[13px] font-bold text-slate-500">Description</TableHead>
+                <TableHead className="px-4 py-2.5 text-[13px] font-bold text-slate-500 text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {teams.map((team) => (
+              {paginatedTeams.map((team) => (
                 <TableRow
                   key={team.id}
                   className="group hover:bg-slate-50/50 transition-colors"
@@ -107,26 +101,26 @@ export function UserTeamsTable({
                       href={`/settings/organization-team-user-management/teams/${team.id}`}
                       className="flex items-center gap-3 group/link"
                     >
-                      <div className="h-8 w-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600 transition-colors group-hover/link:bg-blue-100">
-                        <Users size={16} />
+                      <div className="h-7 w-7 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600 transition-colors group-hover/link:bg-blue-100">
+                        <Users size={14} />
                       </div>
-                      <span className="font-bold text-slate-700 group-hover/link:text-blue-600 transition-colors">
+                      <span className="font-bold text-slate-700 group-hover/link:text-blue-600 transition-colors text-[13px]">
                         {team.display_name || team.name}
                       </span>
                     </Link>
                   </TableCell>
                   <TableCell className="px-4 py-2">
-                    <span className="text-slate-500 text-[13px] font-medium">
+                    <span className="text-slate-500 text-[12px] font-medium">
                       Member of this team
                     </span>
                   </TableCell>
                   <TableCell className="px-4 py-2 text-right">
                     <Link
                       href={`/settings/organization-team-user-management/teams/${team.id}`}
-                      className="inline-flex items-center gap-1.5 text-blue-600 font-bold text-[13px] hover:underline"
+                      className="inline-flex items-center gap-1.5 text-blue-600 font-bold text-[12px] hover:underline"
                     >
                       View Team
-                      <ChevronRight size={14} />
+                      <ChevronRight size={12} />
                     </Link>
                   </TableCell>
                 </TableRow>
@@ -135,6 +129,77 @@ export function UserTeamsTable({
           </Table>
         )}
       </div>
+
+      {teams.length > pageSize && (
+        <div className="flex justify-end pt-2">
+          <Pagination
+            size="small"
+            current={currentPage}
+            total={teams.length}
+            pageSize={pageSize}
+            onChange={setCurrentPage}
+            showSizeChanger={false}
+          />
+        </div>
+      )}
+
+      {/* Add to Team Modal */}
+      <Modal
+        title={
+          <div className="flex items-center gap-2 border-b border-slate-100 pb-3 mb-0">
+            <div className="h-8 w-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600">
+              <Users size={18} />
+            </div>
+            <div>
+              <h3 className="text-base font-bold text-slate-800">Add to Team</h3>
+              <p className="text-[11px] text-slate-400 font-medium">Select a team to add the user as a member</p>
+            </div>
+          </div>
+        }
+        open={isModalOpen}
+        onOk={handleAssignTeam}
+        onCancel={() => {
+          setIsModalOpen(false);
+          setSelectedTeam(undefined);
+        }}
+        confirmLoading={isAssigningTeam}
+        okText="Add to Team"
+        okButtonProps={{
+          className: "bg-blue-600 hover:bg-blue-700 h-9 px-6 rounded-lg font-bold",
+        }}
+        cancelButtonProps={{
+          className: "h-9 px-6 rounded-lg font-bold border-slate-200 text-slate-600 hover:text-blue-800",
+        }}
+        centered
+        width={450}
+        closeIcon={false}
+      >
+        <div className="py-6">
+          <p className="text-[13px] font-bold text-slate-600 mb-2 px-1">Choose Team</p>
+          <Select
+            placeholder="Search and select team..."
+            className="w-full"
+            style={{ height: "42px" }}
+            value={selectedTeam}
+            onChange={setSelectedTeam}
+            loading={isLoadingTeams}
+            showSearch
+            optionFilterProp="label"
+            options={(availableTeams as any[])
+              ?.filter((t) => !teams.some((existing) => existing.id === t.id))
+              .map((t) => ({
+                label: t.display_name || t.name,
+                value: t.id,
+              }))}
+            suffixIcon={<Search size={16} className="text-slate-400" />}
+          />
+          <div className="mt-4 p-3 bg-slate-50 rounded-lg border border-slate-100">
+            <p className="text-[11px] text-slate-400 font-medium leading-relaxed">
+              Note: Adding a user to a team will grant them access to team-specific resources.
+            </p>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }
@@ -154,6 +219,10 @@ export function UserRolesTable({
   isAdmin,
 }: UserRolesTableProps) {
   const [selectedRole, setSelectedRole] = React.useState<string>();
+  const [currentPage, setCurrentPage] = React.useState(1);
+  const [isModalOpen, setIsModalOpen] = React.useState(false);
+  const pageSize = 5;
+
   const { roles: availableRoles, isLoading: isLoadingRoles } = useRoles({
     limit: 200,
   });
@@ -167,6 +236,7 @@ export function UserRolesTable({
     try {
       await assignRole(selectedRole);
       setSelectedRole(undefined);
+      setIsModalOpen(false);
     } catch (error) {
       // Error handled in hook
     }
@@ -174,31 +244,19 @@ export function UserRolesTable({
 
   if (isLoading) return <LoadingState />;
 
+  const paginatedRoles = roles.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize,
+  );
+
   return (
     <div className="flex flex-col gap-4 animate-in fade-in duration-500">
       {isAdmin && (
-        <div className="flex items-center gap-3 bg-white p-3 rounded-lg border border-slate-200 shadow-sm">
-          <Select
-            placeholder="Select a role to assign"
-            className="flex-1"
-            style={{ height: "36px" }}
-            value={selectedRole}
-            onChange={setSelectedRole}
-            loading={isLoadingRoles}
-            showSearch
-            optionFilterProp="label"
-            options={(availableRoles as any[])
-              ?.filter((r) => !roles.some((existing) => existing.id === r.id))
-              .map((r) => ({
-                label: r.display_name || r.name,
-                value: r.id,
-              }))}
-          />
+        <div className="flex justify-end">
           <Button
             type="primary"
             icon={<Plus size={16} />}
-            onClick={handleAssignRole}
-            loading={isAssigningRole}
+            onClick={() => setIsModalOpen(true)}
             className="bg-indigo-600 hover:bg-indigo-700 h-9 px-4 rounded-lg font-semibold flex items-center gap-2 text-sm"
           >
             Assign Role
@@ -213,13 +271,13 @@ export function UserRolesTable({
           <Table>
             <TableHeader className="bg-slate-50/50">
               <TableRow>
-                <TableHead className="px-4 py-2">Role Name</TableHead>
-                <TableHead className="px-4 py-2">Description</TableHead>
-                <TableHead className="px-4 py-2 text-right">Actions</TableHead>
+                <TableHead className="px-4 py-2.5 text-[13px] font-bold text-slate-500">Role Name</TableHead>
+                <TableHead className="px-4 py-2.5 text-[13px] font-bold text-slate-500">Description</TableHead>
+                <TableHead className="px-4 py-2.5 text-[13px] font-bold text-slate-500 text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {roles.map((role) => (
+              {paginatedRoles.map((role) => (
                 <TableRow
                   key={role.id}
                   className="group hover:bg-slate-50/50 transition-colors"
@@ -229,24 +287,24 @@ export function UserRolesTable({
                       href={`/settings/access-control/roles/${role.id}`}
                       className="flex items-center gap-3 group/link"
                     >
-                      <div className="h-8 w-8 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600 transition-colors group-hover/link:bg-indigo-100">
-                        <Shield size={16} />
+                      <div className="h-7 w-7 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600 transition-colors group-hover/link:bg-indigo-100">
+                        <Shield size={14} />
                       </div>
-                      <span className="font-bold text-slate-700 group-hover/link:text-indigo-600 transition-colors">
+                      <span className="font-bold text-slate-700 group-hover/link:text-indigo-600 transition-colors text-[13px]">
                         {role.display_name || role.name}
                       </span>
                     </Link>
                   </TableCell>
-                  <TableCell className="px-4 py-2 text-slate-500 text-[13px] font-medium">
+                  <TableCell className="px-4 py-2 text-slate-500 text-[12px] font-medium">
                     Granted role permissions
                   </TableCell>
                   <TableCell className="px-4 py-2 text-right">
                     <Link
                       href={`/settings/access-control/roles/${role.id}`}
-                      className="inline-flex items-center gap-1.5 text-indigo-600 font-bold text-[13px] hover:underline"
+                      className="inline-flex items-center gap-1.5 text-indigo-600 font-bold text-[12px] hover:underline"
                     >
                       View Role
-                      <ChevronRight size={14} />
+                      <ChevronRight size={12} />
                     </Link>
                   </TableCell>
                 </TableRow>
@@ -255,6 +313,77 @@ export function UserRolesTable({
           </Table>
         )}
       </div>
+
+      {roles.length > pageSize && (
+        <div className="flex justify-end pt-2">
+          <Pagination
+            size="small"
+            current={currentPage}
+            total={roles.length}
+            pageSize={pageSize}
+            onChange={setCurrentPage}
+            showSizeChanger={false}
+          />
+        </div>
+      )}
+
+      {/* Assign Role Modal */}
+      <Modal
+        title={
+          <div className="flex items-center gap-2 border-b border-slate-100 pb-3 mb-0">
+            <div className="h-8 w-8 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600">
+              <Shield size={18} />
+            </div>
+            <div>
+              <h3 className="text-base font-bold text-slate-800">Assign Role</h3>
+              <p className="text-[11px] text-slate-400 font-medium">Select a role to assign to this user</p>
+            </div>
+          </div>
+        }
+        open={isModalOpen}
+        onOk={handleAssignRole}
+        onCancel={() => {
+          setIsModalOpen(false);
+          setSelectedRole(undefined);
+        }}
+        confirmLoading={isAssigningRole}
+        okText="Assign Role"
+        okButtonProps={{
+          className: "bg-indigo-600 hover:bg-indigo-700 h-9 px-6 rounded-lg font-bold",
+        }}
+        cancelButtonProps={{
+          className: "h-9 px-6 rounded-lg font-bold border-slate-200 text-slate-600 hover:text-blue-800",
+        }}
+        centered
+        width={450}
+        closeIcon={false}
+      >
+        <div className="py-6">
+          <p className="text-[13px] font-bold text-slate-600 mb-2 px-1">Choose Role</p>
+          <Select
+            placeholder="Search and select role..."
+            className="w-full"
+            style={{ height: "42px" }}
+            value={selectedRole}
+            onChange={setSelectedRole}
+            loading={isLoadingRoles}
+            showSearch
+            optionFilterProp="label"
+            options={(availableRoles as any[])
+              ?.filter((r) => !roles.some((existing) => existing.id === r.id))
+              .map((r) => ({
+                label: r.display_name || r.name,
+                value: r.id,
+              }))}
+            suffixIcon={<Search size={16} className="text-slate-400" />}
+          />
+          <div className="mt-4 p-3 bg-slate-50 rounded-lg border border-slate-100">
+            <p className="text-[11px] text-slate-400 font-medium leading-relaxed">
+              Note: Assigning a role will grant the user the permissions associated with it.
+            </p>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }
@@ -263,50 +392,172 @@ export function UserRolesTable({
 interface UserPoliciesTableProps {
   policies: UserPolicy[];
   isLoading: boolean;
+  userId?: string;
+  isAdmin?: boolean;
 }
 
 export function UserPoliciesTable({
   policies,
   isLoading,
+  userId,
+  isAdmin,
 }: UserPoliciesTableProps) {
+  const [currentPage, setCurrentPage] = React.useState(1);
+  const [isModalOpen, setIsModalOpen] = React.useState(false);
+  const [selectedPolicy, setSelectedPolicy] = React.useState<string>();
+  const pageSize = 5;
+
+  const { policies: availablePolicies, isLoading: isLoadingPolicies } = usePolicies({
+    limit: 200,
+  });
+  const { assignPolicy, isAssigningPolicy } = useUserAssignments(userId || "");
+
+  const handleAssignPolicy = async () => {
+    if (!selectedPolicy) {
+      message.warning("Please select a policy first");
+      return;
+    }
+    try {
+      await assignPolicy(selectedPolicy);
+      setSelectedPolicy(undefined);
+      setIsModalOpen(false);
+    } catch (error) {
+      // Error handled in hook
+    }
+  };
+
   if (isLoading) return <LoadingState />;
-  if (policies.length === 0) return <EmptyState label="policies" />;
+
+  const paginatedPolicies = policies.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize,
+  );
 
   return (
-    <div className="rounded-lg border border-slate-200 bg-white shadow-sm overflow-hidden animate-in fade-in duration-500">
-      <Table>
-        <TableHeader className="bg-slate-50/50">
-          <TableRow>
-            <TableHead className="px-4 py-2">Policy Name</TableHead>
-            <TableHead className="px-4 py-2">Description</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {policies.map((policy) => (
-            <TableRow
-              key={policy.id}
-              className="group hover:bg-slate-50/50 transition-colors"
-            >
-              <TableCell className="px-4 py-2">
-                <Link
-                  href={`/settings/access-control/policies/${policy.id}`}
-                  className="flex items-center gap-3 group/link"
+    <div className="flex flex-col gap-4 animate-in fade-in duration-500">
+      {isAdmin && (
+        <div className="flex justify-end">
+          <Button
+            type="primary"
+            icon={<Plus size={16} />}
+            onClick={() => setIsModalOpen(true)}
+            className="bg-emerald-600 hover:bg-emerald-700 h-9 px-4 rounded-lg font-semibold flex items-center gap-2 text-sm"
+          >
+            Assign Policy
+          </Button>
+        </div>
+      )}
+
+      <div className="rounded-lg border border-slate-200 bg-white shadow-sm overflow-hidden">
+        {policies.length === 0 ? (
+          <EmptyState label="policies" />
+        ) : (
+          <Table>
+            <TableHeader className="bg-slate-50/50">
+              <TableRow>
+                <TableHead className="px-4 py-2.5 text-[13px] font-bold text-slate-500">Policy Name</TableHead>
+                <TableHead className="px-4 py-2.5 text-[13px] font-bold text-slate-500">Description</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {paginatedPolicies.map((policy) => (
+                <TableRow
+                  key={policy.id}
+                  className="group hover:bg-slate-50/50 transition-colors"
                 >
-                  <div className="h-8 w-8 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-600 transition-colors group-hover/link:bg-emerald-100">
-                    <Lock size={16} />
-                  </div>
-                  <span className="font-bold text-slate-700 group-hover/link:text-emerald-600 transition-colors">
-                    {policy.name}
-                  </span>
-                </Link>
-              </TableCell>
-              <TableCell className="px-4 py-2 text-slate-500 text-[13px] font-medium">
-                {policy.description || "No description provided."}
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+                  <TableCell className="px-4 py-2">
+                    <Link
+                      href={`/settings/access-control/policies/${policy.id}`}
+                      className="flex items-center gap-3 group/link"
+                    >
+                      <div className="h-7 w-7 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600 transition-colors group-hover/link:bg-blue-100">
+                        <Lock size={14} />
+                      </div>
+                      <span className="font-bold text-slate-700 group-hover/link:text-blue-600 transition-colors text-[13px]">
+                        {policy.name}
+                      </span>
+                    </Link>
+                  </TableCell>
+                  <TableCell className="px-4 py-2 text-slate-500 text-[12px] font-medium">
+                    {policy.description || "No description provided."}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        )}
+      </div>
+
+      {policies.length > pageSize && (
+        <div className="flex justify-end pt-2">
+          <Pagination
+            size="small"
+            current={currentPage}
+            total={policies.length}
+            pageSize={pageSize}
+            onChange={setCurrentPage}
+            showSizeChanger={false}
+          />
+        </div>
+      )}
+
+      {/* Assign Policy Modal */}
+      <Modal
+        title={
+          <div className="flex items-center gap-2 border-b border-slate-100 pb-3 mb-0">
+            <div className="h-8 w-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600">
+              <Lock size={18} />
+            </div>
+            <div>
+              <h3 className="text-base font-bold text-slate-800">Assign Policy</h3>
+              <p className="text-[11px] text-slate-400 font-medium">Select a security policy to grant permissions</p>
+            </div>
+          </div>
+        }
+        open={isModalOpen}
+        onOk={handleAssignPolicy}
+        onCancel={() => {
+          setIsModalOpen(false);
+          setSelectedPolicy(undefined);
+        }}
+        confirmLoading={isAssigningPolicy}
+        okText="Assign Policy"
+        okButtonProps={{
+          className: "bg-blue-600 hover:bg-blue-700 h-9 px-6 rounded-lg font-bold",
+        }}
+        cancelButtonProps={{
+          className: "h-9 px-6 rounded-lg font-bold border-slate-200 text-slate-600 hover:text-blue-800",
+        }}
+        centered
+        width={450}
+        closeIcon={false}
+      >
+        <div className="py-6">
+          <p className="text-[13px] font-bold text-slate-600 mb-2 px-1">Choose Policy</p>
+          <Select
+            placeholder="Search and select policy..."
+            className="w-full"
+            style={{ height: "42px" }}
+            value={selectedPolicy}
+            onChange={setSelectedPolicy}
+            loading={isLoadingPolicies}
+            showSearch
+            optionFilterProp="label"
+            options={(availablePolicies as any[])
+              ?.filter((p) => !policies.some((existing) => existing.id === p.id))
+              .map((p) => ({
+                label: p.name,
+                value: p.id,
+              }))}
+            suffixIcon={<Search size={16} className="text-slate-400" />}
+          />
+          <div className="mt-4 p-3 bg-slate-50 rounded-lg border border-slate-100">
+            <p className="text-[11px] text-slate-400 font-medium leading-relaxed">
+              Note: Assigning a policy will grant the user the permissions defined within that policy. This action will be logged.
+            </p>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

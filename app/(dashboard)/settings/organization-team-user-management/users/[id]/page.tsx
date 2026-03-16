@@ -144,6 +144,8 @@ export default function UserProfilePage({ params }: PageProps) {
           <UserPoliciesTable
             policies={policies}
             isLoading={isLoadingPolicies}
+            userId={id}
+            isAdmin={isAdmin}
           />
         </TabsContent>
       </Tabs>

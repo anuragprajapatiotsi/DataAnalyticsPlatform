@@ -72,4 +72,11 @@ export const policyService = {
     const response = await api.put<Policy>(`/policies/${id}`, payload);
     return response.data;
   },
+
+  async assignUsers(policyId: string, userIds: string[]) {
+    const response = await api.post(`/policies/${policyId}/assign`, {
+      user_ids: userIds,
+    });
+    return response.data;
+  },
 };
