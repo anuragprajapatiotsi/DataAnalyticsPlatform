@@ -1,13 +1,13 @@
 export interface UserTeam {
   id: string;
   name: string;
-  display_name: string;
+  display_name?: string;
 }
 
 export interface UserRole {
   id: string;
   name: string;
-  display_name: string;
+  display_name?: string;
 }
 
 export interface AdminUser {

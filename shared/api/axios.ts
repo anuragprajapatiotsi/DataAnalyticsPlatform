@@ -4,7 +4,7 @@ import { parseError } from "../utils/error-handler";
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL ||
-  "https://deltameta-backend.vercel.app";
+  "https://opensourcepulse.pro";
 
 export const api = axios.create({
   baseURL: API_BASE_URL,

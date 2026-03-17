@@ -24,7 +24,7 @@ interface TeamsTableProps {
   total: number;
   current: number;
   pageSize: number;
-  onPageChange: (page: number) => void;
+  onPageChange: (page: number, pageSize: number) => void;
   orgId?: string;
 }
 
@@ -175,7 +175,8 @@ export function TeamsTable({
           pageSize,
           total,
           onChange: onPageChange,
-          showSizeChanger: false,
+          showSizeChanger: true,
+          pageSizeOptions: ["5", "10", "20", "50"],
           className:
             "px-4 py-2.5 border-t border-slate-100 m-0 bg-white sticky bottom-0 z-10",
         }}

@@ -29,9 +29,10 @@ export default function TeamsPage() {
     (searchParams.get("tab") as TeamManagementTab) || "teams",
   );
 
+  const [searchTerm, setSearchTerm] = useState("");
   const [params, setParams] = useState<any>({
     skip: 0,
-    limit: 50,
+    limit: 5,
     search: "",
     team_type: undefined,
     org_id: undefined,
@@ -39,6 +40,15 @@ export default function TeamsPage() {
     is_active: undefined,
     root_only: undefined,
   });
+
+  // Handle Search Debouncing
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setParams((prev: any) => ({ ...prev, search: searchTerm, skip: 0 }));
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
 
   const {
     teams,
@@ -73,16 +83,16 @@ export default function TeamsPage() {
     );
   };
 
-  const handleSearch = (value: string) => {
-    setParams((prev: any) => ({ ...prev, search: value, skip: 0 }));
+  const handlePageChange = (page: number, pageSize: number) => {
+    setParams((prev: any) => ({
+      ...prev,
+      limit: pageSize,
+      skip: (page - 1) * pageSize,
+    }));
   };
 
   const handleParamChange = (key: string, value: any) => {
     setParams((prev: any) => ({ ...prev, [key]: value, skip: 0 }));
-  };
-
-  const handlePageChange = (page: number) => {
-    setParams((prev: any) => ({ ...prev, skip: (page - 1) * prev.limit }));
   };
 
   const currentPage = Math.floor(params.skip / params.limit) + 1;
@@ -95,9 +105,10 @@ export default function TeamsPage() {
     params.root_only !== undefined;
 
   const handleClearFilters = () => {
+    setSearchTerm("");
     setParams({
       skip: 0,
-      limit: 50,
+      limit: 5,
       search: "",
       team_type: undefined,
       org_id: undefined,
@@ -168,26 +179,20 @@ export default function TeamsPage() {
               <Input
                 placeholder="Search teams..."
                 allowClear
-                value={params.search}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  setParams((prev: any) => ({ ...prev, search: val }));
-                  if (!val) handleSearch("");
-                }}
-                onPressEnter={() => handleSearch(params.search)}
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
                 className="flex-1 max-w-[550px] h-9 teams-search"
                 size="middle"
                 prefix={<Search size={14} className="text-slate-400 mr-1.5" />}
               />
-              <Button
-                type="primary"
-                onClick={() => handleSearch(params.search)}
-                className="bg-blue-600 hover:bg-blue-700 h-9 px-5 rounded-lg font-semibold shadow-sm flex items-center justify-center transition-all whitespace-nowrap text-[13px]"
-                loading={isLoading}
-                size="middle"
-              >
-                Search Teams
-              </Button>
+              <div className="h-9 px-4 flex items-center bg-slate-50 border border-slate-200 rounded-lg text-slate-400 select-none">
+                <span className="text-[12px] font-medium italic">
+                  Typing...
+                </span>
+                {isLoading && (
+                  <div className="ml-2 h-1.5 w-1.5 rounded-full bg-blue-500 animate-pulse" />
+                )}
+              </div>
             </div>
 
             {/* Row 2: Filters */}

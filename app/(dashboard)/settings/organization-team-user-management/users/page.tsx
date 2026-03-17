@@ -1,31 +1,54 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import { UsersHeader } from "@/features/users/components/UsersHeader";
 import { UsersTable } from "@/features/users/components/UsersTable";
 import { useAdminUsers } from "@/features/users/hooks/useAdminUsers";
 import { Pagination } from "antd";
 import { PageHeader } from "@/shared/components/layout/PageHeader";
+import { useTeams } from "@/features/teams/hooks/useTeams";
+import { useRoles } from "@/features/roles/hooks/useRoles";
+import { usePolicies } from "@/features/policies/hooks/usePolicies";
+import { GetUserParams } from "@/features/users/types";
+
 
 export default function UsersManagementPage() {
-  const [filters, setFilters] = useState({
+  const [filters, setFilters] = useState<GetUserParams>({
     search: "",
     is_active: true,
+    is_admin: undefined,
+    is_verified: undefined,
+    team_id: undefined,
+    role_id: undefined,
+    policy_id: undefined,
+    domain_id: undefined,
     skip: 0,
-    limit: 10,
+    limit: 5,
   });
 
   const { data: users = [], isLoading } = useAdminUsers(filters);
+  const { teams } = useTeams({ limit: 100 });
+  const { roles } = useRoles({ limit: 100 });
+  const { policies } = usePolicies({ limit: 100 });
 
-  const handleSearchChange = (search: string) => {
+  const domainOptions = [
+    { label: "Finance", value: "finance" },
+    { label: "Marketing", value: "marketing" },
+    { label: "Operations", value: "operations" },
+    { label: "Data Platform", value: "data-platform" },
+  ];
+
+  const handleSearchChange = useCallback((search: string) => {
     setFilters((prev) => ({ ...prev, search, skip: 0 }));
-  };
+  }, []);
 
-  const handleIsActiveChange = (is_active: boolean) => {
-    setFilters((prev) => ({ ...prev, is_active, skip: 0 }));
-  };
+  const handleFilterChange = useCallback((newFilters: Partial<GetUserParams>) => {
+    setFilters((prev) => ({ ...prev, ...newFilters, skip: 0 }));
+  }, []);
 
-  const currentPage = Math.floor(filters.skip / filters.limit) + 1;
+  const limit = filters.limit ?? 5;
+  const skip = filters.skip ?? 0;
+  const currentPage = Math.floor(skip / limit) + 1;
 
   const breadcrumbItems = [
     { label: "Settings", href: "/settings" },
@@ -47,8 +70,12 @@ export default function UsersManagementPage() {
       <div>
         <UsersHeader
           onSearchChange={handleSearchChange}
-          isActive={filters.is_active}
-          onIsActiveChange={handleIsActiveChange}
+          filters={filters}
+          onFiltersChange={handleFilterChange}
+          teams={teams}
+          roles={roles as any}
+          policies={policies}
+          domains={domainOptions}
         />
       </div>
 
@@ -65,14 +92,14 @@ export default function UsersManagementPage() {
 
         <Pagination
           current={currentPage}
-          pageSize={filters.limit}
+          pageSize={limit}
           total={
-            users.length === filters.limit
-              ? (currentPage + 1) * filters.limit
-              : currentPage * filters.limit
+            users.length === limit
+              ? (currentPage + 1) * limit
+              : currentPage * limit
           }
           onChange={(page) => {
-            const newSkip = (page - 1) * filters.limit;
+            const newSkip = (page - 1) * limit;
             setFilters((prev) => ({ ...prev, skip: newSkip }));
           }}
           showSizeChanger={false}

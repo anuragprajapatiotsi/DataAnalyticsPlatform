@@ -17,6 +17,9 @@ interface PageProps {
   params: Promise<{ id: string }>;
 }
 
+import { OrgDetailsHeader } from "@/features/organizations/components/details/OrgDetailsHeader";
+import { OrgDetailsInfo } from "@/features/organizations/components/details/OrgDetailsInfo";
+
 export default function OrganizationTeamsPage({ params }: PageProps) {
   const { id } = use(params);
   const router = useRouter();
@@ -51,24 +54,8 @@ export default function OrganizationTeamsPage({ params }: PageProps) {
   };
 
   const handleCreate = () => {
-    // Navigate to shared create page but maybe with pre-filled org?
-    // For now, follow the requirement to reuse components.
     router.push(`/settings/organization-team-user-management/teams/create?org_id=${id}`);
   };
-
-  const breadcrumbItems = [
-    { label: "Settings", href: "/settings" },
-    {
-      label: "Team & User Management",
-      href: "/settings/organization-team-user-management",
-    },
-    {
-      label: "Organizations",
-      href: "/settings/organization-team-user-management/organizations",
-    },
-    { label: organization?.name || "Organization" },
-    { label: "Teams" },
-  ];
 
   if (isLoadingOrg && !organization) {
     return (
@@ -79,23 +66,31 @@ export default function OrganizationTeamsPage({ params }: PageProps) {
   }
 
   return (
-    <div className="flex flex-col space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-500 max-w-[1400px] mx-auto overflow-hidden h-full">
-      <div className="flex justify-between items-start">
-        <PageHeader
-          title={`${organization?.name || "Organization"} Teams`}
-          description={`View and manage teams under ${organization?.name}.`}
-          breadcrumbItems={breadcrumbItems}
-        />
+    <div className="flex flex-col animate-in fade-in slide-in-from-bottom-2 duration-500 max-w-[1400px] mx-auto overflow-hidden h-full pb-8">
+      <OrgDetailsHeader
+        organization={organization!}
+        isAdmin={isAdmin}
+        onEdit={() => router.push(`/settings/organization-team-user-management/organizations/${id}/edit`)}
+      >
         {isAdmin && (
           <Button
             type="primary"
             icon={<Plus size={15} />}
             onClick={handleCreate}
-            className="bg-blue-600 hover:bg-blue-700 h-9 px-5 rounded-lg font-semibold shadow-sm transition-all flex items-center gap-2 mt-1 text-[13px]"
+            className="bg-blue-600 hover:bg-blue-700 h-9 px-5 rounded-lg font-semibold shadow-sm transition-all flex items-center gap-2 text-[13px]"
           >
             Add Team
           </Button>
         )}
+      </OrgDetailsHeader>
+
+      <OrgDetailsInfo organization={organization!} isLoading={isLoadingOrg} />
+
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex flex-col gap-1">
+          <h2 className="text-[16px] font-bold text-slate-800 tracking-tight">Teams List</h2>
+          <p className="text-[13px] text-slate-500 font-medium">Manage and view all teams associated with this organization.</p>
+        </div>
       </div>
 
       <div className="flex-1 min-h-0 flex flex-col">

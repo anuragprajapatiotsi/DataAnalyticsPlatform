@@ -233,7 +233,7 @@ export function Sidebar() {
           {!collapsed && (
             <div className="animate-in fade-in duration-300 whitespace-nowrap">
               <p className="text-sm font-semibold text-slate-900">OTSI</p>
-              <p className="text-xs text-slate-500">Metadata Platform</p>
+              <p className="text-xs text-slate-500">Deltameta</p>
             </div>
           )}
         </div>
