@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   Database,
   Cpu,
@@ -52,18 +53,26 @@ interface ExploreSidebarProps {
   onViewChange: (view: ExploreView) => void;
   onCategoryChange: (categoryId: string) => void;
 }
-
 export function ExploreSidebar({
   activeView,
   activeCategory,
   onViewChange,
   onCategoryChange,
 }: ExploreSidebarProps) {
-  const [catalogExpanded, setCatalogExpanded] = useState(false);
-  const [sourcesExpanded, setSourcesExpanded] = useState(false);
+  const router = useRouter();
+  const [catalogExpanded, setCatalogExpanded] = useState(true);
+  const [sourcesExpanded, setSourcesExpanded] = useState(true);
+
+  const handleCategoryClick = (id: string) => {
+    if (id === "database") {
+      router.push("/explore/databases");
+    } else {
+      onViewChange(id as ExploreView);
+    }
+  };
 
   return (
-    <aside className="w-[260px] flex-shrink-0 border-r border-slate-200 px-4 py-2  flex flex-col h-full bg-white transition-all duration-300">
+    <aside className="w-[200px] flex-shrink-0 border-r border-slate-200 px-4 py-2  flex flex-col h-full bg-white transition-all duration-300">
       <nav className="flex flex-col gap-1.5 overflow-y-auto pr-2 custom-scrollbar h-full">
         {/* Catalog Section */}
         <div className="flex flex-col">
@@ -147,7 +156,7 @@ export function ExploreSidebar({
                 return (
                   <button
                     key={category.id}
-                    onClick={() => onViewChange(category.id as ExploreView)}
+                    onClick={() => handleCategoryClick(category.id)}
                     className={cn(
                       "group flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium transition-all duration-200",
                       isActive

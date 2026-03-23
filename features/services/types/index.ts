@@ -16,6 +16,7 @@ export interface Service {
 export interface ServiceEndpoint {
   id: string;
   service_name: string;
+  description: string;
   base_url: string;
   extra: Record<string, any>;
   internal_connection: boolean;
@@ -52,4 +53,11 @@ export interface UpdateServiceRequest {
   description?: string;
   is_active?: boolean;
   config?: Record<string, any>;
+}
+
+export interface DatabaseInfo {
+  name: string;
+  description?: string;
+  type?: string;
+  owners?: string[];
 }

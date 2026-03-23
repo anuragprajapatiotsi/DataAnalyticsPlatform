@@ -1,9 +1,9 @@
 import { api } from "@/shared/api/axios";
-import { Service, GetServicesParams, CreateServiceRequest, UpdateServiceRequest, ServiceEndpoint, ServiceEndpointRequest } from "../types";
+import { Service, GetServicesParams, CreateServiceRequest, UpdateServiceRequest, ServiceEndpoint, ServiceEndpointRequest, DatabaseInfo } from "../types";
 
 export const serviceService = {
   async getServices(params: GetServicesParams = { skip: 0, limit: 50 }) {
-    const response = await api.get<Service[]>("/service-endpoints", {
+    const response = await api.get<ServiceEndpoint[]>("/service-endpoints", {
       params: {
         skip: params.skip,
         limit: params.limit,
@@ -53,6 +53,16 @@ export const serviceService = {
 
   async testConnection(id: string) {
     const response = await api.post<{ success: boolean; message: string }>(`/service-endpoints/${id}/test`);
+    return response.data;
+  },
+
+  async getServiceEndpoint(id: string) {
+    const response = await api.get<ServiceEndpoint>(`/service-endpoints/${id}`);
+    return response.data;
+  },
+
+  async getDatabases(id: string) {
+    const response = await api.get<DatabaseInfo[]>(`/service-endpoints/${id}/explore/databases`);
     return response.data;
   },
 };
