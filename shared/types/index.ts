@@ -70,6 +70,8 @@ export interface SettingsItem {
   nav_url: string | null;
   has_children: boolean;
   sort_order: number;
+  is_active?: boolean;
+  is_enabled?: boolean;
 }
 export interface NavItem {
   id: string;

@@ -3,6 +3,7 @@
 import React from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import { Button } from "antd";
 import { SettingsCard } from "@/features/dashboard/components/settings-card";
 import { useSettings } from "@/features/settings/hooks/use-settings";
 import { getIcon } from "@/shared/utils/icon-mapper";
@@ -27,14 +28,22 @@ export default function SettingsCatchAllPage() {
         "/",
       );
       router.push(newPath);
-    } else if (item.node_type === "leaf" && item.nav_url) {
-      // For leaf nodes, navigate to their literal nav_url
-      // Special case for members to follow hierarchical structure
-      const targetUrl =
-        item.nav_url === "/settings/members"
-          ? "/settings/organization-team-user-management/organizations"
-          : item.nav_url;
-      router.push(targetUrl);
+    } else if (item.node_type === "leaf") {
+      // Special handling for services to use the Service Wizard
+      if (slugs.includes("services")) {
+        router.push(`/settings/services/${item.slug}/create`);
+        return;
+      }
+      
+      if (item.nav_url) {
+        // For leaf nodes, navigate to their literal nav_url
+        // Special case for members to follow hierarchical structure
+        const targetUrl =
+          item.nav_url === "/settings/members"
+            ? "/settings/organization-team-user-management/organizations"
+            : item.nav_url;
+        router.push(targetUrl);
+      }
     }
   };
 
@@ -93,6 +102,16 @@ export default function SettingsCatchAllPage() {
       href: `/settings/${slugs.slice(0, index + 1).join("/")}`,
       active: index === slugs.length - 1,
     });
+
+    // If we just added 'services' and there's another slug (like 'databases'), 
+    // inject 'Add Service' in between to maintain the flow
+    if (slug === "services" && index < slugs.length - 1) {
+      breadcrumbItems.push({
+        label: "Add Service",
+        href: "/settings/services/add",
+        active: false,
+      });
+    }
   });
 
   return (
@@ -144,6 +163,15 @@ export default function SettingsCatchAllPage() {
               <p className="text-slate-400 mt-2">
                 This category doesn't have any sub-items or children yet.
               </p>
+              {slugs.includes("services") && (
+                <Button 
+                  type="primary" 
+                  className="mt-6 bg-blue-600 hover:bg-blue-700 font-semibold h-10 px-8 rounded-lg"
+                  onClick={() => router.push(`/settings/services/${currentSlug}/create`)}
+                >
+                  Create {currentSlug.charAt(0).toUpperCase() + currentSlug.slice(1)} Service
+                </Button>
+              )}
             </div>
           )}
         </div>

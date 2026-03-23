@@ -1,6 +1,9 @@
 "use client";
 
 import React, { useState } from "react";
+import { useRouter } from "next/navigation";
+import { Button } from "antd";
+import { Plus } from "lucide-react";
 import {
   ExploreSidebar,
   type ExploreView,
@@ -9,6 +12,7 @@ import { PageHeader } from "@/shared/components/layout/PageHeader";
 import { cn } from "@/shared/utils/cn";
 
 export default function ExplorePage() {
+  const router = useRouter();
   const [activeView, setActiveView] = useState<ExploreView>("catalog");
   const [activeCategory, setActiveCategory] = useState("database");
 
@@ -133,6 +137,8 @@ export default function ExplorePage() {
                 </p>
               </>
             )}
+
+            {/* Removed Add Service button as it belongs in Settings > Services */}
 
             <div className="mt-8 flex gap-2">
               <div
