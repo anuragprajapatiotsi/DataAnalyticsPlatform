@@ -1,77 +1,71 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import { useRouter } from "next/navigation";
+import { Button, Card, Spin, Empty, Alert } from "antd";
+import { Plus } from "lucide-react";
 import { PageHeader } from "@/shared/components/layout/PageHeader";
-import { ServiceHeader, ServiceTable } from "@/features/services/components";
-import { useServices } from "@/features/services/hooks/useServices";
-import { GetServicesParams, Service } from "@/features/services/types";
-import { message, Modal } from "antd";
-import { serviceService } from "@/features/services/services/service.service";
+import { settingsApi } from "@/features/settings/services/settings.service";
+import { getIcon } from "@/shared/utils/icon-mapper";
+import { SettingsItem } from "@/shared/types";
 
 export default function ServicesPage() {
   const router = useRouter();
-  const [params, setParams] = useState<GetServicesParams>({
-    skip: 0,
-    limit: 50,
-  });
+  const [categories, setCategories] = React.useState<SettingsItem[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState<string | null>(null);
 
-  const { data, isLoading } = useServices(params);
-
-  const handleSearchChange = (search: string) => {
-    setParams((prev) => ({ ...prev, search, skip: 0 }));
-  };
-
-  const handleAddClick = () => {
-    // Navigate to the category selection page (we previously moved it to add-service.tsx)
-    // Actually, let's just use the catch-all for now or create a specific page.
-    // I will create /settings/services/add/page.tsx with the category selection logic.
-    router.push("/settings/services/add");
-  };
-
-  const handleEdit = (service: Service) => {
-    // Edit logic
-    message.info(`Editing ${service.display_label} coming soon`);
-  };
-
-  const handleDelete = (id: string) => {
-    Modal.confirm({
-      title: "Are you sure you want to delete this service?",
-      content: "This action cannot be undone.",
-      okText: "Delete",
-      okType: "danger",
-      onOk: async () => {
-        try {
-          await serviceService.deleteService(id);
-          message.success("Service deleted successfully");
-          // Refresh data (handled by react-query window focus or we can invalidate)
-        } catch (error) {
-          message.error("Failed to delete service");
-        }
-      },
-    });
-  };
-
-  const handleTest = async (id: string) => {
-    const hide = message.loading("Testing connection...", 0);
-    try {
-      const result = await serviceService.testConnection(id);
-      hide();
-      if (result.success) {
-        message.success(result.message || "Connection successful!");
-      } else {
-        message.error(result.message || "Connection failed");
+  React.useEffect(() => {
+    async function fetchServices() {
+      try {
+        setLoading(true);
+        const data = await settingsApi.getSettings("services");
+        // Filter by is_active and is_enabled
+        const activeCategories = data.filter((item) => item.is_active && item.is_enabled);
+        setCategories(activeCategories);
+        setError(null);
+      } catch (err) {
+        console.error("Failed to fetch services:", err);
+        setError("Failed to load service categories. Please try again later.");
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      hide();
-      message.error("Failed to test connection");
     }
+
+    fetchServices();
+  }, []);
+
+  const handleCardClick = (item: SettingsItem) => {
+    // Navigate to the category detail page
+    router.push(`/settings/services/${item.slug}`);
   };
 
   const breadcrumbItems = [
     { label: "Settings", href: "/settings" },
     { label: "Services" },
   ];
+
+  if (loading) {
+    return (
+      <div className="flex flex-col space-y-6 animate-in fade-in duration-500 max-w-[1400px] mx-auto px-6 pt-2 pb-20">
+        <PageHeader title="Services" description="Select a service category to get started." breadcrumbItems={breadcrumbItems} />
+        <div className="flex-1 flex items-center justify-center py-20 bg-white rounded-xl border border-slate-200">
+          <Spin size="large" description="Loading categories..." />
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col space-y-6 animate-in fade-in duration-500 max-w-[1400px] mx-auto px-6 pt-2 pb-20">
+        <PageHeader title="Services" description="Select a service category to get started." breadcrumbItems={breadcrumbItems} />
+        <div className="flex-1 flex items-center justify-center p-8 bg-white rounded-xl border border-slate-200">
+          <Alert message="Error" description={error} type="error" showIcon className="max-w-md w-full" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col space-y-6 animate-in fade-in duration-500 max-w-[1400px] mx-auto px-6 pt-2 pb-20">
@@ -81,21 +75,48 @@ export default function ServicesPage() {
         breadcrumbItems={breadcrumbItems}
       />
 
-      <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-        <ServiceHeader 
-          onSearchChange={handleSearchChange} 
-          onAddClick={handleAddClick} 
-        />
-      </div>
-
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-        <ServiceTable
-          services={data?.data || []}
-          isLoading={isLoading}
-          onEdit={handleEdit}
-          onDelete={handleDelete}
-          onTest={handleTest}
-        />
+      <div className="flex-1">
+        {categories.length === 0 ? (
+          <div className="bg-white rounded-xl border border-slate-200 p-12 text-center shadow-sm">
+            <Empty description="No service categories available." />
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {categories.map((category) => {
+              const IconComponent = getIcon(category.icon);
+              return (
+                <Card
+                  key={category.id}
+                  hoverable
+                  className="border-slate-200 shadow-sm hover:shadow-md transition-all duration-300 rounded-xl overflow-hidden group"
+                  onClick={() => handleCardClick(category)}
+                  styles={{ body: { padding: '24px' } }}
+                >
+                  <div className="flex flex-col gap-5">
+                    <div className="p-3 bg-blue-50/50 rounded-xl border border-blue-100/50 w-fit group-hover:bg-blue-600 group-hover:border-blue-700 transition-all duration-300">
+                      <IconComponent className="text-blue-600 group-hover:text-white transition-colors" size={24} />
+                    </div>
+                    <div className="min-h-[auto]">
+                      <h3 className="font-bold text-slate-900 text-lg">{category.display_label}</h3>
+                      <p className="text-sm text-slate-500 mt-2 leading-relaxed line-clamp-2">
+                        {category.description || `Browse and manage your ${category.display_label.toLowerCase()} connections.`}
+                      </p>
+                    </div>
+                    <div className="pt-2">
+                      <Button 
+                        type="primary" 
+                        icon={<Plus size={16} />}
+                        className="w-full bg-slate-900 hover:bg-black border-none font-bold h-10 rounded-lg flex items-center justify-center gap-2 shadow-sm shadow-slate-900/10 group-hover:bg-blue-600 transition-all"
+                      >
+                        Explore {category.display_label}
+                      </Button>
+                    </div>
+                  </div>
+                </Card>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );

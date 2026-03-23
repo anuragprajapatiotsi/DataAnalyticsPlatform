@@ -21,7 +21,7 @@ export function BasicInfoStep({ form }: BasicInfoStepProps) {
 
       <div className="max-w-xl space-y-0.5 mt-2">
         <Form.Item
-          name="name"
+          name="service_name"
           label={
             <span className="font-bold text-slate-700 text-xs uppercase tracking-wider">
               Service Name

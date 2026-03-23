@@ -43,7 +43,8 @@ export interface ServiceEndpointRequest {
   service_name: string;
   base_url: string;
   extra: Record<string, any>;
-  internal_connection?: boolean;
+  internal_connection: boolean;
+  auto_trigger_bots: boolean;
 }
 
 export interface UpdateServiceRequest {

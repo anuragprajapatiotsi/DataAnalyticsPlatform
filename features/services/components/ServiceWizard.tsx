@@ -10,6 +10,8 @@ import {
   PreviewStep,
 } from "./steps";
 import { serviceService } from "../services/service.service";
+import { cn } from "@/shared/utils/cn";
+import { PageHeader, BreadcrumbItem } from "@/shared/components/layout/PageHeader";
 
 import { SettingsItem } from "@/shared/types";
 
@@ -17,6 +19,9 @@ interface ServiceWizardProps {
   serviceType: string;
   onFinish: (data: any) => void;
   onCancel: () => void;
+  title?: string;
+  description?: string;
+  breadcrumbItems?: BreadcrumbItem[];
 }
 
 interface StepItem {
@@ -25,41 +30,81 @@ interface StepItem {
   fields?: string[]; // Field names to validate for this step
 }
 
-export function ServiceWizard({ serviceType, onFinish, onCancel }: ServiceWizardProps) {
+export function ServiceWizard({
+  serviceType,
+  onFinish,
+  onCancel,
+  title,
+  description,
+  breadcrumbItems,
+}: ServiceWizardProps) {
   const [form] = Form.useForm();
-  const databaseKeywords = ["database", "databases", "postgres", "postgresql", "mysql", "mongodb", "redis", "sqlserver", "oracle", "mariadb", "sqlite"];
-  const isDatabaseFlow = databaseKeywords.some(keyword => {
+  const databaseKeywords = [
+    "database",
+    "databases",
+    "postgres",
+    "postgresql",
+    "mysql",
+    "mongodb",
+    "redis",
+    "sqlserver",
+    "oracle",
+    "mariadb",
+    "sqlite",
+  ];
+  const isDatabaseFlow = databaseKeywords.some((keyword) => {
     const lowerType = serviceType.toLowerCase();
     // Match exact keyword or handle cases like "PostgreSQL Database"
-    return lowerType === keyword || lowerType.includes(`${keyword} `) || lowerType.includes(` ${keyword}`) || lowerType.includes("database");
+    return (
+      lowerType === keyword ||
+      lowerType.includes(`${keyword} `) ||
+      lowerType.includes(` ${keyword}`) ||
+      lowerType.includes("database")
+    );
   });
   const [currentStep, setCurrentStep] = useState(0);
   const [isTestSuccessful, setIsTestSuccessful] = useState(false);
   const [testing, setTesting] = useState(false);
-  const [testResult, setTestResult] = useState<{ success: boolean; message: string; detail?: string } | null>(null);
+  const [testResult, setTestResult] = useState<{
+    success: boolean;
+    message: string;
+    detail?: string;
+  } | null>(null);
 
   const integrationLabel = Form.useWatch("integration_label", form);
-  
+
   // Early initialization for specific database types (skipping selection step)
   React.useEffect(() => {
     if (isDatabaseFlow && !form.getFieldValue("json_config")) {
       const lowerType = serviceType.toLowerCase();
-      let protocol = lowerType.includes("postgres") ? "postgresql" : (lowerType.includes("mysql") ? "mysql" : lowerType);
-      
-      const defaultJson = JSON.stringify({
-        service_name: lowerType,
-        base_url: `${protocol}://host:5432`,
-        extra: {
-          host: "host",
-          user: "",
-          password: "",
-          database: "",
-          port: 5432
+      let protocol = lowerType.includes("postgres")
+        ? "postgresql"
+        : lowerType.includes("mysql")
+          ? "mysql"
+          : lowerType;
+
+      const defaultJson = JSON.stringify(
+        {
+          base_url: `${protocol}://host:5432`,
+          extra: {
+            host: "host",
+            port: 5432,
+            user: "",
+            password: "",
+            database: "",
+          },
+          internal_connection: true,
+          auto_trigger_bots: false,
         },
-        internal_connection: true,
-        auto_trigger_bots: false
-      }, null, 2);
-      form.setFieldsValue({ json_config: defaultJson });
+        null,
+        2,
+      );
+      form.setFieldsValue({
+        json_config: defaultJson,
+        service_name: lowerType, // Initialize for direct routes
+        description: `Service for ${lowerType}`, // Initialize for direct routes
+        integration_slug: lowerType, // Initialize for direct routes
+      });
     }
   }, [isDatabaseFlow, serviceType, form]);
 
@@ -68,33 +113,42 @@ export function ServiceWizard({ serviceType, onFinish, onCancel }: ServiceWizard
   // Step 1: Selection (Only for databases)
   if (isDatabaseFlow) {
     steps.push({
-      title: "Select Type",
+      title: "Select Service Type",
       fields: ["db_id"],
       content: (
         <DatabaseSelectionStep
           form={form}
           onSelect={(db) => {
             const serviceName = db.slug;
-            let protocol = serviceName.toLowerCase().includes("postgres") ? "postgresql" : (serviceName.toLowerCase().includes("mysql") ? "mysql" : serviceName.toLowerCase());
-            
-            const defaultJson = JSON.stringify({
-              service_name: serviceName,
-              base_url: `${protocol}://host:5432`,
-              extra: {
-                host: "host",
-                user: "",
-                password: "",
-                database: "",
-                port: 5432
-              }
-            }, null, 2);
+            let protocol = serviceName.toLowerCase().includes("postgres")
+              ? "postgresql"
+              : serviceName.toLowerCase().includes("mysql")
+                ? "mysql"
+                : serviceName.toLowerCase();
 
             form.setFieldsValue({
               db_id: db.id,
+              setting_node_id: db.id, // Explicitly capture for new contract
               integration_slug: db.slug,
-              service_name: db.slug,
+              service_name: db.slug, // Source of truth from Step 1
+              description: db.description || db.display_label, // Source of truth from Step 1
               integration_label: db.display_label,
-              json_config: defaultJson,
+              json_config: JSON.stringify(
+                {
+                  base_url: `${protocol}://host:5432`,
+                  extra: {
+                    host: "host",
+                    port: 5432,
+                    user: "",
+                    password: "",
+                    database: "",
+                  },
+                  internal_connection: true,
+                  auto_trigger_bots: false,
+                },
+                null,
+                2
+              ),
             });
             setIsTestSuccessful(false); // Reset test success when type changes
           }}
@@ -105,8 +159,8 @@ export function ServiceWizard({ serviceType, onFinish, onCancel }: ServiceWizard
 
   // Step: Basic Info
   steps.push({
-    title: "Basic Info",
-    fields: ["name", "description"],
+    title: "Configure Service",
+    fields: ["service_name", "description"],
     content: <BasicInfoStep form={form} />,
   });
 
@@ -126,7 +180,7 @@ export function ServiceWizard({ serviceType, onFinish, onCancel }: ServiceWizard
 
   // Step: Preview
   steps.push({
-    title: "Preview",
+    title: "Preview & Create",
     content: <PreviewStep form={form} />,
   });
 
@@ -134,25 +188,42 @@ export function ServiceWizard({ serviceType, onFinish, onCancel }: ServiceWizard
     try {
       setTesting(true);
       setTestResult(null);
-      
+
       const jsonConfig = form.getFieldValue("json_config");
-      await form.validateFields(["json_config"]);
-      
+      await form.validateFields(["json_config", "service_name"]);
+
       const parsed = JSON.parse(jsonConfig);
-      const currentLabel = integrationLabel || serviceType;
-      const driver = currentLabel.toLowerCase().includes("postgres") ? "postgres" : (currentLabel.toLowerCase().includes("mysql") ? "mysql" : currentLabel.toLowerCase());
+      const serviceName = form.getFieldValue("service_name") || serviceType;
+      const integrationSlug = form.getFieldValue("integration_slug") || "";
       
+      // Determine driver from service name or slug
+      const driverSource = (integrationSlug || serviceName).toLowerCase();
+      const driver = driverSource.includes("postgres")
+        ? "postgres"
+        : driverSource.includes("mysql")
+          ? "mysql"
+          : driverSource.includes("mssql") || driverSource.includes("sqlserver")
+            ? "mssql"
+            : driverSource;
+
+      // Strict validation for required fields in connection_object
+      if (!parsed.extra?.host) throw new Error("Database host is required for testing.");
+      if (!parsed.extra?.port) throw new Error("Database port is required for testing.");
+      if (!parsed.extra?.user) throw new Error("Database username is required for testing.");
+      if (!parsed.extra?.password) throw new Error("Database password is required for testing.");
+      if (!parsed.extra?.database) throw new Error("Database name is required for testing.");
+
       const testPayload = {
-        service: parsed.service_name,
+        service: serviceName,
         service_type: "database",
         driver: driver,
         connection_object: {
-          host: parsed.extra?.host || parsed.base_url.split("://")[1]?.split(":")[0] || "host",
-          port: parsed.extra?.port,
-          user: parsed.extra?.user,
-          password: parsed.extra?.password,
-          database: parsed.extra?.database
-        }
+          host: parsed.extra.host,
+          port: parsed.extra.port,
+          user: parsed.extra.user,
+          password: parsed.extra.password,
+          database: parsed.extra.database,
+        },
       };
 
       const result = await serviceService.testDatabaseConnection(testPayload);
@@ -179,21 +250,27 @@ export function ServiceWizard({ serviceType, onFinish, onCancel }: ServiceWizard
       // Additional check for database flow: must have tested connection
       // For databases, Connection Details is step 2 (Select -> Basic -> Connection)
       if (isDatabaseFlow && currentStep === 2 && !isTestSuccessful) {
-        message.warning("Please test your connection successfully before proceeding.");
+        message.warning(
+          "Please test your connection successfully before proceeding.",
+        );
         return;
       }
 
       setCurrentStep((prev) => prev + 1);
     } catch (error: any) {
       // Log full error object for debugging
-      console.error("Step validation failed detailed (JSON):", JSON.stringify(error, null, 2));
+      console.error(
+        "Step validation failed detailed (JSON):",
+        JSON.stringify(error, null, 2),
+      );
       console.error("Step validation failed full object:", error);
-      
+
       // If error is from antd validation, it contains errorFields
       if (error?.errorFields?.length > 0) {
-        message.error(`Please fix: ${error.errorFields[0].errors[0]}`);
+        const errorMsg = error.errorFields[0].errors[0];
+        message.error(`Please fix: ${errorMsg}`);
       } else {
-        message.error("Validation failed. Please check your inputs.");
+        message.error(error.message || "Validation failed. Please check your inputs.");
       }
     }
   };
@@ -213,7 +290,8 @@ export function ServiceWizard({ serviceType, onFinish, onCancel }: ServiceWizard
     }
   };
 
-  const nextButtonDisabled = isDatabaseFlow && currentStep === 2 && !isTestSuccessful;
+  const nextButtonDisabled =
+    isDatabaseFlow && currentStep === 2 && !isTestSuccessful;
 
   return (
     <Form
@@ -222,51 +300,99 @@ export function ServiceWizard({ serviceType, onFinish, onCancel }: ServiceWizard
       initialValues={{ type: serviceType }}
       preserve={true}
       requiredMark={false}
-      className="max-w-5xl mx-auto space-y-4 pb-6"
+      className="max-w-4xl mx-auto space-y-6 pb-8 px-4 sm:px-6 lg:px-8"
     >
       {/* Hidden fields to preserve state and ensure registration across steps with rules */}
-      <Form.Item name="json_config" noStyle hidden rules={[{ required: isDatabaseFlow, message: "JSON config is required" }]}><Input /></Form.Item>
-      <Form.Item name="db_id" noStyle hidden rules={[{ required: isDatabaseFlow, message: "Selection is required" }]}><Input /></Form.Item>
-      <Form.Item name="integration_slug" noStyle hidden><Input /></Form.Item>
-      <Form.Item name="integration_label" noStyle hidden><Input /></Form.Item>
-
-      <div className="px-4 md:px-0">
-        <Steps
-          current={currentStep}
-          items={steps.map((item) => ({ title: item.title }))}
-          className="mb-0 overflow-x-auto pb-2"
-          responsive={true}
-          size="small"
-        />
-      </div>
-
-      <Card 
-        className="border-slate-200 shadow-md rounded-lg overflow-hidden flex flex-col"
-        styles={{ body: { padding: '0', display: 'flex', flexDirection: 'column', height: '100%', minHeight: '350px' } }}
+      <Form.Item
+        name="json_config"
+        noStyle
+        hidden
+        rules={[
+          { required: isDatabaseFlow, message: "JSON config is required" },
+        ]}
       >
-        <div 
-          className="p-4 md:p-6 flex-1 overflow-y-auto min-h-0 custom-scrollbar"
-          style={{ maxHeight: 'calc(100vh - 380px)' }}
-        >
-          {steps[currentStep].content}
+        <Input />
+      </Form.Item>
+      <Form.Item
+        name="db_id"
+        noStyle
+        hidden
+        rules={[{ required: isDatabaseFlow, message: "Selection is required" }]}
+      >
+        <Input />
+      </Form.Item>
+      <Form.Item
+        name="service_name"
+        noStyle
+        hidden
+        rules={[
+          { required: isDatabaseFlow, message: "Service name is required" },
+        ]}
+      >
+        <Input />
+      </Form.Item>
+      <Form.Item name="setting_node_id" noStyle hidden>
+        <Input />
+      </Form.Item>
+      <Form.Item name="description" noStyle hidden>
+        <Input />
+      </Form.Item>
+      <Form.Item name="integration_slug" noStyle hidden>
+        <Input />
+      </Form.Item>
+      <Form.Item name="integration_label" noStyle hidden>
+        <Input />
+      </Form.Item>
+
+      <div className="bg-white border border-slate-200 shadow-xl rounded-2xl overflow-hidden flex flex-col h-[calc(100vh-120px)] max-h-[850px] min-h-[500px]">
+        {/* Header Section (Breadcrumb + Title + Stepper) - Pinned */}
+        <div className="shrink-0 pt-8 pb-6 px-8 border-b border-slate-100 bg-slate-50/30 flex flex-col gap-6">
+          {(title || breadcrumbItems) && (
+            <div className="text-left">
+              <PageHeader
+                title={title || ""}
+                description={description || ""}
+                breadcrumbItems={breadcrumbItems || []}
+              />
+            </div>
+          )}
+
+          <div className="w-full flex justify-center">
+            <Steps
+              current={currentStep}
+              items={steps.map((item) => ({ title: item.title }))}
+              className="w-full max-w-2xl custom-steps"
+              responsive={true}
+              size="small"
+              titlePlacement="vertical"
+            />
+          </div>
         </div>
 
-        <div className="bg-slate-50/50 border-t border-slate-100 p-3 md:px-6 flex flex-row justify-between items-center mt-auto shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+        {/* Scrollable Content Section */}
+        <div className="flex-1 overflow-y-auto min-h-0 custom-scrollbar p-6 md:p-10">
+          <div className="max-w-4xl mx-auto pb-24">
+            {steps[currentStep].content}
+          </div>
+        </div>
+
+        {/* Sticky Footer Section - Pinned */}
+        <div className="shrink-0 bg-slate-50 border-t border-slate-200 p-5 md:px-10 flex flex-row justify-between items-center backdrop-blur-sm shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.03)] z-10">
           <Button
             onClick={currentStep === 0 ? onCancel : handleBack}
-            className="h-9 px-4 rounded-md font-semibold border-slate-200 text-slate-600 hover:text-slate-800 bg-white shadow-sm"
+            className="h-11 px-8 rounded-xl font-semibold border-slate-300 text-slate-600 hover:text-slate-800 bg-white shadow-sm transition-all hover:border-slate-400 active:scale-95"
           >
             {currentStep === 0 ? "Cancel" : "Back"}
           </Button>
 
-          <div className="flex gap-2">
+          <div className="flex gap-4">
             {isDatabaseFlow && currentStep === 2 && (
-              <Button 
+              <Button
                 onClick={handleTestDatabaseConnection}
                 loading={testing}
-                className="h-9 px-4 rounded-md font-bold border-blue-200 text-blue-600 hover:bg-blue-50 bg-white shadow-sm flex items-center gap-2"
+                className="h-11 px-6 rounded-xl font-bold border-blue-200 text-blue-600 hover:bg-blue-50 bg-white shadow-sm flex items-center gap-2 transition-all hover:border-blue-300 active:scale-95"
               >
-                {!testing && <Play size={14} className="fill-current" />}
+                {!testing && <Play size={16} className="fill-current" />}
                 Test Connection
               </Button>
             )}
@@ -276,26 +402,29 @@ export function ServiceWizard({ serviceType, onFinish, onCancel }: ServiceWizard
                 type="primary"
                 onClick={handleNext}
                 disabled={nextButtonDisabled}
-                className={`h-9 px-6 rounded-md font-bold flex items-center justify-center gap-2 shadow-sm ${
-                  nextButtonDisabled ? "opacity-50" : "bg-blue-600 hover:bg-blue-700"
-                }`}
+                className={cn(
+                  "h-11 px-10 rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg shadow-blue-500/10 transition-all active:scale-95",
+                  nextButtonDisabled
+                    ? "opacity-50"
+                    : "bg-blue-600 hover:bg-blue-700 border-none"
+                )}
               >
-                Next
-                <ChevronRight size={14} />
+                Next Step
+                <ChevronRight size={18} />
               </Button>
             ) : (
               <Button
                 type="primary"
                 onClick={handleSubmit}
-                className="h-9 px-8 rounded-md font-bold bg-green-600 hover:bg-green-700 border-none flex items-center justify-center gap-2 shadow-md transition-all hover:scale-[1.02]"
+                className="h-11 px-12 rounded-xl font-bold bg-green-600 hover:bg-green-700 border-none flex items-center justify-center gap-2 shadow-lg shadow-green-500/10 transition-all hover:scale-[1.02] active:scale-95"
               >
-                Create
-                <Check size={16} />
+                Create Service
+                <Check size={20} />
               </Button>
             )}
           </div>
         </div>
-      </Card>
+      </div>
     </Form>
   );
 }
