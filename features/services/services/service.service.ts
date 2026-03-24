@@ -1,5 +1,5 @@
 import { api } from "@/shared/api/axios";
-import { Service, GetServicesParams, CreateServiceRequest, UpdateServiceRequest, ServiceEndpoint, ServiceEndpointRequest, DatabaseInfo } from "../types";
+import { Service, GetServicesParams, CreateServiceRequest, UpdateServiceRequest, ServiceEndpoint, ServiceEndpointRequest, DatabaseInfo, GroupedServiceCategory } from "../types";
 
 export const serviceService = {
   async getServices(params: GetServicesParams = { skip: 0, limit: 50 }) {
@@ -42,7 +42,16 @@ export const serviceService = {
     return response.data;
   },
 
+  async updateServiceEndpoint(id: string, payload: any) {
+    const response = await api.put<ServiceEndpoint>(`/service-endpoints/${id}`, payload);
+    return response.data;
+  },
+
   async deleteService(id: string) {
+    await api.delete(`/service-endpoints/${id}`);
+  },
+
+  async deleteServiceEndpoint(id: string) {
     await api.delete(`/service-endpoints/${id}`);
   },
 
@@ -64,5 +73,46 @@ export const serviceService = {
   async getDatabases(id: string) {
     const response = await api.get<DatabaseInfo[]>(`/service-endpoints/${id}/explore/databases`);
     return response.data;
+  },
+
+  async getServiceEndpointsByType(type: string) {
+    const response = await api.get<any>("/service-endpoints/by-type", {
+      params: {
+        service_type: type,
+        name: "primary",
+      },
+    });
+    
+    const rawData = response.data;
+    
+    // 1. Array format: [ { category_name: '...', connections: [...] }, ... ]
+    if (Array.isArray(rawData)) return rawData;
+    
+    // 2. Specific format with categories: { categories: [ ... ] }
+    if (rawData && rawData.categories && Array.isArray(rawData.categories)) {
+      return rawData.categories;
+    }
+    
+    // 3. Wrapped format: { data: [ ... ], success?: true }
+    if (rawData && rawData.data) {
+      if (Array.isArray(rawData.data)) return rawData.data;
+      // 4. Object in wrapped format: { data: { "postgres": [...], ... } }
+      if (typeof rawData.data === 'object') {
+        return Object.entries(rawData.data).map(([category, connections]) => ({
+          category_name: category,
+          connections: Array.isArray(connections) ? connections : []
+        }));
+      }
+    }
+    
+    // 5. Direct object mapping: { "postgres": [...], "mysql": [...], ... }
+    if (rawData && typeof rawData === 'object' && !rawData.service_type) {
+      return Object.entries(rawData).map(([category, connections]) => ({
+        category_name: category,
+        connections: Array.isArray(connections) ? connections : []
+      }));
+    }
+    
+    return [];
   },
 };

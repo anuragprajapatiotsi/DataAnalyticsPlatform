@@ -17,20 +17,44 @@ export default function ExploreLayout({
   const pathname = usePathname();
   
   // Determine active view from pathname
-  const activeView: ExploreView = pathname.includes("/databases") ? "database" : "catalog";
+  const getActiveView = (): ExploreView => {
+    const segments = pathname.split('/').filter(Boolean); // ['explore', 'databases', '...'] or ['explore']
+    if (segments.length < 2) return "catalog";
+    
+    const viewSlug = segments[1];
+    const viewMap: Record<string, ExploreView> = {
+      pipelines: "pipelines",
+      kpis: "kpis",
+      files: "files",
+      databases: "database",
+      apis: "api",
+      storages: "storages",
+      messaging: "messaging",
+      dashboards: "dashboards",
+      "ml-models": "ml-models",
+      metadata: "metadata",
+      drives: "drives",
+      "ftp-servers": "ftp-servers",
+      drive: "drives",
+    };
+    
+    return viewMap[viewSlug] || "catalog";
+  };
+
+  const activeView = getActiveView();
   const [activeCategory, setActiveCategory] = useState("database");
 
-  const breadcrumbItems = [
-    { label: "Dashboard", href: "/" },
-    { label: "Explore", href: "/explore" },
-  ];
-
   const handleViewChange = (view: ExploreView) => {
-    if (view === "database") {
-      router.push("/explore/databases");
-    } else if (view === "catalog") {
-      router.push("/explore");
-    }
+    const routeMap: Record<string, string> = {
+      database: "databases",
+      api: "apis",
+      pipelines: "pipelines",
+      kpis: "kpis",
+      files: "files",
+      catalog: "",
+    };
+    const route = routeMap[view] || view;
+    router.push(`/explore/${route}`);
   };
 
   return (

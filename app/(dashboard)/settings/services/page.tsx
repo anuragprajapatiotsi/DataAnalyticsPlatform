@@ -61,7 +61,7 @@ export default function ServicesPage() {
       <div className="flex flex-col space-y-6 animate-in fade-in duration-500 max-w-[1400px] mx-auto px-6 pt-2 pb-20">
         <PageHeader title="Services" description="Select a service category to get started." breadcrumbItems={breadcrumbItems} />
         <div className="flex-1 flex items-center justify-center p-8 bg-white rounded-xl border border-slate-200">
-          <Alert message="Error" description={error} type="error" showIcon className="max-w-md w-full" />
+          <Alert title="Error" description={error} type="error" showIcon className="max-w-md w-full" />
         </div>
       </div>
     );

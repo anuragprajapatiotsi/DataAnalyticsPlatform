@@ -15,6 +15,7 @@ export interface Service {
 
 export interface ServiceEndpoint {
   id: string;
+  org_id: string;
   service_name: string;
   description: string;
   base_url: string;
@@ -60,4 +61,11 @@ export interface DatabaseInfo {
   description?: string;
   type?: string;
   owners?: string[];
+}
+
+export interface GroupedServiceCategory {
+  category?: string;
+  category_name?: string;
+  category_slug?: string;
+  connections: ServiceEndpoint[];
 }

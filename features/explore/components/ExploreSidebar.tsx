@@ -25,7 +25,6 @@ const ASSET_CATEGORIES = [
   { id: "api", label: "API", icon: Cpu },
   { id: "messaging", label: "Messaging", icon: MessageSquare },
   { id: "dashboards", label: "Dashboards", icon: LayoutDashboard },
-  { id: "pipelines", label: "Pipelines", icon: GitBranch },
   { id: "ml-models", label: "ML Models", icon: Zap },
   { id: "storages", label: "Storages", icon: HardDrive },
   { id: "metadata", label: "Metadata", icon: Search },
@@ -64,11 +63,15 @@ export function ExploreSidebar({
   const [sourcesExpanded, setSourcesExpanded] = useState(true);
 
   const handleCategoryClick = (id: string) => {
-    if (id === "database") {
-      router.push("/explore/databases");
-    } else {
-      onViewChange(id as ExploreView);
-    }
+    // Map sidebar IDs to service_type route parameters
+    const typeMap: Record<string, string> = {
+      database: "databases",
+      api: "apis",
+      storages: "storages",
+      drives: "drive",
+    };
+    const serviceType = typeMap[id] || id;
+    router.push(`/explore/${serviceType}`);
   };
 
   return (
@@ -127,7 +130,7 @@ export function ExploreSidebar({
             onClick={() => setSourcesExpanded(!sourcesExpanded)}
             className={cn(
               "group flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
-              activeView === "kpis" || activeView === "drives" || activeView === "ftp-servers" || ASSET_CATEGORIES.some(c => c.id === activeView)
+              activeView === "drives" || activeView === "ftp-servers" || ASSET_CATEGORIES.some(c => c.id === activeView)
                 ? "bg-blue-50/50 text-blue-600"
                 : "text-slate-600 hover:bg-slate-100 hover:text-slate-900",
             )}
@@ -135,7 +138,7 @@ export function ExploreSidebar({
             <Zap
               size={18}
               className={
-                activeView === "kpis" || activeView === "drives" || activeView === "ftp-servers" || ASSET_CATEGORIES.some(c => c.id === activeView) ? "text-blue-600" : "text-slate-400"
+                activeView === "drives" || activeView === "ftp-servers" || ASSET_CATEGORIES.some(c => c.id === activeView) ? "text-blue-600" : "text-slate-400"
               }
             />
             <span className="flex-1 text-left">Sources</span>
@@ -215,29 +218,47 @@ export function ExploreSidebar({
                 />
                 FTP Servers
               </button>
-
-              {/* KPIs */}
-              <button
-                onClick={() => onViewChange("kpis")}
-                className={cn(
-                  "group flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium transition-all duration-200",
-                  activeView === "kpis"
-                    ? "text-blue-600 font-bold bg-blue-50/30"
-                    : "text-slate-500 hover:text-slate-800 hover:bg-slate-50",
-                )}
-              >
-                <TrendingUp
-                  size={14}
-                  className={cn(
-                    "transition-colors",
-                    activeView === "kpis" ? "text-blue-600" : "text-slate-400",
-                  )}
-                />
-                KPIs
-              </button>
             </div>
           )}
         </div>
+
+        {/* Pipelines */}
+        <button
+          onClick={() => onViewChange("pipelines")}
+          className={cn(
+            "group flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
+            activeView === "pipelines"
+              ? "bg-blue-50 text-blue-600 shadow-sm shadow-blue-100/30"
+              : "text-slate-600 hover:bg-slate-100 hover:text-slate-900",
+          )}
+        >
+          <GitBranch
+            size={18}
+            className={
+              activeView === "pipelines" ? "text-blue-600" : "text-slate-400"
+            }
+          />
+          Pipelines
+        </button>
+
+        {/* KPIs */}
+        <button
+          onClick={() => onViewChange("kpis")}
+          className={cn(
+            "group flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
+            activeView === "kpis"
+              ? "bg-blue-50 text-blue-600 shadow-sm shadow-blue-100/30"
+              : "text-slate-600 hover:bg-slate-100 hover:text-slate-900",
+          )}
+        >
+          <TrendingUp
+            size={18}
+            className={
+              activeView === "kpis" ? "text-blue-600" : "text-slate-400"
+            }
+          />
+          KPIs
+        </button>
 
         {/* Files */}
         <button
