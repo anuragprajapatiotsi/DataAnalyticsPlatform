@@ -69,3 +69,41 @@ export interface GroupedServiceCategory {
   category_slug?: string;
   connections: ServiceEndpoint[];
 }
+
+export interface SchemaInfo {
+  name: string;
+  description?: string;
+  owners?: string[];
+  domains?: string[];
+}
+
+export interface DBObjectInfo {
+  name: string;
+  object_type: string;
+  description?: string;
+  owners?: string[];
+  tags?: string[];
+}
+
+export interface ColumnInfo {
+  name: string;
+  data_type: string;
+  is_nullable: boolean;
+  ordinal_position: number;
+  description?: string;
+  tags?: string[];
+  glossary_terms?: string[];
+}
+
+export interface DBTableDetail {
+  schema: string;
+  table: string;
+  object_type: string;
+  columns: ColumnInfo[];
+  description?: string;
+  owners?: string[];
+  domains?: string[];
+  tier?: string;
+  retention_period?: string;
+  certification?: string;
+}

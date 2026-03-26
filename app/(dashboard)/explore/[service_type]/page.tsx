@@ -11,7 +11,8 @@ import {
   ServiceEndpoint,
 } from "@/features/services/types";
 import { GroupedConnectionList } from "@/features/services/components";
-import { Button } from "antd";
+import { Button, Select } from "antd";
+import { Building2 } from "lucide-react";
 
 export default function ExploreServiceTypePage() {
   const params = useParams();
@@ -20,11 +21,26 @@ export default function ExploreServiceTypePage() {
 
   const [groupedData, setGroupedData] = useState<GroupedServiceCategory[]>([]);
   const [loading, setLoading] = useState(true);
+  const [organizations, setOrganizations] = useState<{ id: string; name: string }[]>([]);
+  const [selectedOrgId, setSelectedOrgId] = useState<string | undefined>(undefined);
+
+  // Fetch Organizations
+  useEffect(() => {
+    async function fetchOrgs() {
+      try {
+        const orgs = await serviceService.getOrganizations();
+        setOrganizations(orgs || []);
+      } catch (err) {
+        console.error("Failed to fetch organizations:", err);
+      }
+    }
+    fetchOrgs();
+  }, []);
 
   const fetchData = useCallback(async () => {
     try {
       setLoading(true);
-      const data = await serviceService.getServiceEndpointsByType(serviceType);
+      const data = await serviceService.getServiceEndpointsByType(serviceType, selectedOrgId);
       setGroupedData(data || []);
     } catch (err) {
       console.error(`Failed to fetch ${serviceType} connections:`, err);
@@ -32,7 +48,7 @@ export default function ExploreServiceTypePage() {
     } finally {
       setLoading(false);
     }
-  }, [serviceType]);
+  }, [serviceType, selectedOrgId]);
 
   useEffect(() => {
     fetchData();
@@ -73,6 +89,29 @@ export default function ExploreServiceTypePage() {
             description={`Explore and manage your connected ${serviceType} instances grouped by integration.`}
             breadcrumbItems={breadcrumbItems}
           />
+
+          <div className="flex items-center gap-3">
+            <div className="flex flex-col gap-1 items-end">
+              <span className="text-[10px] font-bold text-slate-600  tracking-widest leading-none mr-1">
+                Organization
+              </span>
+              <Select
+                placeholder="All Organizations"
+                allowClear
+                className="w-64"
+                suffixIcon={<Building2 size={14} className="text-slate-00" />}
+                onChange={(value) => setSelectedOrgId(value)}
+                value={selectedOrgId}
+                loading={organizations.length === 0 && loading}
+                options={organizations.map(org => ({
+                  label: org.name,
+                  value: org.id
+                }))}
+                variant="filled"
+                style={{ borderRadius: '8px'}}
+              />
+            </div>
+          </div>
         </div>
       </div>
 
@@ -91,7 +130,11 @@ export default function ExploreServiceTypePage() {
               loading={loading}
               onRowClick={handleRowClick}
               onDelete={handleDelete}
-              emptyText={`No ${serviceType} connections found. Add one in Settings > Services.`}
+              emptyText={
+                selectedOrgId 
+                  ? "No connections available for the selected organization"
+                  : `No ${serviceType} connections found. Add one in Settings > Services.`
+              }
             />
           )}
         </div>

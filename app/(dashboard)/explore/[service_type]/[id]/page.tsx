@@ -197,7 +197,7 @@ export default function ConnectionDetailPage() {
   return (
     <div className="flex flex-col h-full bg-[#f8fafc] animate-in fade-in duration-500">
       {/* Header Area */}
-      <div className="px-6 pt-4 bg-white border-b border-slate-200">
+      <div className="px-4 pt-2 bg-white border-b border-slate-200">
         <div className="max-w-6xl mx-auto flex flex-col gap-3">
           <div className="flex items-center justify-between">
             <PageHeader
@@ -205,13 +205,6 @@ export default function ConnectionDetailPage() {
               description={`Manage and explore databases for this connection.`}
               breadcrumbItems={breadcrumbItems}
             />
-            <Button
-              type="text"
-              icon={<Settings2 size={16} />}
-              className="flex items-center gap-2 text-slate-500 hover:text-blue-600 hover:bg-blue-50 font-medium text-xs h-9 px-4 rounded-lg border border-slate-200"
-            >
-              Customize
-            </Button>
           </div>
 
           {/* Tab Navigation */}

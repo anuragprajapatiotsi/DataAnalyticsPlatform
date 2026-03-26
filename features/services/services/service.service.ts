@@ -1,5 +1,5 @@
 import { api } from "@/shared/api/axios";
-import { Service, GetServicesParams, CreateServiceRequest, UpdateServiceRequest, ServiceEndpoint, ServiceEndpointRequest, DatabaseInfo, GroupedServiceCategory } from "../types";
+import { Service, GetServicesParams, CreateServiceRequest, UpdateServiceRequest, ServiceEndpoint, ServiceEndpointRequest, DatabaseInfo, GroupedServiceCategory, SchemaInfo, DBObjectInfo, DBTableDetail } from "../types";
 
 export const serviceService = {
   async getServices(params: GetServicesParams = { skip: 0, limit: 50 }) {
@@ -75,11 +75,34 @@ export const serviceService = {
     return response.data;
   },
 
-  async getServiceEndpointsByType(type: string) {
+  async getSchemas(id: string, database: string) {
+    const response = await api.get<SchemaInfo[]>(`/service-endpoints/${id}/explore/${database}/schemas`);
+    return response.data;
+  },
+
+  async getDBObjects(id: string, database: string, schema: string) {
+    const response = await api.get<DBObjectInfo[]>(`/service-endpoints/${id}/explore/${database}/${schema}/objects`, {
+      params: { name: "primary" }
+    });
+    return response.data;
+  },
+
+  async getTableDetail(id: string, database: string, schema: string, table: string) {
+    const response = await api.get<DBTableDetail>(`/service-endpoints/${id}/explore/${database}/${schema}/${table}`);
+    return response.data;
+  },
+
+  async getOrganizations() {
+    const response = await api.get<any[]>("/orgs");
+    return response.data;
+  },
+
+  async getServiceEndpointsByType(type: string, orgId?: string) {
     const response = await api.get<any>("/service-endpoints/by-type", {
       params: {
         service_type: type,
         name: "primary",
+        org_id: orgId,
       },
     });
     
