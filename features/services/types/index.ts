@@ -107,3 +107,44 @@ export interface DBTableDetail {
   retention_period?: string;
   certification?: string;
 }
+
+export interface Bot {
+  id: string;
+  name: string;
+  bot_type: string;
+  mode: string;
+  is_enabled: boolean;
+  trigger_mode: string;
+  last_run_status?: string;
+  last_run_at?: string;
+  description?: string;
+  config?: any;
+}
+
+export interface GetBotsParams {
+  search?: string;
+  bot_type?: string;
+  mode?: string;
+  is_enabled?: boolean;
+  trigger_mode?: string;
+  skip?: number;
+  limit?: number;
+}
+
+export interface BotRun {
+  id: string;
+  bot_id: string;
+  status: "success" | "failed" | "running" | "pending";
+  trigger_source: "manual" | "scheduled" | "event";
+  triggered_by?: string;
+  started_at: string;
+  completed_at?: string;
+  output?: any;
+  message?: string;
+}
+
+export interface GetBotRunsParams {
+  skip?: number;
+  limit?: number;
+  status?: string;
+}

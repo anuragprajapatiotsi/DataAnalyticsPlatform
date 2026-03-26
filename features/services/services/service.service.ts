@@ -1,5 +1,5 @@
 import { api } from "@/shared/api/axios";
-import { Service, GetServicesParams, CreateServiceRequest, UpdateServiceRequest, ServiceEndpoint, ServiceEndpointRequest, DatabaseInfo, GroupedServiceCategory, SchemaInfo, DBObjectInfo, DBTableDetail } from "../types";
+import { Service, GetServicesParams, CreateServiceRequest, UpdateServiceRequest, ServiceEndpoint, ServiceEndpointRequest, DatabaseInfo, GroupedServiceCategory, SchemaInfo, DBObjectInfo, DBTableDetail, Bot, GetBotsParams, BotRun, GetBotRunsParams } from "../types";
 
 export const serviceService = {
   async getServices(params: GetServicesParams = { skip: 0, limit: 50 }) {
@@ -94,6 +94,51 @@ export const serviceService = {
 
   async getOrganizations() {
     const response = await api.get<any[]>("/orgs");
+    return response.data;
+  },
+
+  async getBots(params: GetBotsParams = { skip: 0, limit: 50 }) {
+    const response = await api.get<Bot[]>("/bots", {
+      params: {
+        ...params,
+        name: "primary",
+      },
+    });
+    return response.data;
+  },
+
+  async updateBot(botId: string, data: Partial<Bot>) {
+    const response = await api.put<Bot>(`/bots/${botId}`, data);
+    return response.data;
+  },
+
+  async runBot(botId: string, config: Record<string, any> = {}) {
+    const response = await api.post<{ message: string; success: boolean }>(`/bots/${botId}/run`, { config });
+    return response.data;
+  },
+
+  async enableBot(botId: string) {
+    const response = await api.post(`/bots/${botId}/enable`);
+    return response.data;
+  },
+
+  async disableBot(botId: string) {
+    const response = await api.post(`/bots/${botId}/disable`);
+    return response.data;
+  },
+
+  async deleteBot(botId: string) {
+    const response = await api.delete(`/bots/${botId}`);
+    return response.data;
+  },
+
+  async getBotRuns(botId: string, params: GetBotRunsParams = { skip: 0, limit: 50 }) {
+    const response = await api.get<BotRun[]>(`/bots/${botId}/runs`, {
+      params: {
+        ...params,
+        name: "primary",
+      },
+    });
     return response.data;
   },
 

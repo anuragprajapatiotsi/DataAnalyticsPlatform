@@ -92,7 +92,7 @@ export default function ExploreServiceTypePage() {
 
           <div className="flex items-center gap-3">
             <div className="flex flex-col gap-1 items-end">
-              <span className="text-[10px] font-bold text-slate-600  tracking-widest leading-none mr-1">
+              <span className="text-[14px] font-bold text-slate-600  tracking-widest leading-none mr-1">
                 Organization
               </span>
               <Select
