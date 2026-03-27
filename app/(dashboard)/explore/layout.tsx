@@ -33,11 +33,13 @@ export default function ExploreLayout({
       dashboards: "dashboards",
       "ml-models": "ml-models",
       metadata: "metadata",
+      "object-resources": "object-resources",
+      "data-assets": "data-assets",
       drives: "drives",
       "ftp-servers": "ftp-servers",
       drive: "drives",
     };
-    
+
     return viewMap[viewSlug] || "catalog";
   };
 
@@ -51,6 +53,8 @@ export default function ExploreLayout({
       pipelines: "pipelines",
       kpis: "kpis",
       files: "files",
+      "object-resources": "object-resources",
+      "data-assets": "data-assets",
       catalog: "",
     };
     const route = routeMap[view] || view;

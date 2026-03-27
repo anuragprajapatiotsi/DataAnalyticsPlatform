@@ -1,7 +1,23 @@
 import { api } from "@/shared/api/axios";
-import { Service, GetServicesParams, CreateServiceRequest, UpdateServiceRequest, ServiceEndpoint, ServiceEndpointRequest, DatabaseInfo, GroupedServiceCategory, SchemaInfo, DBObjectInfo, DBTableDetail, Bot, GetBotsParams, BotRun, GetBotRunsParams, ConnectorMetadata, AggregatedDatabase } from "../types";
+import { Service, GetServicesParams, CreateServiceRequest, UpdateServiceRequest, ServiceEndpoint, ServiceEndpointRequest, DatabaseInfo, GroupedServiceCategory, SchemaInfo, DBObjectInfo, DBTableDetail, Bot, GetBotsParams, BotRun, GetBotRunsParams, ConnectorMetadata, AggregatedDatabase, CatalogResponse, CatalogAsset, DataAssetDetail, DataAssetProfile } from "../types";
 
 export const serviceService = {
+  async getLatestAssetProfile(assetId: string) {
+    const response = await api.get<DataAssetProfile>(`/data-assets/${assetId}/profiles/latest`);
+    return response.data;
+  },
+  async getAssetDetail(assetId: string) {
+    const response = await api.get<DataAssetDetail>(`/data-assets/${assetId}`);
+    return response.data;
+  },
+  async getAssetChildren(assetId: string) {
+    const response = await api.get<CatalogAsset[]>(`/data-assets/${assetId}/children`);
+    return response.data;
+  },
+  async getCatalog(id: string) {
+    const response = await api.get<CatalogResponse>(`/service-endpoints/${id}/catalog`);
+    return response.data;
+  },
   async getServices(params: GetServicesParams = { skip: 0, limit: 50 }) {
     const response = await api.get<ServiceEndpoint[]>("/service-endpoints", {
       params: {

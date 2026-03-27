@@ -164,3 +164,85 @@ export interface AggregatedDatabase {
   connector_slug: string;
   connector_label: string;
 }
+
+export interface CatalogSchema {
+  id: string;
+  name: string;
+  children_count: number;
+}
+
+export interface CatalogDatabase {
+  id: string;
+  name: string;
+  schemas: CatalogSchema[];
+  children_count: number;
+}
+
+export interface CatalogResponse {
+  databases: CatalogDatabase[];
+}
+
+export interface CatalogAsset {
+  id: string;
+  name: string;
+  display_name?: string;
+  asset_type: "table" | "view" | "function";
+  row_count?: number;
+  size_bytes?: number;
+  observability_score?: number;
+  classification_tags?: Array<{
+    id: string;
+    name: string;
+    display_name: string;
+    color?: string;
+  }>;
+  description?: string;
+}
+
+export interface DataAssetColumn {
+  name: string;
+  data_type: string;
+  description?: string;
+  is_nullable: boolean;
+  is_primary_key: boolean;
+  tags?: Array<{
+    id: string;
+    name: string;
+    display_name: string;
+    color?: string;
+  }>;
+}
+
+export interface DataAssetDetail extends CatalogAsset {
+  fully_qualified_name: string;
+  sensitivity?: "PII" | "Internal" | "Restricted" | "Public";
+  tier?: "Bronze" | "Silver" | "Gold" | "Platinum";
+  owners?: Array<{ id: string; name: string; email?: string }>;
+  experts?: Array<{ id: string; name: string; email?: string }>;
+  columns: DataAssetColumn[];
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface ColumnProfile {
+  null_count: number;
+  null_percentage: number;
+  distinct_count: number;
+  distinct_percentage: number;
+  min?: any;
+  max?: any;
+  avg?: number;
+  median?: number;
+  std_dev?: number;
+  histogram?: Array<{ value: any; count: number }>;
+}
+
+export interface DataAssetProfile {
+  id: string;
+  asset_id: string;
+  row_count: number;
+  profile_data: Record<string, any>;
+  column_profiles: Record<string, ColumnProfile>;
+  started_at: string;
+  completed_at: string;
+}

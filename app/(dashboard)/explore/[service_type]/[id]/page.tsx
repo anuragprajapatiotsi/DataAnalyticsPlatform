@@ -44,6 +44,7 @@ import {
   MoreVertical,
   Trash2,
   ExternalLink,
+  Share2,
 } from "lucide-react";
 import { serviceService } from "@/features/services/services/service.service";
 import { PageHeader } from "@/shared/components/layout/PageHeader";
@@ -81,6 +82,7 @@ export default function ConnectionDetailPage() {
     "idle" | "testing" | "success" | "failed"
   >("idle");
   const [form] = Form.useForm();
+  const watchedExtra = Form.useWatch("extra", form);
 
   async function fetchData() {
     try {
@@ -104,11 +106,34 @@ export default function ConnectionDetailPage() {
     if (id) fetchData();
   }, [id]);
 
+  const buildBaseUrl = (service: string, host: string, port: string | number) => {
+    const protocolMap: Record<string, string> = {
+      postgres: "postgresql",
+      mysql: "mysql",
+      mongodb: "mongodb",
+      redis: "redis",
+    };
+    const protocol = protocolMap[service] || service;
+    return `${protocol}://${host}:${port}`;
+  };
+
   const handleUpdate = async (values: any) => {
     try {
       setIsUpdating(true);
+      const host = values.extra?.host;
+      const port = values.extra?.port;
+      
+      if (!host || !port) {
+        message.error("Host and Port are required to generate connection URL");
+        setIsUpdating(false);
+        return;
+      }
+
+      const autoBaseUrl = buildBaseUrl(connection?.service_name || "postgres", host, port);
+
       const payload = {
         ...values,
+        base_url: autoBaseUrl,
         setting_node_id: connection?.extra?.setting_node_id,
         extra: {
           ...connection?.extra,
@@ -137,32 +162,32 @@ export default function ConnectionDetailPage() {
       setIsTesting(true);
       setTestStatus("testing");
 
-      // Extract and flatten the config data
-      // Case 1: testData from form (which has extra nested)
-      // Case 2: testData from direct call or existing connection.extra
       const config = testData?.extra || testData || connection.extra;
-
       const host = config?.host;
+      const port = config?.port;
       const user =
         config?.username ||
         config?.user ||
         config?.service_name ||
         connection.extra?.username;
 
-      if (!host || !user) {
-        message.warning("Connection requires Host and User configuration");
+      if (!host || !port || !user) {
+        message.warning("Connection requires Host, Port, and User configuration");
         setIsTesting(false);
         setTestStatus("failed");
         return;
       }
 
+      const autoBaseUrl = buildBaseUrl(connection.service_name, host, port);
+
       const payload = {
         service: connection.service_name,
         service_type: "database",
+        base_url: autoBaseUrl,
         driver: serviceType === "databases" ? "postgres" : serviceType,
         connection_object: {
           host: String(host),
-          port: Number(config?.port) || 0,
+          port: Number(port) || 0,
           user: String(user),
           password: String(config?.password || ""),
           database: String(config?.database || ""),
@@ -356,21 +381,6 @@ export default function ConnectionDetailPage() {
           >
             <div className="grid grid-cols-2 gap-x-6">
               <Form.Item
-                name="base_url"
-                label={
-                  <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-                    API Base URL
-                  </span>
-                }
-                className="col-span-2"
-                rules={[{ required: true, message: "Base URL is required" }]}
-              >
-                <Input
-                  placeholder="postgresql://host:port/db"
-                  className="h-11 rounded-xl bg-slate-50 border-slate-100 hover:border-blue-300 focus:bg-white transition-all font-mono text-sm"
-                />
-              </Form.Item>
-              <Form.Item
                 name="description"
                 label={
                   <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
@@ -381,7 +391,7 @@ export default function ConnectionDetailPage() {
               >
                 <Input.TextArea
                   placeholder="Describe this connection's purpose..."
-                  rows={3}
+                  rows={2}
                   className="rounded-xl bg-slate-50 border-slate-100 hover:border-blue-300 focus:bg-white transition-all text-sm py-3"
                 />
               </Form.Item>
@@ -392,6 +402,24 @@ export default function ConnectionDetailPage() {
                   Technical Configuration
                   <div className="h-[1px] flex-1 bg-slate-100" />
                 </h4>
+
+                {watchedExtra?.host && watchedExtra?.port && (
+                  <div className="mb-4 p-3 bg-blue-50/50 rounded-xl border border-blue-100/50 flex items-center justify-between animate-in fade-in zoom-in duration-300">
+                    <div className="flex items-center gap-2">
+                      <Share2 size={14} className="text-blue-500" />
+                      <span className="text-[10px] font-bold text-blue-600 uppercase tracking-wider">
+                        Generated URL
+                      </span>
+                    </div>
+                    <span className="text-xs font-mono font-bold text-blue-700">
+                      {buildBaseUrl(
+                        connection?.service_name || "postgres",
+                        watchedExtra.host,
+                        watchedExtra.port,
+                      )}
+                    </span>
+                  </div>
+                )}
                 <div className="bg-slate-50/50 p-3 rounded-2xl border border-slate-100 relative overflow-hidden space-y-3">
                   <div className="grid grid-cols-12 gap-x-4">
                     <Form.Item
@@ -921,21 +949,43 @@ function AgentsTabView({ connectionId }: { connectionId: string }) {
     }
   }, [filters]);
 
+  // Initial fetch
   useEffect(() => {
     fetchBots();
   }, [fetchBots]);
+
+  // Status Polling
+  useEffect(() => {
+    const hasActiveBots = bots.some(
+      (b) => b.last_run_status === "running" || b.last_run_status === "pending",
+    );
+
+    if (!hasActiveBots) return;
+
+    const interval = setInterval(() => {
+      fetchBots();
+    }, 10000);
+
+    return () => clearInterval(interval);
+  }, [fetchBots, bots]);
 
   const handleRunBot = async (botId: string) => {
     try {
       setIsActionLoading(true);
       const res = await serviceService.runBot(botId);
       if (res.success) {
-        message.success(res.message || "Bot triggered successfully");
+        message.success("Agent execution started successfully");
         fetchBots();
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Failed to run bot:", err);
-      message.error("Failed to trigger agent execution.");
+      if (err.status === 409) {
+        message.warning("Agent is already running.");
+      } else {
+        const errorMsg = err?.message || "Failed to trigger agent execution.";
+        message.error(errorMsg);
+      }
+      fetchBots(); // Refresh to get current state
     } finally {
       setIsActionLoading(false);
     }
@@ -1118,12 +1168,34 @@ function AgentsTabView({ connectionId }: { connectionId: string }) {
           <Dropdown
             menu={{
               items: [
-                {
-                  key: "run",
-                  label: "Run Agent",
-                  icon: <Play size={14} />,
-                  onClick: () => handleRunBot(record.id),
-                },
+                ...(record.is_enabled &&
+                record.last_run_status !== "running" &&
+                record.last_run_status !== "pending"
+                  ? [
+                      {
+                        key: "run",
+                        label: "Run Agent",
+                        icon: <Play size={14} />,
+                        onClick: () => handleRunBot(record.id),
+                      },
+                    ]
+                  : []),
+                ...(record.is_enabled &&
+                (record.last_run_status === "running" ||
+                  record.last_run_status === "pending")
+                  ? [
+                      {
+                        key: "running",
+                        label: (
+                          <span className="flex items-center gap-2 text-blue-600 font-bold">
+                            Running...{" "}
+                            <Loader2 size={14} className="animate-spin" />
+                          </span>
+                        ),
+                        disabled: true,
+                      },
+                    ]
+                  : []),
                 {
                   key: "toggle",
                   label: record.is_enabled ? "Disable Agent" : "Enable Agent",
@@ -1446,42 +1518,83 @@ function AgentsTabView({ connectionId }: { connectionId: string }) {
   );
 }
 
+interface UnifiedBotRun extends BotRun {
+  bot_name: string;
+  bot_type: string;
+}
+
 function AgentRunsTabView({ connectionId }: { connectionId: string }) {
   const [bots, setBots] = useState<Bot[]>([]);
-  const [selectedBotId, setSelectedBotId] = useState<string | undefined>(
-    undefined,
-  );
-  const [runs, setRuns] = useState<BotRun[]>([]);
+  const [runs, setRuns] = useState<UnifiedBotRun[]>([]);
   const [loading, setLoading] = useState(false);
   const [isOutputModalOpen, setIsOutputModalOpen] = useState(false);
   const [selectedRun, setSelectedRun] = useState<BotRun | null>(null);
 
+  const [filters, setFilters] = useState({
+    search: "",
+    bot_id: "all",
+    status: "all",
+    trigger_source: "all",
+  });
+
   const fetchBots = useCallback(async () => {
     try {
+      // Fetch all bots for this endpoint
       const data = await serviceService.getBots({ skip: 0, limit: 100 });
       setBots(data || []);
-      if (data && data.length > 0 && !selectedBotId) {
-        setSelectedBotId(data[0].id);
-      }
     } catch (err) {
-      console.error("Failed to fetch bots for selection:", err);
-      message.error("Failed to load agents for selection.");
+      console.error("Failed to fetch bots for runs context:", err);
+      message.error("Failed to load agents.");
     }
-  }, [selectedBotId]);
+  }, []);
 
   const fetchRuns = useCallback(async () => {
-    if (!selectedBotId) return;
     try {
       setLoading(true);
-      const data = await serviceService.getBotRuns(selectedBotId);
-      setRuns(data || []);
+      // 1. Ensure we have bots
+      const currentBots = bots.length > 0 
+        ? bots 
+        : await serviceService.getBots({ skip: 0, limit: 100 });
+      
+      if (bots.length === 0) setBots(currentBots);
+
+      if (!currentBots || currentBots.length === 0) {
+        setRuns([]);
+        return;
+      }
+
+      // 2. Fetch runs for all bots in parallel
+      const runsPromises = currentBots.map(async (bot: Bot) => {
+        try {
+          const botRuns = await serviceService.getBotRuns(bot.id, { limit: 20 });
+          return botRuns.map((run: BotRun) => ({
+            ...run,
+            bot_name: bot.name,
+            bot_type: bot.bot_type,
+          }));
+        } catch (e) {
+          console.error(`Failed to fetch runs for bot ${bot.id}`, e);
+          return [];
+        }
+      });
+
+      const allRunsNested = await Promise.all(runsPromises);
+      const flattenedRuns = allRunsNested.flat() as UnifiedBotRun[];
+
+      // 3. Sort by started_at DESC
+      const sortedRuns = flattenedRuns.sort(
+        (a, b) =>
+          new Date(b.started_at).getTime() - new Date(a.started_at).getTime(),
+      );
+
+      setRuns(sortedRuns);
     } catch (err) {
-      console.error("Failed to fetch runs:", err);
+      console.error("Failed to fetch aggregated runs:", err);
       message.error("Failed to load agent runs.");
     } finally {
       setLoading(false);
     }
-  }, [selectedBotId]);
+  }, [bots]);
 
   useEffect(() => {
     fetchBots();
@@ -1490,6 +1603,21 @@ function AgentRunsTabView({ connectionId }: { connectionId: string }) {
   useEffect(() => {
     fetchRuns();
   }, [fetchRuns]);
+
+  const filteredRuns = runs.filter((run) => {
+    const matchesSearch =
+      !filters.search ||
+      run.bot_name.toLowerCase().includes(filters.search.toLowerCase()) ||
+      run.id.toLowerCase().includes(filters.search.toLowerCase());
+    const matchesBot = filters.bot_id === "all" || run.bot_id === filters.bot_id;
+    const matchesStatus =
+      filters.status === "all" || run.status === filters.status;
+    const matchesSource =
+      filters.trigger_source === "all" ||
+      run.trigger_source === filters.trigger_source;
+
+    return matchesSearch && matchesBot && matchesStatus && matchesSource;
+  });
 
   const formatDuration = (start: string, end?: string) => {
     if (!end) return "Running...";
@@ -1500,27 +1628,33 @@ function AgentRunsTabView({ connectionId }: { connectionId: string }) {
     return `${minutes}m ${seconds % 60}s`;
   };
 
-  const columns: ColumnsType<BotRun> = [
+  const columns: ColumnsType<UnifiedBotRun> = [
     {
-      title: "Run ID",
-      dataIndex: "id",
-      key: "id",
-      width: "15%",
-      render: (id) => (
-        <span className="text-xs font-mono text-slate-500 truncate block max-w-[120px]">
-          {id}
-        </span>
+      title: "Agent",
+      key: "agent",
+      width: "18%",
+      render: (_, record) => (
+        <div className="flex flex-col">
+          <span className="text-sm font-bold text-slate-900">
+            {record.bot_name}
+          </span>
+          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+            {record.bot_type}
+          </span>
+        </div>
       ),
     },
     {
       title: "Status",
       dataIndex: "status",
       key: "status",
+      width: "10%",
       render: (status) => (
         <span
           className={cn(
             "inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border",
-            status === "success" && "bg-emerald-50 text-emerald-600 border-emerald-100",
+            status === "success" &&
+              "bg-emerald-50 text-emerald-600 border-emerald-100",
             status === "failed" && "bg-red-50 text-red-600 border-red-100",
             status === "running" && "bg-blue-50 text-blue-600 border-blue-100",
             status === "pending" && "bg-amber-50 text-amber-600 border-amber-100",
@@ -1534,6 +1668,7 @@ function AgentRunsTabView({ connectionId }: { connectionId: string }) {
       title: "Trigger",
       dataIndex: "trigger_source",
       key: "trigger",
+      width: "12%",
       render: (source) => (
         <span className="text-[11px] font-bold text-slate-500 capitalize flex items-center gap-1.5">
           <Zap size={12} className="text-amber-500" />
@@ -1592,31 +1727,67 @@ function AgentRunsTabView({ connectionId }: { connectionId: string }) {
 
   return (
     <div className="flex flex-col gap-6 animate-in fade-in slide-in-from-top-4 duration-500">
-      <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">
-            Select Agent
-          </span>
+      <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-wrap items-center justify-between gap-4">
+        <div className="flex items-center gap-3 flex-1 min-w-[300px]">
+          <Input
+            placeholder="Search runs or agents..."
+            prefix={<Search size={16} className="text-slate-400" />}
+            className="h-10 rounded-lg border-slate-200 max-w-sm"
+            value={filters.search}
+            onChange={(e) =>
+              setFilters((prev) => ({ ...prev, search: e.target.value }))
+            }
+          />
           <Select
-            placeholder="Select Agent to view history"
-            className="w-64"
-            value={selectedBotId}
-            onChange={(val) => setSelectedBotId(val)}
-            options={bots.map((b) => ({ label: b.name, value: b.id }))}
+            placeholder="All Agents"
+            className="w-48 h-10"
+            value={filters.bot_id}
+            onChange={(val) => setFilters((prev) => ({ ...prev, bot_id: val }))}
+            options={[
+              { label: "All Agents", value: "all" },
+              ...bots.map((b) => ({ label: b.name, value: b.id })),
+            ]}
+          />
+          <Select
+            placeholder="Status"
+            className="w-32 h-10"
+            value={filters.status}
+            onChange={(val) => setFilters((prev) => ({ ...prev, status: val }))}
+            options={[
+              { label: "All Statuses", value: "all" },
+              { label: "Success", value: "success" },
+              { label: "Failed", value: "failed" },
+              { label: "Running", value: "running" },
+            ]}
+          />
+          <Select
+            placeholder="Source"
+            className="w-32 h-10"
+            value={filters.trigger_source}
+            onChange={(val) =>
+              setFilters((prev) => ({ ...prev, trigger_source: val }))
+            }
+            options={[
+              { label: "All Sources", value: "all" },
+              { label: "Manual", value: "manual" },
+              { label: "Scheduled", value: "scheduled" },
+              { label: "Event", value: "event" },
+            ]}
           />
         </div>
         <Button
           icon={<Activity size={16} />}
-          className="rounded-lg h-10 border-slate-200 text-slate-600 font-semibold"
+          className="rounded-lg h-10 border-slate-200 text-slate-600 font-semibold hover:text-blue-600 hover:border-blue-200"
           onClick={fetchRuns}
+          loading={loading}
         >
-          Refresh History
+          Refresh
         </Button>
       </div>
 
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
         <Table
-          dataSource={runs}
+          dataSource={filteredRuns}
           columns={columns}
           rowKey="id"
           loading={loading}
@@ -1626,11 +1797,7 @@ function AgentRunsTabView({ connectionId }: { connectionId: string }) {
             emptyText: (
               <Empty
                 image={<History className="mx-auto text-slate-200" size={48} />}
-                description={
-                  selectedBotId
-                    ? "No runs available for this agent"
-                    : "Please select an agent to view history"
-                }
+                description="No execution history found for the selected filters."
               />
             ),
           }}
