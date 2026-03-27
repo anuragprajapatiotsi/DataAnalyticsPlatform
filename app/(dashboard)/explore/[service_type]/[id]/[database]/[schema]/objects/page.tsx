@@ -76,17 +76,14 @@ export default function SchemaObjectsPage() {
     if (id && database && schema) fetchData();
   }, [id, database, schema]);
 
-  const serviceLabel =
-    serviceType.charAt(0).toUpperCase() + serviceType.slice(1);
+  const isDatabaseService = serviceType === "database" || serviceType === "databases";
+  const serviceLabel = isDatabaseService ? "Database Services" : 
+    (serviceType.charAt(0).toUpperCase() + serviceType.slice(1));
 
   const breadcrumbItems = [
     { label: "Explore", href: "/explore" },
     { label: "Sources", href: "/explore" },
     { label: serviceLabel, href: `/explore/${serviceType}` },
-    {
-      label: connection?.service_name || "Connection",
-      href: `/explore/${serviceType}/${id}`,
-    },
     { label: database, href: `/explore/${serviceType}/${id}/${database}` },
     { label: schema },
   ];

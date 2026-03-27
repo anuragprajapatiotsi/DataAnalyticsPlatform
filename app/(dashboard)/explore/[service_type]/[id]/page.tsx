@@ -68,7 +68,7 @@ export default function ConnectionDetailPage() {
 
   const [connection, setConnection] = useState<ServiceEndpoint | null>(null);
   const [databases, setDatabases] = useState<DatabaseInfo[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true); 
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<TabType>("databases");
 
@@ -188,8 +188,9 @@ export default function ConnectionDetailPage() {
     }
   };
 
-  const serviceLabel =
-    serviceType.charAt(0).toUpperCase() + serviceType.slice(1);
+  const isDatabaseService = serviceType === "database" || serviceType === "databases";
+  const serviceLabel = isDatabaseService ? "Database Services" : 
+    (serviceType.charAt(0).toUpperCase() + serviceType.slice(1));
 
   const breadcrumbItems = [
     { label: "Explore", href: "/explore" },
@@ -951,9 +952,10 @@ function AgentsTabView({ connectionId }: { connectionId: string }) {
         message.success("Agent enabled successfully");
       }
       fetchBots();
-    } catch (err) {
-      console.error("Failed to toggle bot status:", err);
-      message.error(`Failed to ${isEnabled ? "disable" : "enable"} agent.`);
+    } catch (err: any) {
+      console.error("Failed to toggle bot status. Full error:", err);
+      const errorMsg = err?.message || `Failed to ${isEnabled ? "disable" : "enable"} agent.`;
+      message.error(errorMsg);
     } finally {
       setIsActionLoading(false);
     }

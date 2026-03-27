@@ -97,17 +97,16 @@ export default function TableDetailsPage() {
     if (id && database && schema && table) fetchData();
   }, [id, database, schema, table]);
 
-  const serviceLabel =
-    serviceType.charAt(0).toUpperCase() + serviceType.slice(1);
+  const isDatabaseService =
+    serviceType === "database" || serviceType === "databases";
+  const serviceLabel = isDatabaseService
+    ? "Database Services"
+    : serviceType.charAt(0).toUpperCase() + serviceType.slice(1);
 
   const breadcrumbItems = [
     { label: "Explore", href: "/explore" },
     { label: "Sources", href: "/explore" },
     { label: serviceLabel, href: `/explore/${serviceType}` },
-    {
-      label: connection?.service_name || "Connection",
-      href: `/explore/${serviceType}/${id}`,
-    },
     { label: database, href: `/explore/${serviceType}/${id}/${database}` },
     {
       label: schema,
@@ -254,97 +253,9 @@ export default function TableDetailsPage() {
                 />
               </div>
             </div>
-
-            {/* <div className="flex items-center gap-3"> */}
-              {/* <Button
-                icon={<Star size={16} />}
-                className="flex items-center gap-2 text-slate-600 hover:text-amber-500 font-bold text-xs h-9 px-4 rounded-lg border border-slate-200"
-              >
-                Follow
-              </Button> */}
-              {/* <Button
-                icon={<Edit2 size={16} />}
-                className="flex items-center gap-2 text-slate-600 hover:text-blue-600 font-bold text-xs h-9 px-4 rounded-lg border border-slate-200"
-              >
-                Edit
-              </Button> */}
-              {/* <Button
-                type="text"
-                icon={<Settings2 size={16} />}
-                className="flex items-center gap-2 text-slate-500 hover:text-blue-600 hover:bg-blue-50 font-medium text-xs h-9 px-4 rounded-lg border border-slate-200"
-              >
-                Customize
-              </Button> */}
-            {/* </div> */}
           </div>
-
-          {/* Metadata Grid */}
-          <div className="flex items-center gap-0 py-2.5 px-0 mt-1 border-y border-slate-50 overflow-x-auto no-scrollbar">
-            {[
-              {
-                label: "Domains",
-                value: tableDetail?.domains?.join(", ") || "--",
-                icon: GitBranch,
-              },
-              {
-                label: "Owners",
-                value: tableDetail?.owners?.join(", ") || "No Owners",
-                icon: User,
-              },
-              {
-                label: "Tier",
-                value: tableDetail?.tier || "--",
-                icon: Shield,
-                isBadge: true,
-              },
-              {
-                label: "Retention",
-                value: tableDetail?.retention_period || "--",
-                icon: Clock,
-              },
-              {
-                label: "Certification",
-                value: tableDetail?.certification || "--",
-                icon: CheckCircle2,
-                isBadge: true,
-              },
-              {
-                label: "Type",
-                value: tableDetail?.object_type || "Table",
-                icon: Info,
-              },
-              { label: "Usage", value: "0.00", icon: Activity },
-            ].map((item, idx) => (
-              <div
-                key={item.label}
-                className={cn(
-                  "flex items-center gap-2.5 px-6 border-r border-slate-100 last:border-none group/meta",
-                )}
-              >
-                <item.icon
-                  size={12}
-                  className="text-slate-400 group-hover:text-slate-600 transition-colors"
-                />
-                <div className="flex flex-col gap-0.5 min-w-0">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest truncate">
-                    {item.label}
-                  </span>
-                  {item.isBadge ? (
-                    <span className="text-[10px] font-black uppercase tracking-tight px-1.5 py-px bg-slate-50 text-slate-500 rounded border border-slate-200 inline-flex shadow-sm w-fit">
-                      {item.value}
-                    </span>
-                  ) : (
-                    <span className="text-xs font-bold text-slate-600 truncate leading-none">
-                      {item.value}
-                    </span>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-
           {/* Tab Navigation */}
-          <div className="flex gap-6 mt-1">
+          <div className="flex gap-6 mt-2">
             {[
               {
                 id: "columns",
@@ -352,21 +263,21 @@ export default function TableDetailsPage() {
                 icon: Info,
                 count: tableDetail?.columns?.length,
               },
-              {
-                id: "activity",
-                label: "Activity Feeds & Tasks",
-                icon: History,
-              },
-              { id: "sample", label: "Sample Data", icon: TableIcon },
-              { id: "queries", label: "Queries", icon: PlaySquare },
-              {
-                id: "observability",
-                label: "Data Observability",
-                icon: Activity,
-              },
-              { id: "lineage", label: "Lineage", icon: GitBranch },
-              { id: "contract", label: "Contract", icon: FileText },
-              { id: "custom", label: "Custom Properties", icon: Settings2 },
+              // {
+              //   id: "activity",
+              //   label: "Activity Feeds & Tasks",
+              //   icon: History,
+              // },
+              // { id: "sample", label: "Sample Data", icon: TableIcon },
+              // { id: "queries", label: "Queries", icon: PlaySquare },
+              // {
+              //   id: "observability",
+              //   label: "Data Observability",
+              //   icon: Activity,
+              // },
+              // { id: "lineage", label: "Lineage", icon: GitBranch },
+              // { id: "contract", label: "Contract", icon: FileText },
+              // { id: "custom", label: "Custom Properties", icon: Settings2 },
             ].map((tab, idx) => (
               <div
                 key={tab.id}

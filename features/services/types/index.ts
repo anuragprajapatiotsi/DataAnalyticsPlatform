@@ -17,6 +17,7 @@ export interface ServiceEndpoint {
   id: string;
   org_id: string;
   service_name: string;
+  driver?: string;
   description: string;
   base_url: string;
   extra: Record<string, any>;
@@ -147,4 +148,19 @@ export interface GetBotRunsParams {
   skip?: number;
   limit?: number;
   status?: string;
+}
+
+export interface ConnectorMetadata {
+  id: string;
+  slug: string;
+  display_label: string;
+  icon?: string;
+}
+
+export interface AggregatedDatabase {
+  name: string;
+  endpoint_id: string;
+  connection_name: string;
+  connector_slug: string;
+  connector_label: string;
 }

@@ -21,7 +21,7 @@ import {
 import { cn } from "@/shared/utils/cn";
 
 const ASSET_CATEGORIES = [
-  { id: "database", label: "Database", icon: Database },
+  { id: "database", label: "Database Services", icon: Database },
   { id: "api", label: "API", icon: Cpu },
   { id: "messaging", label: "Messaging", icon: MessageSquare },
   { id: "dashboards", label: "Dashboards", icon: LayoutDashboard },
@@ -76,7 +76,7 @@ export function ExploreSidebar({
 
   return (
     <aside className="w-[200px] flex-shrink-0 border-r border-slate-200 px-4 py-2  flex flex-col h-full bg-white transition-all duration-300">
-      <nav className="flex flex-col gap-1.5 overflow-y-auto pr-2 custom-scrollbar h-full">
+      <nav className="flex flex-col gap-1.5 overflow-y-auto pr-2 no-scrollbar h-full">
         {/* Catalog Section */}
         <div className="flex flex-col">
           <button

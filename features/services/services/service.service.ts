@@ -1,5 +1,5 @@
 import { api } from "@/shared/api/axios";
-import { Service, GetServicesParams, CreateServiceRequest, UpdateServiceRequest, ServiceEndpoint, ServiceEndpointRequest, DatabaseInfo, GroupedServiceCategory, SchemaInfo, DBObjectInfo, DBTableDetail, Bot, GetBotsParams, BotRun, GetBotRunsParams } from "../types";
+import { Service, GetServicesParams, CreateServiceRequest, UpdateServiceRequest, ServiceEndpoint, ServiceEndpointRequest, DatabaseInfo, GroupedServiceCategory, SchemaInfo, DBObjectInfo, DBTableDetail, Bot, GetBotsParams, BotRun, GetBotRunsParams, ConnectorMetadata, AggregatedDatabase } from "../types";
 
 export const serviceService = {
   async getServices(params: GetServicesParams = { skip: 0, limit: 50 }) {
@@ -71,6 +71,10 @@ export const serviceService = {
   },
 
   async getDatabases(id: string) {
+    if (!id || id === "undefined") {
+      console.warn("getDatabases: Missing or invalid endpoint_id", id);
+      return [];
+    }
     const response = await api.get<DatabaseInfo[]>(`/service-endpoints/${id}/explore/databases`);
     return response.data;
   },
@@ -118,12 +122,12 @@ export const serviceService = {
   },
 
   async enableBot(botId: string) {
-    const response = await api.post(`/bots/${botId}/enable`);
+    const response = await api.patch(`/bots/${botId}/enable`);
     return response.data;
   },
 
   async disableBot(botId: string) {
-    const response = await api.post(`/bots/${botId}/disable`);
+    const response = await api.patch(`/bots/${botId}/disable`);
     return response.data;
   },
 
@@ -142,11 +146,21 @@ export const serviceService = {
     return response.data;
   },
 
-  async getServiceEndpointsByType(type: string, orgId?: string) {
+  async getConnectors() {
+    const response = await api.get<ConnectorMetadata[]>("/settings/tree", {
+      params: {
+        parent: "databases",
+        name: "primary",
+      },
+    });
+    return response.data;
+  },
+
+  async getServiceEndpointsByType(type: string, orgId?: string, name: string = "primary") {
     const response = await api.get<any>("/service-endpoints/by-type", {
       params: {
         service_type: type,
-        name: "primary",
+        name,
         org_id: orgId,
       },
     });
