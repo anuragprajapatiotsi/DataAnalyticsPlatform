@@ -17,6 +17,8 @@ import {
   Files as FilesIcon,
   Globe,
   TrendingUp,
+  Layers,
+  Package
 } from "lucide-react";
 import { cn } from "@/shared/utils/cn";
 
@@ -150,9 +152,10 @@ export function ExploreSidebar({
                       "flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-[12px] transition-all duration-200",
                       activeView === "object-resources"
                         ? "text-blue-700 bg-blue-50/50 font-semibold"
-                        : "text-slate-400 hover:text-slate-700 hover:bg-slate-50",
+                        : "text-slate-500 hover:text-slate-700 hover:bg-slate-50",
                     )}
                   >
+                    <Layers size={14} className={activeView === "object-resources" ? "text-blue-600" : "text-slate-400"} />
                     Object Resources
                   </button>
                   <button
@@ -161,9 +164,10 @@ export function ExploreSidebar({
                       "flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-[12px] transition-all duration-200",
                       activeView === "data-assets"
                         ? "text-blue-700 bg-blue-50/50 font-semibold"
-                        : "text-slate-400 hover:text-slate-700 hover:bg-slate-50",
+                        : "text-slate-500 hover:text-slate-700 hover:bg-slate-50",
                     )}
                   >
+                    <Database size={14} className={activeView === "data-assets" ? "text-blue-600" : "text-slate-400"} />
                     Data Assets
                   </button>
                   <button
@@ -172,9 +176,10 @@ export function ExploreSidebar({
                       "flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-[12px] transition-all duration-200",
                       activeView === "kpis"
                         ? "text-blue-700 bg-blue-50/50 font-semibold"
-                        : "text-slate-400 hover:text-slate-700 hover:bg-slate-50",
+                        : "text-slate-500 hover:text-slate-700 hover:bg-slate-50",
                     )}
                   >
+                    <TrendingUp size={14} className={activeView === "kpis" ? "text-blue-600" : "text-slate-400"} />
                     KPI
                   </button>
                 </div>

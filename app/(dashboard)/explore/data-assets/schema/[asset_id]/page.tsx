@@ -149,7 +149,7 @@ export default function SchemaAssetsPage() {
             size="small" 
             showInfo={false} 
             strokeColor={(score || 0) > 80 ? "#10b981" : (score || 0) > 50 ? "#f59e0b" : "#ef4444"}
-            trailColor="#f1f5f9"
+            railColor="#f1f5f9"
           />
         </div>
       ),
@@ -194,7 +194,7 @@ export default function SchemaAssetsPage() {
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-[#f8fafc]">
       <div className="bg-white border-b border-slate-200 shrink-0">
-        <div className="px-8 pt-6 pb-6">
+        <div className="px-4 pt-2 pb-2">
           <div className="flex items-center justify-between">
             <PageHeader
               title="Schema Assets"
@@ -219,7 +219,7 @@ export default function SchemaAssetsPage() {
         </div>
         
         {/* Quick Filters */}
-        <div className="px-8 pb-4 flex items-center gap-2">
+        <div className="px-4 pb-4 flex items-center gap-2">
           {["all", "table", "view", "function"].map((type) => (
              <button
               key={type}
@@ -237,8 +237,8 @@ export default function SchemaAssetsPage() {
         </div>
       </div>
 
-      <div className="flex-1 flex flex-col min-w-0 p-8 pt-6 overflow-hidden gap-6">
-        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+      <div className="flex-1 flex flex-col min-w-0 p-2 pt-2 overflow-hidden gap-6">
+        {/* <div className="bg-white p-2 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
           <Input
             placeholder="Search assets by name or type..."
             prefix={<Search size={16} className="text-slate-400" />}
@@ -246,20 +246,23 @@ export default function SchemaAssetsPage() {
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
-        </div>
+        </div> */}
 
-        <div className="flex-1 min-h-0 overflow-hidden bg-white rounded-2xl border border-slate-200 shadow-sm flex flex-col">
+        <div className="flex-1 min-h-0 overflow-hidden bg-white rounded-2xl border border-slate-200 shadow-sm flex flex-col h-full">
           <Table
             dataSource={filteredAssets}
             columns={columns}
             rowKey="id"
             loading={loading}
-            className="custom-explore-table h-full overflow-hidden"
-            scroll={{ y: "calc(100vh - 420px)" }}
+            className="custom-explore-table flex-1 flex flex-col h-full"
+            scroll={{ y: "calc(100vh - 290px)" }}
             pagination={{
-              pageSize: 20,
-              hideOnSinglePage: true,
-              className: "px-6 py-4 border-t border-slate-50",
+              defaultPageSize: 20,
+              showSizeChanger: true,
+              showQuickJumper: true,
+              pageSizeOptions: ["10", "20", "50", "100"],
+              showTotal: (total, range) => `${range[0]}-${range[1]} of ${total} assets`,
+              className: "px-6 py-4 border-t border-slate-50 mt-auto !mb-0 flex-shrink-0 bg-white",
             }}
             onRow={(record) => ({
               onClick: () => {

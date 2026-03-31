@@ -269,18 +269,19 @@ export default function ExploreServiceTypePage() {
         </div>
 
         {/* Connection List Table */}
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex-1">
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex-1 flex flex-col min-h-0 h-full">
           <Table
             dataSource={filteredConnections}
             columns={columns}
             rowKey="id"
             loading={loading}
+            scroll={{ y: "calc(100vh - 290px)" }}
             pagination={{ 
               pageSize: 50, 
               hideOnSinglePage: true,
-              className: "px-6 py-4 border-t border-slate-50" 
+              className: "px-6 py-4 border-t border-slate-50 mt-auto !mb-0 flex-shrink-0 bg-white" 
             }}
-            className="custom-explore-table"
+            className="custom-explore-table flex-1 flex flex-col h-full"
             locale={{
               emptyText: (
                 <Empty

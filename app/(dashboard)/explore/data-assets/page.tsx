@@ -161,7 +161,7 @@ export default function ExploreDataAssetsPage() {
     <div className="flex h-screen flex-col overflow-hidden bg-[#f8fafc]">
       {/* Top Header Section */}
       <div className="bg-white border-b border-slate-200 shrink-0">
-        <div className="px-8 pt-6 pb-6">
+        <div className="px-4 pt-2 pb-2">
           <div className="flex items-center justify-between">
             <PageHeader
               title="Data Assets"
@@ -194,9 +194,9 @@ export default function ExploreDataAssetsPage() {
       </div>
 
       {/* Main Table Interface */}
-      <div className="flex-1 flex flex-col min-w-0 p-8 pt-6 overflow-hidden gap-6">
+      <div className="flex-1 flex flex-col min-w-0 p-4 pt-2 overflow-hidden gap-6">
         {/* Search & Filter Controls */}
-        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+        {/* <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
            <Input
             placeholder="Search data assets..."
             prefix={<Search size={16} className="text-slate-400" />}
@@ -204,21 +204,21 @@ export default function ExploreDataAssetsPage() {
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
-        </div>
+        </div> */}
 
         {/* Discovery Table Container */}
-        <div className="flex-1 min-h-0 overflow-hidden bg-white rounded-2xl border border-slate-200 shadow-sm flex flex-col">
+        <div className="flex-1 min-h-0 overflow-hidden bg-white rounded-2xl border border-slate-200 shadow-sm flex flex-col h-full">
           <Table
             dataSource={filteredServices}
             columns={columns}
             rowKey="id"
             loading={loading}
-            className="custom-explore-table h-full overflow-hidden"
-            scroll={{ y: "calc(100vh - 360px)" }}
+            className="custom-explore-table flex-1 flex flex-col h-full"
+            scroll={{ y: "calc(100vh - 290px)" }}
             pagination={{
               pageSize: 20,
               hideOnSinglePage: true,
-              className: "px-6 py-4 border-t border-slate-50",
+              className: "px-6 py-4 border-t border-slate-50 mt-auto !mb-0 flex-shrink-0 bg-white",
             }}
             onRow={(record) => ({
               onClick: () => {

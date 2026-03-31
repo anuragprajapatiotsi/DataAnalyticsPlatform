@@ -200,17 +200,44 @@ export interface CatalogAsset {
 }
 
 export interface DataAssetColumn {
+  id: string;
   name: string;
   data_type: string;
+  display_name?: string;
   description?: string;
   is_nullable: boolean;
   is_primary_key: boolean;
+  is_foreign_key?: boolean;
+  is_pii?: boolean;
+  sensitivity?: string;
   tags?: Array<{
     id: string;
     name: string;
     display_name: string;
     color?: string;
   }>;
+}
+
+export interface DataColumnDetail {
+  name: string;
+  display_name?: string;
+  description?: string;
+  data_type: string;
+  ordinal_position: number;
+  is_nullable: boolean;
+  is_primary_key: boolean;
+  is_foreign_key: boolean;
+  is_pii: boolean;
+  sensitivity?: string;
+  default_value?: any;
+  extra_metadata?: {
+    numeric_precision?: number;
+    scale?: number;
+    char_max_length?: number;
+    [key: string]: any;
+  };
+  created_at: string;
+  updated_at: string;
 }
 
 export interface DataAssetDetail extends CatalogAsset {
@@ -245,4 +272,68 @@ export interface DataAssetProfile {
   column_profiles: Record<string, ColumnProfile>;
   started_at: string;
   completed_at: string;
+}
+
+export interface ColumnProfilingResponse {
+  column_name: string;
+  data_type: string;
+  stats: {
+    null_count: number;
+    null_pct: number;
+    distinct_count: number;
+    min_val: any;
+    max_val: any;
+    mean_val?: number;
+    stddev_val?: number;
+    top_values: Array<{ value: any; count: number }>;
+    histogram: Array<{ bucket: any; count: number }>;
+    profiled_at: string;
+  };
+  rows: any[];
+  total_matching: number;
+  skip: number;
+  limit: number;
+}
+
+export interface UpdateColumnRequest {
+  display_name?: string;
+  description?: string;
+  data_type?: string;
+  ordinal_position?: number;
+  is_nullable?: boolean;
+  is_primary_key?: boolean;
+  is_foreign_key?: boolean;
+  is_pii?: boolean;
+  sensitivity?: string;
+  classification_locked?: boolean;
+  default_value?: string;
+}
+
+export interface BulkUpdateColumnItem extends UpdateColumnRequest {
+  name: string;
+}
+
+export interface CatalogView {
+  id: string;
+  name: string;
+  display_name: string;
+  description?: string;
+  source_connection_id?: string | null;
+  source_schema?: string | null;
+  source_table?: string | null;
+  source_object_type?: string;
+  tags?: any[];
+  glossary_term_ids?: string[];
+  synonyms?: string[];
+  sync_mode?: "auto" | "scheduled" | "on_demand" | string;
+  cron_expr?: string | null;
+  sync_config?: Record<string, any>;
+  org_id?: string;
+  asset_id?: string | null;
+  sync_status?: "success" | "never" | "failed" | string;
+  sync_error?: string | null;
+  last_synced_at?: string | null;
+  created_by?: string;
+  created_at?: string;
+  updated_at?: string;
 }

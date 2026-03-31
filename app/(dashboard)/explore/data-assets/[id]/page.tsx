@@ -163,7 +163,7 @@ export default function DataAssetCatalogPage() {
     <div className="flex h-screen flex-col overflow-hidden bg-[#f8fafc]">
       {/* Header Section */}
       <div className="bg-white border-b border-slate-200 shrink-0 shadow-sm">
-        <div className="px-8 pt-6 pb-6">
+        <div className="px-4 pt-2 pb-2">
           <div className="flex items-center justify-between">
             <PageHeader
               title={connection?.service_name || "Catalog Discovery"}
@@ -185,7 +185,7 @@ export default function DataAssetCatalogPage() {
       </div>
 
       {/* Hierarchy Content */}
-      <div className="flex-1 overflow-hidden p-8 pt-6 flex flex-col gap-6">
+      <div className="flex-1 overflow-hidden p-2 pt-2 flex flex-col gap-6">
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm flex-1 flex flex-col overflow-hidden">
           <div className="p-4 border-b border-slate-50 bg-slate-50/30 flex items-center justify-between">
             <div className="flex items-center gap-2">

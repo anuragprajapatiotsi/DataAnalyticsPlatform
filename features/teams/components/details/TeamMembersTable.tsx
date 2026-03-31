@@ -122,6 +122,12 @@ export function TeamMembersTable({
               <TableHead className="text-[13px] font-bold text-slate-500 uppercase py-3 px-6">
                 Team Role
               </TableHead>
+              <TableHead className="text-[13px] font-bold text-slate-500 uppercase py-3 px-6">
+                System Roles
+              </TableHead>
+              <TableHead className="text-[13px] font-bold text-slate-500 uppercase py-3 px-6">
+                Policies
+              </TableHead>
               {isAdmin && (
                 <TableHead className="text-right text-[13px] font-bold text-slate-500 uppercase py-3 px-6">
                   Actions
@@ -145,7 +151,7 @@ export function TeamMembersTable({
             ) : filteredMembers.length === 0 ? (
               <TableRow>
                 <TableCell
-                  colSpan={isAdmin ? 4 : 3}
+                  colSpan={isAdmin ? 6 : 5}
                   className="h-64 text-center"
                 >
                   <Empty
@@ -190,6 +196,32 @@ export function TeamMembersTable({
                       <Badge className="bg-emerald-50 text-emerald-700 border-none text-[11px] font-bold py-0.5 px-2.5 uppercase tracking-wide">
                         {member.role || "Member"}
                       </Badge>
+                    </div>
+                  </TableCell>
+                  <TableCell className="px-6 py-3">
+                    <div className="flex flex-wrap gap-1.5 max-w-[200px]">
+                      {member.roles && member.roles.length > 0 ? (
+                        member.roles.map((r) => (
+                          <Badge key={r.id} className="bg-blue-50 text-blue-700 border-none text-[10px] font-bold py-0.5 px-2 rounded-full uppercase tracking-tighter">
+                            {r.display_name || r.name}
+                          </Badge>
+                        ))
+                      ) : (
+                        <span className="text-slate-400 text-xs italic">Default User</span>
+                      )}
+                    </div>
+                  </TableCell>
+                  <TableCell className="px-6 py-3">
+                    <div className="flex flex-wrap gap-1.5 max-w-[250px]">
+                      {member.policies && member.policies.length > 0 ? (
+                        member.policies.map((p) => (
+                          <Badge key={p.id} className="bg-purple-50 text-purple-700 border-none text-[10px] font-bold py-0.5 px-2 rounded-full uppercase tracking-tighter">
+                            {p.name}
+                          </Badge>
+                        ))
+                      ) : (
+                        <span className="text-slate-400 text-xs italic">No Policies</span>
+                      )}
                     </div>
                   </TableCell>
                   {isAdmin && (

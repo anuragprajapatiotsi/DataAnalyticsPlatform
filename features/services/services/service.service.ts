@@ -1,5 +1,5 @@
 import { api } from "@/shared/api/axios";
-import { Service, GetServicesParams, CreateServiceRequest, UpdateServiceRequest, ServiceEndpoint, ServiceEndpointRequest, DatabaseInfo, GroupedServiceCategory, SchemaInfo, DBObjectInfo, DBTableDetail, Bot, GetBotsParams, BotRun, GetBotRunsParams, ConnectorMetadata, AggregatedDatabase, CatalogResponse, CatalogAsset, DataAssetDetail, DataAssetProfile } from "../types";
+import { Service, GetServicesParams, CreateServiceRequest, UpdateServiceRequest, ServiceEndpoint, ServiceEndpointRequest, DatabaseInfo, GroupedServiceCategory, SchemaInfo, DBObjectInfo, DBTableDetail, Bot, GetBotsParams, BotRun, GetBotRunsParams, ConnectorMetadata, AggregatedDatabase, CatalogResponse, CatalogAsset, DataAssetDetail, DataAssetProfile, DataColumnDetail, ColumnProfilingResponse, UpdateColumnRequest, BulkUpdateColumnItem, CatalogView } from "../types";
 
 export const serviceService = {
   async getLatestAssetProfile(assetId: string) {
@@ -213,4 +213,52 @@ export const serviceService = {
     
     return [];
   },
+  async getColumnProfilingData(assetId: string, columnId: string, params: { skip: number; limit: number; exclude_nulls?: boolean }) {
+    if (!assetId || !columnId) return null;
+    
+    const url = `/data-assets/${assetId}/columns/${columnId}/data`;
+    try {
+      const response = await api.get<ColumnProfilingResponse>(url, {
+        params: {
+          skip: params.skip,
+          limit: params.limit,
+          exclude_nulls: params.exclude_nulls ?? true
+        }
+      });
+      return response.data;
+    } catch (err: any) {
+      console.error(`[Profiling API Error] GET ${url}:`, err.response?.data || err.message || err);
+      throw err;
+    }
+  },
+  
+  async updateColumn(assetId: string, columnId: string, data: UpdateColumnRequest) {
+    const response = await api.put<DataColumnDetail>(`/data-assets/${assetId}/columns/${columnId}`, data);
+    return response.data;
+  },
+
+  async deleteColumn(assetId: string, columnId: string) {
+    await api.delete(`/data-assets/${assetId}/columns/${columnId}`);
+  },
+
+  async bulkUpdateColumns(assetId: string, data: BulkUpdateColumnItem[]) {
+    const response = await api.post(`/data-assets/${assetId}/columns/bulk`, data);
+    return response.data;
+  },
+
+  async getCatalogViews(params?: { skip?: number; limit?: number; name?: string }) {
+    const response = await api.get<CatalogView[]>("/catalog-views", {
+      params: {
+        skip: params?.skip || 0,
+        limit: params?.limit || 50,
+        name: params?.name,
+      },
+    });
+    return response.data;
+  },
+
+  async getCatalogViewById(id: string) {
+    const response = await api.get<CatalogView>(`/catalog-views/${id}`);
+    return response.data;
+  }
 };

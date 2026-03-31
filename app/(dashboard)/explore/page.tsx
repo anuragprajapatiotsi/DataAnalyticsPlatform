@@ -30,7 +30,7 @@ export default function ExplorePage() {
 
   return (
     <div className="flex flex-col h-full animate-in fade-in duration-500">
-      <div className="px-4 pt-2 pb-2 bg-white border-b border-slate-200">
+      <div className="px-4 pt-4 pb-4 bg-white border-b border-slate-200">
         <PageHeader
           title="Explore Catalog"
           description="Browse and discover different data assets across your organization."
