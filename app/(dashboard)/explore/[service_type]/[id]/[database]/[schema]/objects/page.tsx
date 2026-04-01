@@ -4,36 +4,28 @@ import React, { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import {
   Table,
-  Tabs,
   Input,
-  Button,
   Switch,
-  Space,
   Tooltip,
   Avatar,
   Spin,
   message,
-  Card,
-  Badge,
   Dropdown,
+  Button
 } from "antd";
 import type { MenuProps } from "antd";
 import {
   Database,
   Search,
   Settings2,
-  Edit2,
   Table as TableIcon,
   PlaySquare,
   History,
   FileText,
-  Info,
-  ChevronRight,
-  User,
-  Tags,
   MoreVertical,
   Eye,
   Layers,
+  ArrowRight
 } from "lucide-react";
 import { CreateCatalogViewModal } from "@/features/explore/components/CreateCatalogViewModal";
 import { PageHeader } from "@/shared/components/layout/PageHeader";
@@ -107,32 +99,29 @@ export default function SchemaObjectsPage() {
       key: "name",
       width: "30%",
       render: (text, record) => (
-        <Space size="middle" className="group/name">
-          <div className="p-2 rounded-lg bg-slate-50 border border-slate-100 group-hover/name:bg-emerald-50 group-hover/name:border-emerald-100 transition-colors">
-            <TableIcon
-              size={18}
-              className="text-slate-600 group-hover/name:text-emerald-600"
-            />
+        <div className="flex items-center gap-3 group/name">
+          <div className="flex items-center justify-center w-8 h-8 rounded-md bg-emerald-50/50 border border-emerald-100 text-emerald-600 group-hover/name:bg-emerald-600 group-hover/name:border-emerald-600 group-hover/name:text-white transition-all duration-200">
+            <TableIcon size={14} />
           </div>
           <div className="flex flex-col">
-            <span className="font-bold text-blue-600 group-hover/name:text-blue-700 transition-all">
+            <span className="font-semibold text-slate-900 group-hover/name:text-emerald-600 transition-colors">
               {text}
             </span>
-            <span className="text-[10px] text-slate-400 font-bold uppercase tracking-tight">
+            <span className="text-[10px] font-mono text-slate-500 uppercase tracking-wider">
               {record.object_type || "table"}
             </span>
           </div>
-        </Space>
+        </div>
       ),
     },
     {
       title: "Description",
       dataIndex: "description",
       key: "description",
-      width: "35%",
+      width: "30%",
       render: (text) => (
-        <span className="text-slate-500 text-sm italic line-clamp-1">
-          {text || `standard ${schema} schema table`}
+        <span className="text-slate-500 text-[13px] line-clamp-2">
+          {text || `Standard ${schema} schema table.`}
         </span>
       ),
     },
@@ -140,22 +129,17 @@ export default function SchemaObjectsPage() {
       title: "Owners",
       dataIndex: "owners",
       key: "owners",
-      width: "15%",
+      width: "10%",
       render: (owners) => (
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
           {owners && owners.length > 0 ? (
             <Tooltip title={owners.join(", ")}>
-              <Avatar
-                size="small"
-                className="bg-blue-600 text-[10px] font-bold"
-              >
+              <div className="flex items-center justify-center w-6 h-6 rounded-full bg-slate-100 border border-slate-200 text-slate-600 text-[10px] font-bold">
                 {owners[0].charAt(0).toUpperCase()}
-              </Avatar>
+              </div>
             </Tooltip>
           ) : (
-            <span className="text-slate-400 text-xs font-semibold">
-              No Owners
-            </span>
+            <span className="text-slate-400 text-[13px]">—</span>
           )}
         </div>
       ),
@@ -166,26 +150,27 @@ export default function SchemaObjectsPage() {
       key: "tags",
       width: "20%",
       render: (tags) => (
-        <div className="flex flex-wrap gap-1">
+        <div className="flex flex-wrap gap-1.5">
           {tags && tags.length > 0 ? (
             tags.map((tag: string) => (
               <span
                 key={tag}
-                className="px-2 py-0.5 bg-slate-50 border border-slate-200 rounded text-[10px] text-slate-500 font-bold uppercase tracking-wider"
+                className="px-2 py-0.5 bg-slate-50 border border-slate-200 rounded text-[11px] text-slate-600 font-medium"
               >
                 {tag}
               </span>
             ))
           ) : (
-            <span className="text-slate-300">--</span>
+            <span className="text-slate-400 text-[13px]">—</span>
           )}
         </div>
       ),
     },
     {
-      title: "Action",
+      title: "",
       key: "action",
-      width: "8%",
+      width: "10%",
+      align: "right",
       render: (_, record) => {
         const isEligible = !record.object_type || record.object_type.toLowerCase() === "table" || record.object_type.toLowerCase() === "view";
 
@@ -220,11 +205,14 @@ export default function SchemaObjectsPage() {
         }
 
         return (
-          <div className="flex items-center justify-end pr-3" onClick={(e) => e.stopPropagation()}>
+          <div className="flex items-center justify-end gap-2 pr-2" onClick={(e) => e.stopPropagation()}>
+            <ArrowRight size={16} className="text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity mr-2" />
             <Dropdown menu={{ items }} trigger={["click"]} placement="bottomRight">
-              <button className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors">
-                <MoreVertical size={16} />
-              </button>
+              <Button 
+                type="text" 
+                icon={<MoreVertical size={16} />} 
+                className="flex items-center justify-center text-slate-400 hover:text-slate-900 hover:bg-slate-100 w-8 h-8 rounded-md p-0"
+              />
             </Dropdown>
           </div>
         );
@@ -234,22 +222,22 @@ export default function SchemaObjectsPage() {
 
   if (loading && !connection) {
     return (
-      <div className="flex flex-col items-center justify-center h-full gap-4 bg-white">
+      <div className="flex flex-col items-center justify-center h-full gap-4 bg-[#FAFAFA]">
         <Spin size="large" />
-        <p className="text-slate-500 font-medium">Loading table details...</p>
+        <p className="text-slate-500 font-medium text-[13px]">Loading table details...</p>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col h-full bg-[#f8fafc] animate-in fade-in duration-500 overflow-hidden">
+    <div className="flex flex-col h-full bg-[#FAFAFA] animate-in fade-in duration-500 overflow-hidden">
       {/* Header Area */}
-      <div className="px-6 pt-4 bg-white border-b border-slate-200">
-        <div className="max-w-[1400px] mx-auto flex flex-col gap-3">
+      <div className="px-6 pt-5 bg-white border-b border-slate-200">
+        <div className="max-w-[1400px] mx-auto flex flex-col gap-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="p-2.5 bg-blue-50 rounded-xl border border-blue-100">
-                <Database size={24} className="text-blue-600" />
+            <div className="flex items-center gap-4">
+              <div className="flex items-center justify-center w-10 h-10 bg-blue-50 rounded-xl border border-blue-100">
+                <Database size={20} className="text-blue-600" />
               </div>
               <PageHeader
                 title={schema}
@@ -257,64 +245,36 @@ export default function SchemaObjectsPage() {
                 breadcrumbItems={breadcrumbItems}
               />
             </div>
-
-            {/* <div className="flex items-center gap-3">
-              <Button
-                icon={<Edit2 size={16} />}
-                className="flex items-center gap-2 text-slate-600 hover:text-blue-600 font-bold text-xs h-9 px-4 rounded-lg border border-slate-200"
-              >
-                Edit
-              </Button>
-              <Button
-                type="text"
-                icon={<Settings2 size={16} />}
-                className="flex items-center gap-2 text-slate-500 hover:text-blue-600 hover:bg-blue-50 font-medium text-xs h-9 px-4 rounded-lg border border-slate-200"
-              >
-                Customize
-              </Button>
-            </div> */}
           </div>
 
           {/* Tab Navigation */}
           <div className="flex gap-8 mt-2">
             {[
-              {
-                id: "tables",
-                label: "Tables",
-                icon: TableIcon,
-                count: objects.length,
-              },
-              {
-                id: "procedures",
-                label: "Stored Procedures",
-                icon: PlaySquare,
-              },
-              {
-                id: "activity",
-                label: "Activity Feeds & Tasks",
-                icon: History,
-              },
+              { id: "tables", label: "Tables", icon: TableIcon, count: objects.length },
+              { id: "procedures", label: "Stored Procedures", icon: PlaySquare },
+              { id: "activity", label: "Activity Feeds", icon: History },
               { id: "contract", label: "Contract", icon: FileText },
-              { id: "custom", label: "Custom Properties", icon: Settings2 },
+              { id: "custom", label: "Settings", icon: Settings2 },
             ].map((tab, idx) => (
               <div
                 key={tab.id}
                 className={cn(
-                  "pb-3 text-sm font-semibold capitalize transition-all relative cursor-pointer",
+                  "pb-3 text-[13px] font-semibold transition-all relative cursor-pointer flex items-center gap-2",
                   idx === 0
                     ? "text-blue-600 border-b-2 border-blue-600"
-                    : "text-slate-500 hover:text-slate-700",
+                    : "text-slate-500 hover:text-slate-700 hover:border-b-2 hover:border-slate-300",
                 )}
               >
-                <div className="flex items-center gap-2 px-1">
-                  <tab.icon size={14} />
-                  {tab.label}
-                  {tab.count !== undefined && (
-                    <span className="ml-1 px-1.5 py-0.5 bg-slate-50 text-slate-400 text-[10px] rounded-md border border-slate-100 font-bold">
-                      {tab.count}
-                    </span>
-                  )}
-                </div>
+                <tab.icon size={14} className={idx === 0 ? "text-blue-600" : "text-slate-400"} />
+                {tab.label}
+                {tab.count !== undefined && (
+                  <span className={cn(
+                    "ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold",
+                    idx === 0 ? "bg-blue-50 text-blue-600" : "bg-slate-100 text-slate-500"
+                  )}>
+                    {tab.count}
+                  </span>
+                )}
               </div>
             ))}
           </div>
@@ -322,50 +282,53 @@ export default function SchemaObjectsPage() {
       </div>
 
       {/* Main Content Area */}
-      <div className="flex-1 overflow-y-auto p-3">
-        <div className="max-w-[1400px] mx-auto space-y-6">
-          {/* Tables Table Section */}
-          <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
-            {/* Search & Actions Bar */}
-            <div className="p-4 border-b border-slate-100 bg-slate-50/30 flex items-center justify-between">
+      <div className="flex-1 overflow-y-auto p-6">
+        <div className="max-w-[1400px] mx-auto flex flex-col gap-4 h-full">
+          
+          {/* Unified Toolbar */}
+          <div className="flex items-center justify-between gap-4 bg-white p-2 rounded-xl border border-slate-200 shadow-sm">
+            <div className="flex-1 flex items-center gap-2 px-2">
+              <Search size={16} className="text-slate-400" />
               <Input
-                placeholder="Search for Table"
-                prefix={<Search size={16} className="text-slate-400 mr-2" />}
-                className="max-w-md h-10 rounded-xl border-slate-200 shadow-sm hover:border-blue-400 focus:border-blue-500 transition-all"
+                placeholder="Search tables by name..."
+                variant="borderless"
+                className="h-9 shadow-none px-2 text-[14px] w-full max-w-md focus:ring-0"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-                    Deleted
-                  </span>
-                  <Switch size="small" className="bg-slate-200" />
-                </div>
-              </div>
             </div>
+            
+            <div className="flex items-center gap-3 pr-2 border-l border-slate-100 pl-4">
+              <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+                Show Deleted
+              </span>
+              <Switch size="small" className="bg-slate-200 hover:bg-slate-300" />
+            </div>
+          </div>
 
-            {/* Table */}
+          {/* Table Container */}
+          <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex-1 flex flex-col min-h-0">
             <Table
               dataSource={filteredObjects}
               columns={columns}
               rowKey="name"
               loading={loading}
               pagination={false}
+              scroll={{ y: "calc(100vh - 340px)" }}
               onRow={(record) => ({
-                onClick: () =>
-                  router.push(
-                    `/explore/${serviceType}/${id}/${database}/${schema}/${record.name}`,
-                  ),
-                className:
-                  "cursor-pointer transition-colors hover:bg-slate-50/80",
+                onClick: () => router.push(`/explore/${serviceType}/${id}/${database}/${schema}/${record.name}`),
+                className: "cursor-pointer group",
               })}
-              className="custom-explore-table"
+              className="custom-explore-table flex-1 flex flex-col h-full"
               locale={{
                 emptyText: loading ? (
-                  <Spin />
+                  <Spin className="my-8" />
                 ) : (
-                  "No tables available in this schema."
+                  <div className="py-12 flex flex-col items-center justify-center text-slate-500">
+                    <TableIcon size={32} className="text-slate-300 mb-3" />
+                    <span className="text-[14px] font-medium text-slate-700">No objects found</span>
+                    <span className="text-[13px]">Try adjusting your search query.</span>
+                  </div>
                 ),
               }}
             />
@@ -374,22 +337,45 @@ export default function SchemaObjectsPage() {
       </div>
 
       <style jsx global>{`
+        /* Modern Table "Ghost" Styles */
+        .custom-explore-table .ant-table {
+          background: transparent !important;
+        }
         .custom-explore-table .ant-table-thead > tr > th {
-          background: #fcfdfe !important;
-          color: #94a3b8 !important;
-          font-size: 10px !important;
-          font-weight: 700 !important;
+          background: #FAFAFA !important;
+          color: #64748b !important;
+          font-size: 11px !important;
+          font-weight: 600 !important;
           text-transform: uppercase !important;
           letter-spacing: 0.05em !important;
-          border-bottom: 1px solid #f1f5f9 !important;
+          border-bottom: 1px solid #E2E8F0 !important;
           padding: 12px 24px !important;
         }
-        .custom-explore-table .ant-table-tbody > tr > td {
-          padding: 14px 24px !important;
-          border-bottom: 1px solid #f8fafc !important;
+        .custom-explore-table .ant-table-thead > tr > th::before {
+          display: none !important; /* Remove Antd default column separators */
         }
-        .custom-explore-table .ant-table-row:last-child > td {
-          border-bottom: none !important;
+        .custom-explore-table .ant-table-tbody > tr > td {
+          padding: 16px 24px !important;
+          border-bottom: 1px solid #F1F5F9 !important;
+          transition: background-color 0.2s ease;
+        }
+        .custom-explore-table .ant-table-tbody > tr:hover > td {
+          background: #F8FAFC !important;
+        }
+        /* Custom scrollbar for the table */
+        .custom-explore-table .ant-table-body::-webkit-scrollbar {
+          width: 6px;
+          height: 6px;
+        }
+        .custom-explore-table .ant-table-body::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        .custom-explore-table .ant-table-body::-webkit-scrollbar-thumb {
+          background: #CBD5E1;
+          border-radius: 4px;
+        }
+        .custom-explore-table .ant-table-body::-webkit-scrollbar-thumb:hover {
+          background: #94A3B8;
         }
       `}</style>
 

@@ -1,17 +1,17 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { Table, Badge, Input, message, Tooltip, Empty, Button } from "antd";
+import { Table, Input, message, Tooltip, Empty, Button, Spin } from "antd";
 import {
   Search,
   Layers,
   Activity,
-  ChevronRight,
   Database,
   Clock,
   Calendar,
-  AlertCircle,
   RefreshCw,
+  ArrowRight,
+  Plus
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { serviceService } from "@/features/services/services/service.service";
@@ -100,22 +100,17 @@ export default function ExploreObjectResourcesPage() {
           ? `${record.source_schema}.${record.source_table}`
           : "No source linked";
         return (
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-indigo-50 text-indigo-600">
-              <Layers size={18} />
+          <div className="flex items-center gap-3 group/name">
+            <div className="flex items-center justify-center w-8 h-8 rounded-md bg-indigo-50 border border-indigo-100 text-indigo-600 group-hover/name:bg-indigo-600 group-hover/name:border-indigo-600 group-hover/name:text-white transition-all duration-200">
+              <Layers size={14} />
             </div>
             <div className="flex flex-col">
-              <span className="font-bold text-slate-800 tracking-tight">
+              <span className="font-semibold text-slate-900 group-hover/name:text-indigo-600 transition-colors">
                 {name || record.name}
               </span>
-              <div className="flex items-center gap-1 mt-0.5">
-                <Database size={10} className="text-slate-400" />
-                <span
-                  className={cn(
-                    "text-[10px] font-mono",
-                    hasSource ? "text-slate-500" : "text-slate-400 italic",
-                  )}
-                >
+              <div className="flex items-center gap-1.5 mt-0.5">
+                <Database size={10} className={hasSource ? "text-indigo-400" : "text-slate-400"} />
+                <span className={cn("text-[11px] font-mono", hasSource ? "text-slate-500" : "text-slate-400 italic")}>
                   {sourcePath}
                 </span>
               </div>
@@ -128,12 +123,10 @@ export default function ExploreObjectResourcesPage() {
       title: "Description",
       dataIndex: "description",
       key: "description",
-      width: "30%",
+      width: "25%",
       render: (desc) => (
-        <span className="text-xs text-slate-500 line-clamp-2">
-          {desc || (
-            <span className="italic opacity-70">No description provided</span>
-          )}
+        <span className="text-[13px] text-slate-500 line-clamp-2">
+          {desc || <span className="italic opacity-70">No description provided</span>}
         </span>
       ),
     },
@@ -142,39 +135,27 @@ export default function ExploreObjectResourcesPage() {
       key: "sync_status",
       width: "15%",
       render: (_, record) => {
-        const getStatusColor = (status?: string) => {
-          if (status === "success")
-            return {
-              color: "green",
-              text: "text-emerald-600",
-              bg: "bg-emerald-50",
-            };
-          if (status === "failed")
-            return { color: "red", text: "text-rose-600", bg: "bg-rose-50" };
-          return {
-            color: "default",
-            text: "text-slate-500",
-            bg: "bg-slate-50",
-          };
-        };
-        const st = getStatusColor(record.sync_status);
+        const status = record.sync_status?.toLowerCase();
+        const isSuccess = status === "success";
+        const isFailed = status === "failed";
+
         return (
-          <div className="flex flex-col gap-1 items-start">
-            <Badge
-              status={st.color as any}
-              text={
-                <span
-                  className={cn(
-                    "text-[10px] font-black uppercase tracking-widest",
-                    st.text,
-                  )}
-                >
-                  {record.sync_status || "Never"}
-                </span>
-              }
-            />
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest bg-slate-100 px-1.5 py-0.5 rounded ml-3">
-              Mode: {record.sync_mode || "Manual"}
+          <div className="flex flex-col gap-1.5 items-start">
+            <div className={cn(
+              "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium border capitalize",
+              isSuccess ? "bg-emerald-50 text-emerald-700 border-emerald-200" :
+              isFailed ? "bg-red-50 text-red-700 border-red-200" :
+              "bg-slate-50 text-slate-600 border-slate-200"
+            )}>
+              <span className={cn(
+                "w-1.5 h-1.5 rounded-full",
+                isSuccess ? "bg-emerald-500 shadow-[0_0_4px_rgba(16,185,129,0.4)]" :
+                isFailed ? "bg-red-500" : "bg-slate-400"
+              )} />
+              {status || "Never"}
+            </div>
+            <span className="text-[10px] font-mono text-slate-500 bg-slate-50 border border-slate-200 px-1.5 py-0.5 rounded capitalize">
+              Mode: {record.sync_mode || "manual"}
             </span>
           </div>
         );
@@ -184,31 +165,30 @@ export default function ExploreObjectResourcesPage() {
       title: "Last Synced",
       key: "last_synced",
       width: "20%",
-      render: (_, record) => {
-        return (
-          <div className="flex flex-col gap-1 items-start">
-            <div className="flex items-center gap-1.5 text-slate-600 text-[11px] font-medium">
-              <Clock size={12} className="text-slate-400" />
-              {record.last_synced_at ? (
-                <span>{dayjs(record.last_synced_at).fromNow()}</span>
-              ) : (
-                <span className="italic text-slate-400">Not synced yet</span>
-              )}
-            </div>
-            {record.cron_expr && (
-              <div className="flex items-center gap-1 text-[10px] text-indigo-500 bg-indigo-50 px-1.5 py-0.5 rounded font-mono">
-                <Calendar size={10} />
-                <span>Schedule: {record.cron_expr}</span>
-              </div>
+      render: (_, record) => (
+        <div className="flex flex-col gap-1.5 items-start">
+          <div className="flex items-center gap-1.5 text-slate-600 text-[12px] font-medium">
+            <Clock size={12} className="text-slate-400" />
+            {record.last_synced_at ? (
+              <span>{dayjs(record.last_synced_at).fromNow()}</span>
+            ) : (
+              <span className="italic text-slate-400 text-[11px]">Not synced yet</span>
             )}
           </div>
-        );
-      },
+          {record.cron_expr && (
+            <div className="flex items-center gap-1 text-[10px] text-indigo-600 bg-indigo-50 border border-indigo-100 px-1.5 py-0.5 rounded font-mono">
+              <Calendar size={10} />
+              <span>{record.cron_expr}</span>
+            </div>
+          )}
+        </div>
+      ),
     },
     {
       title: "",
       key: "action",
-      width: "12%",
+      width: "10%",
+      align: "right",
       render: (_, record) => (
         <div className="flex items-center justify-end gap-3 pr-2" onClick={(e) => e.stopPropagation()}>
           {record.sync_mode === "on_demand" && (
@@ -216,141 +196,162 @@ export default function ExploreObjectResourcesPage() {
               <Button
                 type="text"
                 size="small"
-                icon={<RefreshCw size={14} className={cn(syncingViews.has(record.id) && "animate-spin text-blue-500")} />}
+                icon={<RefreshCw size={14} className={cn(syncingViews.has(record.id) && "animate-spin text-indigo-600")} />}
                 onClick={(e) => handleSync(e, record.id)}
                 disabled={syncingViews.has(record.id)}
-                className="flex items-center text-slate-400 hover:text-blue-600 hover:bg-blue-50"
-              >
-                Sync
-              </Button>
+                className="flex items-center justify-center text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 w-8 h-8 rounded-md p-0"
+              />
             </Tooltip>
           )}
-          <ChevronRight
-            size={16}
-            className="text-slate-300 group-hover:text-indigo-500 transition-colors"
-          />
+          <ArrowRight size={16} className="text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity mr-2" />
         </div>
       ),
     },
   ];
 
   return (
-    <div className="flex h-screen flex-col bg-[#f8fafc] animate-in fade-in duration-500">
-      {/* Top Header Section */}
-      <div className="bg-white border-b border-slate-200 shrink-0 shadow-sm z-10">
-        <div className="px-6 py-4">
+    <div className="flex flex-col h-screen bg-[#FAFAFA] animate-in fade-in duration-500 overflow-hidden">
+      {/* Header Area */}
+      <div className="px-6 pt-5 bg-white border-b border-slate-200 shadow-sm z-10">
+        <div className="max-w-[1400px] mx-auto pb-4">
           <div className="flex items-center justify-between">
             <PageHeader
               title="Object Resources"
               description="Browse and manage aggregated catalog views mapped from connected data sources."
               breadcrumbItems={breadcrumbItems}
             />
-            <div className="flex items-center gap-4">
+
+            <div className="flex items-center gap-5">
               <div className="flex flex-col items-end pr-5 border-r border-slate-200">
-                <span className="text-[10px] uppercase tracking-widest font-bold text-slate-400 mb-1">
+                <span className="text-[10px] uppercase tracking-widest font-bold text-slate-400 mb-0.5">
                   Active Views
                 </span>
-                <span className="text-2xl font-black text-slate-800 leading-none">
+                <span className="text-xl font-bold text-slate-900 leading-none">
                   {filteredViews.length}
                 </span>
               </div>
-              <Button
-                type="primary"
-                onClick={() => setIsModalOpen(true)}
-                className="bg-indigo-600 hover:bg-indigo-500 rounded-xl font-bold h-10 px-5 shadow-sm"
-              >
-                Create View
-              </Button>
-              <Tooltip title="Refresh Catalog Views">
+              <div className="flex items-center gap-2">
+                <Tooltip title="Refresh Catalog Views">
+                  <Button
+                    onClick={fetchCatalogViews}
+                    icon={<RefreshCw size={14} className={loading ? "animate-spin" : ""} />}
+                    className="h-9 w-9 p-0 flex items-center justify-center rounded-md border-slate-200 text-slate-500 hover:text-indigo-600 hover:border-indigo-200 hover:bg-indigo-50"
+                  />
+                </Tooltip>
                 <Button
-                  onClick={fetchCatalogViews}
-                  icon={
-                    <Activity
-                      size={18}
-                      className={loading ? "animate-spin" : ""}
-                    />
-                  }
-                  size="large"
-                  className="rounded-xl border-slate-200 text-slate-500 hover:text-indigo-600 hover:border-indigo-200 bg-white"
-                />
-              </Tooltip>
+                  type="primary"
+                  onClick={() => setIsModalOpen(true)}
+                  icon={<Plus size={16} />}
+                  className="bg-slate-900 hover:bg-slate-800 text-white rounded-md font-medium h-9 px-4 shadow-sm border-none"
+                >
+                  Create View
+                </Button>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Main Table Interface */}
-      <div className="flex-1 overflow-hidden p-3 flex flex-col">
-        {/* Discovery Table Container */}
-        <div className="flex-1 bg-white rounded-2xl border border-slate-200 shadow-sm flex flex-col overflow-hidden">
-          <Table
-            dataSource={filteredViews}
-            columns={columns}
-            rowKey="id"
-            loading={loading}
-            className="custom-explore-table h-full flex flex-col no-scrollbar"
-            scroll={{ y: "calc(100vh - 220px)" }}
-            pagination={{
-              pageSize: 50,
-              hideOnSinglePage: true,
-              className:
-                "px-6 py-4 border-t border-slate-50 mt-auto !mb-0 shrink-0 bg-white",
-            }}
-            locale={{
-              emptyText: (
-                <Empty
-                  image={
-                    <Layers className="mx-auto text-slate-200" size={48} />
-                  }
-                  description={
-                    <div className="flex flex-col gap-1 mt-4">
-                      <span className="text-slate-600 font-bold text-sm">
-                        No Catalog Views Found
-                      </span>
-                      <span className="text-slate-400 text-xs text-balance">
-                        No synced object resources match your criteria or none
-                        have been mapped yet.
-                      </span>
-                    </div>
-                  }
-                />
-              ),
-            }}
-            onRow={(record) => ({
-              onClick: () => {
-                router.push(`/explore/object-resources/${record.id}`);
-              },
-              className:
-                "cursor-pointer group hover:bg-indigo-50/30 transition-all border-b border-slate-50 last:border-0",
-            })}
-          />
+      {/* Main Content Area */}
+      <div className="flex-1 overflow-y-auto p-6">
+        <div className="max-w-[1400px] mx-auto flex flex-col gap-4 h-full">
+          
+          {/* Unified Toolbar */}
+          <div className="flex items-center justify-between gap-4 bg-white p-2 rounded-xl border border-slate-200 shadow-sm">
+            <div className="flex-1 flex items-center gap-2 px-2">
+              <Search size={16} className="text-slate-400" />
+              <Input
+                placeholder="Search catalog views by name or description..."
+                variant="borderless"
+                className="h-9 shadow-none px-2 text-[14px] w-full max-w-md focus:ring-0"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+          </div>
+
+          {/* Table Container */}
+          <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex-1 flex flex-col min-h-0">
+            <Table
+              dataSource={filteredViews}
+              columns={columns}
+              rowKey="id"
+              loading={{
+                spinning: loading,
+                indicator: <Spin indicator={<RefreshCw className="animate-spin text-indigo-600" size={24} />} />
+              }}
+              scroll={{ y: "calc(100vh - 280px)" }}
+              pagination={{
+                pageSize: 50,
+                hideOnSinglePage: true,
+                className: "px-6 py-4 border-t border-slate-100 mt-auto !mb-0 shrink-0 bg-white",
+              }}
+              className="custom-explore-table flex-1 flex flex-col h-full"
+              onRow={(record) => ({
+                onClick: () => router.push(`/explore/object-resources/${record.id}`),
+                className: "cursor-pointer group",
+              })}
+              locale={{
+                emptyText: (
+                  <Empty
+                    image={<div className="w-16 h-16 rounded-full bg-slate-50 flex items-center justify-center mx-auto mb-4 border border-slate-100"><Layers className="text-slate-300" size={28} /></div>}
+                    description={
+                      <div className="flex flex-col gap-1">
+                        <span className="text-slate-700 font-medium text-sm">No Catalog Views Found</span>
+                        <span className="text-slate-400 text-[13px]">No synced object resources match your search criteria.</span>
+                      </div>
+                    }
+                  />
+                ),
+              }}
+            />
+          </div>
         </div>
       </div>
+
       <style jsx global>{`
-        .custom-explore-table .ant-table-wrapper {
-          height: 100%;
-          display: flex;
-          flex-direction: column;
-        }
-        .custom-explore-table .ant-spin-nested-loading,
-        .custom-explore-table .ant-spin-container,
+        /* Modern Table "Ghost" Styles */
         .custom-explore-table .ant-table {
-          height: 100%;
-          display: flex;
-          flex-direction: column;
-          flex: 1;
+          background: transparent !important;
         }
-        .custom-explore-table .ant-table-container {
-          flex: 1;
-          display: flex;
-          flex-direction: column;
-          overflow: hidden !important;
+        .custom-explore-table .ant-table-thead > tr > th {
+          background: #FAFAFA !important;
+          color: #64748b !important;
+          font-size: 11px !important;
+          font-weight: 600 !important;
+          text-transform: uppercase !important;
+          letter-spacing: 0.05em !important;
+          border-bottom: 1px solid #E2E8F0 !important;
+          padding: 12px 24px !important;
         }
-        .custom-explore-table .ant-table-body {
-          flex: 1;
-          overflow-y: auto !important;
+        .custom-explore-table .ant-table-thead > tr > th::before {
+          display: none !important; /* Remove Antd default column separators */
+        }
+        .custom-explore-table .ant-table-tbody > tr > td {
+          padding: 16px 24px !important;
+          border-bottom: 1px solid #F1F5F9 !important;
+          transition: background-color 0.2s ease;
+        }
+        .custom-explore-table .ant-table-tbody > tr:hover > td {
+          background: #F8FAFC !important;
+        }
+        /* Custom scrollbar for the table */
+        .custom-explore-table .ant-table-body::-webkit-scrollbar {
+          width: 6px;
+          height: 6px;
+        }
+        .custom-explore-table .ant-table-body::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        .custom-explore-table .ant-table-body::-webkit-scrollbar-thumb {
+          background: #CBD5E1;
+          border-radius: 4px;
+        }
+        .custom-explore-table .ant-table-body::-webkit-scrollbar-thumb:hover {
+          background: #94A3B8;
         }
       `}</style>
+
       <CreateCatalogViewModal
         open={isModalOpen}
         onCancel={() => setIsModalOpen(false)}

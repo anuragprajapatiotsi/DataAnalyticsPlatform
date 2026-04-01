@@ -202,7 +202,7 @@ export default function ExploreServiceTypePage() {
   return (
     <div className="flex flex-col h-full bg-[#FAFAFA] animate-in fade-in duration-500 overflow-hidden">
       {/* Header Area */}
-      <div className="px-4 pt-4 pb-4 bg-white border-b border-slate-200">
+      <div className="px-6 pt-5 pb-4 bg-white border-b border-slate-200">
         <div className="flex items-center justify-between">
           <PageHeader
             title={serviceLabel}
@@ -232,7 +232,7 @@ export default function ExploreServiceTypePage() {
       </div>
 
       {/* Main Content Area */}
-      <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-4">
+      <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-4">
         {/* Toolbar */}
         <div className="flex items-center justify-between gap-4 bg-white p-2 rounded-xl border border-slate-200 shadow-sm">
           <div className="flex-1 flex items-center gap-2 px-2">

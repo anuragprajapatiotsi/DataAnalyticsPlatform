@@ -2,23 +2,24 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { message, Alert, Badge, Card, Descriptions, Tag, Skeleton, Divider, Table, Button, Tooltip } from "antd";
+import { message, Alert, Skeleton, Table, Button, Tooltip } from "antd";
 import {
   Layers,
   Database,
   Clock,
   Calendar,
   AlertTriangle,
-  Server,
   Settings,
   Activity,
   RefreshCw,
   Hash,
+  ShieldAlert
 } from "lucide-react";
 import { serviceService } from "@/features/services/services/service.service";
 import { CatalogView } from "@/features/services/types";
 import { PageHeader } from "@/shared/components/layout/PageHeader";
 import { cn } from "@/shared/utils/cn";
+import type { ColumnsType } from "antd/es/table";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 
@@ -73,23 +74,18 @@ export default function ExploreObjectResourceDetailPage() {
   }, [fetchDetail]);
 
   const getStatusConfig = (status?: string) => {
-    switch (status) {
-      case "success":
-        return { color: "success", text: "Success", bg: "bg-emerald-50", border: "border-emerald-200" };
-      case "failed":
-        return { color: "error", text: "Failed", bg: "bg-rose-50", border: "border-rose-200" };
-      case "never":
-        return { color: "warning", text: "Never", bg: "bg-amber-50", border: "border-amber-200" };
-      default:
-        return { color: "default", text: status || "Unknown", bg: "bg-slate-50", border: "border-slate-200" };
-    }
+    const s = status?.toLowerCase();
+    if (s === "success") return { bg: "bg-emerald-50", text: "text-emerald-700", border: "border-emerald-200", dot: "bg-emerald-500 shadow-[0_0_4px_rgba(16,185,129,0.4)]" };
+    if (s === "failed") return { bg: "bg-red-50", text: "text-red-700", border: "border-red-200", dot: "bg-red-500" };
+    if (s === "never" || !s) return { bg: "bg-amber-50", text: "text-amber-700", border: "border-amber-200", dot: "bg-amber-500" };
+    return { bg: "bg-slate-50", text: "text-slate-600", border: "border-slate-200", dot: "bg-slate-400" };
   };
 
   const statusConfig = getStatusConfig(viewDetail?.sync_status);
 
   if (loading) {
     return (
-      <div className="p-8 space-y-8 h-full bg-[#f8fafc] animate-in fade-in">
+      <div className="p-8 space-y-8 h-full bg-[#FAFAFA] animate-in fade-in">
         <Skeleton active paragraph={{ rows: 2 }} />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <Skeleton.Node active style={{ width: "100%", height: 300 }} />
@@ -101,27 +97,30 @@ export default function ExploreObjectResourceDetailPage() {
 
   if (!viewDetail) {
     return (
-      <div className="flex h-full items-center justify-center bg-[#f8fafc] animate-in fade-in">
+      <div className="flex h-full items-center justify-center bg-[#FAFAFA] animate-in fade-in">
         <Alert
           type="error"
-          message="Resource Not Found"
-          description="The requested catalog view could not be located or you lack permissions to view it."
+          message={<span className="font-semibold">Resource Not Found</span>}
+          description={<span className="text-[13px]">The requested catalog view could not be located or you lack permissions to view it.</span>}
           showIcon
           icon={<AlertTriangle className="mt-1" />}
-          className="max-w-md border-rose-200 bg-rose-50"
+          className="max-w-md border-red-200 bg-red-50 rounded-xl"
         />
       </div>
     );
   }
 
+  const configData = viewDetail.sync_config ? Object.entries(viewDetail.sync_config).map(([key, value]) => ({ key, value })) : [];
+
   return (
-    <div className="flex flex-col gap-3 h-full overflow-y-auto bg-[#f8fafc]  animate-in fade-in duration-500">
-      {/* Header Card Section */}
-      <div className="bg-white shadow-sm px-8 py-6">
+    <div className="flex flex-col h-full bg-[#FAFAFA] animate-in fade-in duration-500 overflow-hidden">
+      {/* Header Area */}
+      <div className="px-6 pt-5 bg-white border-b border-slate-200 shadow-sm z-10 shrink-0">
+        <div className="max-w-[1400px] mx-auto pb-4">
           <div className="flex justify-between items-start gap-4">
-            <div className="flex items-start gap-4 flex-1">
-              <div className="p-3 bg-indigo-50 text-indigo-600 rounded-xl border border-indigo-100 mt-1 shrink-0">
-                <Layers size={24} />
+            <div className="flex items-center gap-4 flex-1">
+              <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-indigo-50 border border-indigo-100 text-indigo-600 shrink-0">
+                <Layers size={20} />
               </div>
               <div className="flex flex-col w-full">
                 <PageHeader
@@ -129,11 +128,11 @@ export default function ExploreObjectResourceDetailPage() {
                   description={viewDetail.description || "No description provided for this resource."}
                   breadcrumbItems={breadcrumbItems}
                 />
-                <div className="flex items-center gap-2 mt-1">
-                  <span className="text-[11px] font-mono text-slate-400 bg-slate-50 border border-slate-200 px-2 py-0.5 rounded uppercase font-bold tracking-widest">
+                <div className="flex items-center gap-2 mt-1.5">
+                  <span className="text-[11px] font-mono text-slate-500 bg-slate-50 border border-slate-200 px-2 py-0.5 rounded uppercase font-medium tracking-wider">
                     ID: {viewDetail.id}
                   </span>
-                  <span className="text-[11px] font-mono text-slate-400 bg-slate-50 border border-slate-200 px-2 py-0.5 rounded font-bold tracking-widest">
+                  <span className="text-[11px] font-mono text-slate-500 bg-slate-50 border border-slate-200 px-2 py-0.5 rounded font-medium">
                     {viewDetail.name}
                   </span>
                 </div>
@@ -144,106 +143,133 @@ export default function ExploreObjectResourceDetailPage() {
               {viewDetail.sync_mode === "on_demand" && (
                 <Tooltip title="Trigger Manual Sync">
                   <Button
-                    icon={<RefreshCw size={16} className={cn(isSyncing && "animate-spin")} />}
+                    icon={<RefreshCw size={14} className={cn(isSyncing && "animate-spin")} />}
                     onClick={handleSync}
                     loading={isSyncing}
-                    className="flex items-center gap-2 border border-slate-200 bg-white text-slate-600 hover:text-indigo-600 hover:border-indigo-300 hover:bg-indigo-50 font-bold h-[46px] px-4 rounded-xl transition-all shadow-sm shrink-0"
+                    className="flex items-center h-9 px-4 rounded-md border-slate-200 bg-white text-slate-600 hover:text-indigo-600 hover:border-indigo-300 hover:bg-indigo-50 font-medium transition-all shadow-sm"
                   >
                     Sync Now
                   </Button>
                 </Tooltip>
               )}
-              <div className={cn("px-4 py-2 rounded-xl border flex flex-col items-center shrink-0 md:min-w-[120px]", statusConfig.bg, statusConfig.border)}>
-                <span className="text-[10px] uppercase font-bold text-slate-500 tracking-widest mb-1">Status</span>
-                <Badge status={statusConfig.color as any} text={<span className="font-bold text-sm tracking-tight">{statusConfig.text}</span>} />
+              
+              <div className="flex flex-col items-end border-l border-slate-200 pl-4 ml-1">
+                <span className="text-[10px] uppercase font-semibold text-slate-400 tracking-widest mb-1">Status</span>
+                <div className={cn(
+                  "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium border capitalize",
+                  statusConfig.bg, statusConfig.text, statusConfig.border
+                )}>
+                  <span className={cn("w-1.5 h-1.5 rounded-full", statusConfig.dot)} />
+                  {viewDetail.sync_status || "Never"}
+                </div>
               </div>
             </div>
           </div>
+        </div>
       </div>
 
-      {/* Content Card Section */}
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-3 mx-2 flex-1 flex flex-col overflow-y-auto">
+      {/* Main Content Area */}
+      <div className="flex-1 overflow-y-auto p-6">
+        <div className="max-w-[1400px] mx-auto flex flex-col gap-6">
+          
           {viewDetail.sync_error && (
-            <Alert
-              message="Synchronization Error Detected"
-              description={<span className="font-mono text-xs">{viewDetail.sync_error}</span>}
-              type="error"
-              showIcon
-              className="mb-8 rounded-xl border-rose-200 shadow-sm"
-            />
+            <div className="flex items-start gap-3 p-4 bg-red-50 border border-red-200 rounded-xl">
+              <ShieldAlert size={18} className="text-red-500 mt-0.5 shrink-0" />
+              <div className="flex flex-col">
+                <h4 className="text-[13px] font-semibold text-red-800">Synchronization Error Detected</h4>
+                <span className="text-[12px] font-mono text-red-600/80 mt-1 whitespace-pre-wrap">{viewDetail.sync_error}</span>
+              </div>
+            </div>
           )}
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
             
             {/* Column 1: Overview & Source Information */}
-            <div className="flex flex-col gap-6">
-              <h3 className="text-sm font-bold uppercase tracking-widest text-slate-800 flex items-center gap-2 pb-3 border-b border-slate-100">
-                <Database size={16} className="text-slate-400" /> General Overview
+            <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col gap-6">
+              <h3 className="text-[12px] font-semibold uppercase tracking-wider text-slate-800 flex items-center gap-2 pb-3 border-b border-slate-100 m-0">
+                <Database size={14} className="text-slate-400" /> General Overview
               </h3>
               
-              <div className="space-y-6">
-                <Descriptions column={1} styles={{ label: { width: "140px", color: "#64748b", fontWeight: 600, fontSize: "12px", textTransform: "uppercase", letterSpacing: "0.05em" }, content: { fontWeight: 500, color: "#1e293b", fontSize: "14px" } }}>
-                  <Descriptions.Item label="Source Schema">
-                    {viewDetail.source_schema ? (
-                      <span className="font-mono bg-slate-100 px-2 py-0.5 rounded text-xs">{viewDetail.source_schema}</span>
-                    ) : "—"}
-                  </Descriptions.Item>
-                  <Descriptions.Item label="Source Table">
-                    {viewDetail.source_table ? (
-                      <span className="font-mono bg-slate-100 px-2 py-0.5 rounded text-xs">{viewDetail.source_table}</span>
-                    ) : "—"}
-                  </Descriptions.Item>
-                  <Descriptions.Item label="Object Type">
-                    {viewDetail.source_object_type ? (
-                      <Tag color="cyan" className="m-0 font-bold uppercase text-[10px] tracking-widest border-cyan-200">{viewDetail.source_object_type}</Tag>
-                    ) : "—"}
-                  </Descriptions.Item>
-                  <Descriptions.Item label="Connection ID">
-                    {viewDetail.source_connection_id ? (
-                      <span className="font-mono text-xs text-slate-500">{viewDetail.source_connection_id}</span>
-                    ) : "Not Configured"}
-                  </Descriptions.Item>
-                </Descriptions>
+              <div className="flex flex-col gap-4">
+                <div className="flex flex-col border-b border-slate-100 pb-3">
+                  <span className="text-[11px] text-slate-500 font-semibold uppercase tracking-wider mb-1.5">Source Schema</span>
+                  {viewDetail.source_schema ? (
+                    <span className="text-[12px] font-mono text-slate-700 bg-slate-50 border border-slate-200 px-2 py-1 rounded w-fit">
+                      {viewDetail.source_schema}
+                    </span>
+                  ) : <span className="text-[13px] text-slate-400">—</span>}
+                </div>
 
-                <div className="p-4 bg-slate-50 rounded-xl border border-slate-100">
-                  <Descriptions column={2} size="small" styles={{ label: { color: "#94a3b8", fontSize: "12px" }, content: { fontSize: "12px", color: "#475569", fontWeight: 500 } }}>
-                    <Descriptions.Item label="Created At">
-                      {viewDetail.created_at ? dayjs(viewDetail.created_at).format("MMM D, YYYY h:mm A") : "—"}
-                    </Descriptions.Item>
-                    <Descriptions.Item label="Updated At">
-                      {viewDetail.updated_at ? dayjs(viewDetail.updated_at).format("MMM D, YYYY h:mm A") : "—"}
-                    </Descriptions.Item>
-                  </Descriptions>
+                <div className="flex flex-col border-b border-slate-100 pb-3">
+                  <span className="text-[11px] text-slate-500 font-semibold uppercase tracking-wider mb-1.5">Source Table</span>
+                  {viewDetail.source_table ? (
+                    <span className="text-[12px] font-mono text-slate-700 bg-slate-50 border border-slate-200 px-2 py-1 rounded w-fit">
+                      {viewDetail.source_table}
+                    </span>
+                  ) : <span className="text-[13px] text-slate-400">—</span>}
+                </div>
+
+                <div className="flex flex-col border-b border-slate-100 pb-3">
+                  <span className="text-[11px] text-slate-500 font-semibold uppercase tracking-wider mb-1.5">Object Type</span>
+                  {viewDetail.source_object_type ? (
+                    <span className="text-[10px] font-bold text-cyan-700 bg-cyan-50 border border-cyan-200 px-2 py-0.5 rounded uppercase tracking-widest w-fit">
+                      {viewDetail.source_object_type}
+                    </span>
+                  ) : <span className="text-[13px] text-slate-400">—</span>}
+                </div>
+
+                <div className="flex flex-col border-b border-slate-100 pb-3">
+                  <span className="text-[11px] text-slate-500 font-semibold uppercase tracking-wider mb-1.5">Connection ID</span>
+                  {viewDetail.source_connection_id ? (
+                    <span className="text-[12px] font-mono text-slate-500">
+                      {viewDetail.source_connection_id}
+                    </span>
+                  ) : <span className="text-[13px] text-slate-400 italic">Not Configured</span>}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 p-4 bg-slate-50 rounded-lg border border-slate-100 mt-2">
+                <div className="flex flex-col gap-1">
+                  <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Created At</span>
+                  <span className="text-[12px] font-medium text-slate-700">
+                    {viewDetail.created_at ? dayjs(viewDetail.created_at).format("MMM D, YYYY h:mm A") : "—"}
+                  </span>
+                </div>
+                <div className="flex flex-col gap-1">
+                  <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Updated At</span>
+                  <span className="text-[12px] font-medium text-slate-700">
+                    {viewDetail.updated_at ? dayjs(viewDetail.updated_at).format("MMM D, YYYY h:mm A") : "—"}
+                  </span>
                 </div>
               </div>
             </div>
 
             {/* Column 2: Sync & Configuration Details */}
-            <div className="flex flex-col gap-6">
-              <h3 className="text-sm font-bold uppercase tracking-widest text-slate-800 flex items-center gap-2 pb-3 border-b border-slate-100">
-                <Activity size={16} className="text-slate-400" /> Sync & Configuration
+            <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col gap-6">
+              <h3 className="text-[12px] font-semibold uppercase tracking-wider text-slate-800 flex items-center gap-2 pb-3 border-b border-slate-100 m-0">
+                <Activity size={14} className="text-slate-400" /> Sync & Configuration
               </h3>
               
-              <div className="space-y-6">
+              <div className="flex flex-col gap-6">
                 {/* Sync Metadata Highlights */}
-                <div className="flex gap-4 p-4 bg-slate-50 rounded-xl border border-slate-100">
-                  <div className="flex-1 flex flex-col gap-1">
-                    <span className="text-[10px] uppercase font-bold text-slate-400 tracking-widest flex items-center gap-1.5"><Settings size={12}/> Mode</span>
-                    <span className="font-medium text-slate-700 capitalize">{viewDetail.sync_mode || "Manual"}</span>
+                <div className="flex flex-wrap gap-4 p-4 bg-slate-50 rounded-lg border border-slate-100">
+                  <div className="flex-1 flex flex-col gap-1.5 min-w-[100px]">
+                    <span className="text-[10px] uppercase font-semibold text-slate-500 tracking-wider flex items-center gap-1.5"><Settings size={12}/> Mode</span>
+                    <span className="text-[13px] font-medium text-slate-900 capitalize">{viewDetail.sync_mode || "Manual"}</span>
                   </div>
-                  <div className="w-px bg-slate-200" />
-                  <div className="flex-1 flex flex-col gap-1">
-                    <span className="text-[10px] uppercase font-bold text-slate-400 tracking-widest flex items-center gap-1.5"><Clock size={12}/> Last Synced</span>
-                    <span className="font-medium text-slate-700 text-sm">
-                      {viewDetail.last_synced_at ? dayjs(viewDetail.last_synced_at).fromNow() : <span className="italic text-slate-400">Not synced yet</span>}
+                  <div className="w-px bg-slate-200 hidden sm:block" />
+                  <div className="flex-1 flex flex-col gap-1.5 min-w-[120px]">
+                    <span className="text-[10px] uppercase font-semibold text-slate-500 tracking-wider flex items-center gap-1.5"><Clock size={12}/> Last Synced</span>
+                    <span className="text-[13px] font-medium text-slate-900">
+                      {viewDetail.last_synced_at ? dayjs(viewDetail.last_synced_at).fromNow() : <span className="italic text-slate-400 text-[12px]">Not synced yet</span>}
                     </span>
                   </div>
                   {viewDetail.cron_expr && (
                     <>
-                      <div className="w-px bg-slate-200" />
-                      <div className="flex-1 flex flex-col gap-1">
-                        <span className="text-[10px] uppercase font-bold text-slate-400 tracking-widest flex items-center gap-1.5"><Calendar size={12} /> Schedule</span>
-                        <span className="font-mono text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded text-xs w-fit">
+                      <div className="w-px bg-slate-200 hidden sm:block" />
+                      <div className="flex-1 flex flex-col gap-1.5 min-w-[100px]">
+                        <span className="text-[10px] uppercase font-semibold text-slate-500 tracking-wider flex items-center gap-1.5"><Calendar size={12} /> Schedule</span>
+                        <span className="font-mono text-indigo-700 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded text-[11px] w-fit">
                           {viewDetail.cron_expr}
                         </span>
                       </div>
@@ -251,16 +277,16 @@ export default function ExploreObjectResourceDetailPage() {
                   )}
                 </div>
 
-                {/* Dynamic Sync Configuration */}
-                <div className="flex flex-col gap-3">
-                  <h4 className="text-[11px] font-bold uppercase tracking-widest text-slate-500 flex items-center gap-2">
-                    <Hash size={14} /> Technical Configuration
+                {/* Dynamic Sync Configuration Table */}
+                <div className="flex flex-col gap-3 mt-2">
+                  <h4 className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 flex items-center gap-1.5 m-0">
+                    <Hash size={14} className="text-slate-400" /> Technical Configuration
                   </h4>
                   
-                  {viewDetail.sync_config && Object.keys(viewDetail.sync_config).length > 0 ? (
-                    <div className="bg-slate-50 rounded-xl border border-slate-100 overflow-hidden">
+                  {configData.length > 0 ? (
+                    <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">
                       <Table 
-                        dataSource={Object.entries(viewDetail.sync_config).map(([key, value]) => ({ key, value }))}
+                        dataSource={configData}
                         pagination={false}
                         showHeader={false}
                         size="small"
@@ -268,23 +294,25 @@ export default function ExploreObjectResourceDetailPage() {
                           { 
                             dataIndex: "key", 
                             width: "40%",
-                            render: (text) => <span className="text-xs font-semibold text-slate-600 font-mono">{text}</span> 
+                            render: (text) => <span className="text-[12px] font-medium text-slate-500">{text}</span> 
                           },
                           { 
                             dataIndex: "value", 
                             render: (val) => (
-                              <span className="text-xs text-slate-800 font-mono">
+                              <span className="text-[12px] text-slate-900 font-mono bg-slate-50 px-1.5 py-0.5 rounded border border-slate-100">
                                 {val === null || val === undefined ? <span className="text-slate-400 italic">null</span> : String(val)}
                               </span>
                             ) 
                           }
                         ]}
-                        className="config-table"
+                        className="custom-explore-table"
                       />
                     </div>
                   ) : (
-                    <div className="p-4 rounded-xl border border-dashed border-slate-200 bg-slate-50 text-center text-sm text-slate-400 italic">
-                      No configuration properties mapped.
+                    <div className="p-6 rounded-lg border border-dashed border-slate-200 bg-slate-50/50 flex flex-col items-center justify-center text-center">
+                      <Settings size={20} className="text-slate-300 mb-2" />
+                      <span className="text-[13px] font-medium text-slate-600">No configuration mapped</span>
+                      <span className="text-[12px] text-slate-400 mt-0.5">This view has no technical parameters.</span>
                     </div>
                   )}
                 </div>
@@ -293,16 +321,23 @@ export default function ExploreObjectResourceDetailPage() {
 
           </div>
         </div>
+      </div>
+
       <style jsx global>{`
-        .config-table .ant-table-row > td {
-          border-bottom: 1px solid #f1f5f9 !important;
+        /* Modern Table "Ghost" Styles for Config Table */
+        .custom-explore-table .ant-table {
           background: transparent !important;
         }
-        .config-table .ant-table-row:last-child > td {
-          border-bottom: none !important;
+        .custom-explore-table .ant-table-tbody > tr > td {
+          padding: 12px 16px !important;
+          border-bottom: 1px solid #F1F5F9 !important;
+          transition: background-color 0.2s ease;
         }
-        .config-table .ant-table-tbody > tr.ant-table-row:hover > td {
-          background: #f8fafc !important;
+        .custom-explore-table .ant-table-tbody > tr:hover > td {
+          background: #F8FAFC !important;
+        }
+        .custom-explore-table .ant-table-tbody > tr:last-child > td {
+          border-bottom: none !important;
         }
       `}</style>
     </div>
