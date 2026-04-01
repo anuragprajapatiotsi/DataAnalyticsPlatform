@@ -279,5 +279,10 @@ export const serviceService = {
   async syncCatalogView(id: string, payload: { sync_data: boolean; force: boolean }) {
     const response = await api.post(`/catalog-views/${id}/sync`, payload);
     return response.data;
+  },
+  
+  async executeTrinoQuery(payload: { sql: string; catalog: string; schema: string; limit: number }, signal?: AbortSignal) {
+    const response = await api.post("/integrations/trino/query", payload, { signal });
+    return response.data;
   }
 };
