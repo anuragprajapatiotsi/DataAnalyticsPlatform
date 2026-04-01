@@ -260,5 +260,24 @@ export const serviceService = {
   async getCatalogViewById(id: string) {
     const response = await api.get<CatalogView>(`/catalog-views/${id}`);
     return response.data;
+  },
+
+  async createCatalogView(data: Partial<CatalogView>) {
+    const response = await api.post<CatalogView>("/catalog-views", data);
+    return response.data;
+  },
+
+  async getDataAssets(params?: { skip?: number; limit?: number; name?: string; sn?: string }) {
+    const response = await api.get<any[]>("/data-assets", { params });
+    // Handle both array returns and paginated object returns
+    if (response.data && typeof response.data === 'object' && 'data' in response.data) {
+      return response.data.data;
+    }
+    return Array.isArray(response.data) ? response.data : [];
+  },
+
+  async syncCatalogView(id: string, payload: { sync_data: boolean; force: boolean }) {
+    const response = await api.post(`/catalog-views/${id}/sync`, payload);
+    return response.data;
   }
 };

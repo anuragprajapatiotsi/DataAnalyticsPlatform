@@ -11,11 +11,13 @@ import {
   Clock,
   Calendar,
   AlertCircle,
+  RefreshCw,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { serviceService } from "@/features/services/services/service.service";
 import { CatalogView } from "@/features/services/types";
 import { PageHeader } from "@/shared/components/layout/PageHeader";
+import { CreateCatalogViewModal } from "@/features/explore/components/CreateCatalogViewModal";
 import { cn } from "@/shared/utils/cn";
 import type { ColumnsType } from "antd/es/table";
 import dayjs from "dayjs";
@@ -29,6 +31,27 @@ export default function ExploreObjectResourcesPage() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [pagination, setPagination] = useState({ skip: 0, limit: 100 });
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [syncingViews, setSyncingViews] = useState<Set<string>>(new Set());
+
+  const handleSync = async (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    try {
+      setSyncingViews((prev) => new Set(prev).add(id));
+      const res = await serviceService.syncCatalogView(id, { sync_data: true, force: false });
+      message.success(res.message || "Manual sync triggered successfully.");
+      setTimeout(fetchCatalogViews, 1000);
+    } catch (err: any) {
+      console.error(err);
+      message.error(err?.response?.data?.message || "Failed to trigger sync.");
+    } finally {
+      setSyncingViews((prev) => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
+    }
+  };
 
   const breadcrumbItems = [
     { label: "Catalog", href: "/explore" },
@@ -185,12 +208,28 @@ export default function ExploreObjectResourcesPage() {
     {
       title: "",
       key: "action",
-      width: "5%",
-      render: () => (
-        <ChevronRight
-          size={16}
-          className="text-slate-300 group-hover:text-indigo-500 transition-colors"
-        />
+      width: "12%",
+      render: (_, record) => (
+        <div className="flex items-center justify-end gap-3 pr-2" onClick={(e) => e.stopPropagation()}>
+          {record.sync_mode === "on_demand" && (
+            <Tooltip title="Trigger Manual Sync">
+              <Button
+                type="text"
+                size="small"
+                icon={<RefreshCw size={14} className={cn(syncingViews.has(record.id) && "animate-spin text-blue-500")} />}
+                onClick={(e) => handleSync(e, record.id)}
+                disabled={syncingViews.has(record.id)}
+                className="flex items-center text-slate-400 hover:text-blue-600 hover:bg-blue-50"
+              >
+                Sync
+              </Button>
+            </Tooltip>
+          )}
+          <ChevronRight
+            size={16}
+            className="text-slate-300 group-hover:text-indigo-500 transition-colors"
+          />
+        </div>
       ),
     },
   ];
@@ -215,6 +254,13 @@ export default function ExploreObjectResourcesPage() {
                   {filteredViews.length}
                 </span>
               </div>
+              <Button
+                type="primary"
+                onClick={() => setIsModalOpen(true)}
+                className="bg-indigo-600 hover:bg-indigo-500 rounded-xl font-bold h-10 px-5 shadow-sm"
+              >
+                Create View
+              </Button>
               <Tooltip title="Refresh Catalog Views">
                 <Button
                   onClick={fetchCatalogViews}
@@ -234,21 +280,21 @@ export default function ExploreObjectResourcesPage() {
       </div>
 
       {/* Main Table Interface */}
-      <div className="flex-1 overflow-hidden p-3 flex flex-col gap-4">
+      <div className="flex-1 overflow-hidden p-3 flex flex-col">
         {/* Discovery Table Container */}
-        <div className="flex-1 min-h-[400px] bg-white rounded-2xl border border-slate-200 shadow-sm flex flex-col overflow-hidden relative">
+        <div className="flex-1 bg-white rounded-2xl border border-slate-200 shadow-sm flex flex-col overflow-hidden">
           <Table
             dataSource={filteredViews}
             columns={columns}
             rowKey="id"
             loading={loading}
-            className="custom-explore-table flex-1 flex flex-col absolute inset-0 w-full h-full"
-            scroll={{ y: "100%" }}
+            className="custom-explore-table h-full flex flex-col no-scrollbar"
+            scroll={{ y: "calc(100vh - 220px)" }}
             pagination={{
               pageSize: 50,
               hideOnSinglePage: true,
               className:
-                "px-6 py-4 border-t border-slate-50 mt-auto !mb-0 flex-shrink-0 bg-white sticky bottom-0 z-10 w-full",
+                "px-6 py-4 border-t border-slate-50 mt-auto !mb-0 shrink-0 bg-white",
             }}
             locale={{
               emptyText: (
@@ -305,6 +351,11 @@ export default function ExploreObjectResourcesPage() {
           overflow-y: auto !important;
         }
       `}</style>
+      <CreateCatalogViewModal
+        open={isModalOpen}
+        onCancel={() => setIsModalOpen(false)}
+        onSuccess={() => fetchCatalogViews()}
+      />
     </div>
   );
 }

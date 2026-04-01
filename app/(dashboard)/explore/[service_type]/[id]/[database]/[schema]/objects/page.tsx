@@ -15,7 +15,9 @@ import {
   message,
   Card,
   Badge,
+  Dropdown,
 } from "antd";
+import type { MenuProps } from "antd";
 import {
   Database,
   Search,
@@ -29,7 +31,11 @@ import {
   ChevronRight,
   User,
   Tags,
+  MoreVertical,
+  Eye,
+  Layers,
 } from "lucide-react";
+import { CreateCatalogViewModal } from "@/features/explore/components/CreateCatalogViewModal";
 import { PageHeader } from "@/shared/components/layout/PageHeader";
 import { serviceService } from "@/features/services/services/service.service";
 import { ServiceEndpoint, DBObjectInfo } from "@/features/services/types";
@@ -55,6 +61,8 @@ export default function SchemaObjectsPage() {
   const [objects, setObjects] = useState<DBObjectInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedEndpointContext, setSelectedEndpointContext] = useState<any>(null);
 
   useEffect(() => {
     async function fetchData() {
@@ -173,6 +181,54 @@ export default function SchemaObjectsPage() {
           )}
         </div>
       ),
+    },
+    {
+      title: "Action",
+      key: "action",
+      width: "8%",
+      render: (_, record) => {
+        const isEligible = !record.object_type || record.object_type.toLowerCase() === "table" || record.object_type.toLowerCase() === "view";
+
+        const items: MenuProps["items"] = [
+          {
+            key: "view_details",
+            label: "View Object Details",
+            icon: <Eye size={14} className="text-slate-500" />,
+            onClick: (e) => {
+              e.domEvent.stopPropagation();
+              router.push(`/explore/${serviceType}/${id}/${database}/${schema}/${record.name}`);
+            },
+          },
+        ];
+
+        if (isEligible) {
+          items.push({ type: "divider" });
+          items.push({
+            key: "create_view",
+            label: "Create Catalog View",
+            icon: <Layers size={14} className="text-blue-500" />,
+            onClick: (e) => {
+              e.domEvent.stopPropagation();
+              setSelectedEndpointContext({
+                source_connection_id: id as string,
+                source_schema: schema as string,
+                source_table: record.name,
+              });
+              setIsModalOpen(true);
+            },
+          });
+        }
+
+        return (
+          <div className="flex items-center justify-end pr-3" onClick={(e) => e.stopPropagation()}>
+            <Dropdown menu={{ items }} trigger={["click"]} placement="bottomRight">
+              <button className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors">
+                <MoreVertical size={16} />
+              </button>
+            </Dropdown>
+          </div>
+        );
+      },
     },
   ];
 
@@ -336,6 +392,20 @@ export default function SchemaObjectsPage() {
           border-bottom: none !important;
         }
       `}</style>
+
+      {selectedEndpointContext && (
+        <CreateCatalogViewModal
+          open={isModalOpen}
+          initialEndpointContext={selectedEndpointContext}
+          onCancel={() => {
+            setIsModalOpen(false);
+            setTimeout(() => setSelectedEndpointContext(null), 300);
+          }}
+          onSuccess={(viewId) => {
+            if (viewId) router.push(`/explore/object-resources/${viewId}`);
+          }}
+        />
+      )}
     </div>
   );
 }

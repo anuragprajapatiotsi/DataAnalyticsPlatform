@@ -61,6 +61,7 @@ import {
   ColumnProfilingResponse,
 } from "@/features/services/types";
 import { PageHeader } from "@/shared/components/layout/PageHeader";
+import { CreateCatalogViewModal } from "@/features/explore/components/CreateCatalogViewModal";
 import { cn } from "@/shared/utils/cn";
 import { useAuthContext } from "@/shared/contexts/auth-context";
 import type { ColumnsType } from "antd/es/table";
@@ -74,6 +75,7 @@ export default function DataAssetDetailPage() {
     null,
   );
   const [loading, setLoading] = useState(true);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Column Profiling Drawer State
   const [selectedColumnId, setSelectedColumnId] = useState<string | null>(null);
@@ -623,6 +625,13 @@ export default function DataAssetDetailPage() {
                   {asset?.asset_type}
                 </span>
               </div>
+              <Button
+                type="primary"
+                onClick={() => setIsModalOpen(true)}
+                className="bg-indigo-600 hover:bg-indigo-500 rounded-xl font-bold h-10 px-5 shadow-sm"
+              >
+                Create Catalog View
+              </Button>
               <Tooltip title="Refresh Metadata">
                 <button
                   onClick={fetchData}
@@ -1213,6 +1222,14 @@ export default function DataAssetDetailPage() {
           border-bottom: 1px solid #f8fafc !important;
         }
       `}</style>
+      <CreateCatalogViewModal
+        open={isModalOpen}
+        onCancel={() => setIsModalOpen(false)}
+        initialAssetId={asset_id as string}
+        onSuccess={(id) => {
+          if (id) router.push(`/explore/object-resources/${id}`);
+        }}
+      />
     </div>
   );
 }

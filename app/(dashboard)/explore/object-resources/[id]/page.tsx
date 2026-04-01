@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { message, Alert, Badge, Card, Descriptions, Tag, Skeleton, Divider, Table } from "antd";
+import { message, Alert, Badge, Card, Descriptions, Tag, Skeleton, Divider, Table, Button, Tooltip } from "antd";
 import {
   Layers,
   Database,
@@ -11,8 +11,9 @@ import {
   AlertTriangle,
   Server,
   Settings,
+  Activity,
+  RefreshCw,
   Hash,
-  Activity
 } from "lucide-react";
 import { serviceService } from "@/features/services/services/service.service";
 import { CatalogView } from "@/features/services/types";
@@ -30,6 +31,22 @@ export default function ExploreObjectResourceDetailPage() {
 
   const [viewDetail, setViewDetail] = useState<CatalogView | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isSyncing, setIsSyncing] = useState(false);
+
+  const handleSync = async () => {
+    if (!viewDetail?.id) return;
+    try {
+      setIsSyncing(true);
+      const res = await serviceService.syncCatalogView(viewDetail.id, { sync_data: true, force: false });
+      message.success(res.message || "Manual sync triggered successfully.");
+      setTimeout(fetchDetail, 1000);
+    } catch (err: any) {
+      console.error(err);
+      message.error(err?.response?.data?.message || "Failed to trigger sync.");
+    } finally {
+      setIsSyncing(false);
+    }
+  };
 
   const breadcrumbItems = [
     { label: "Catalog", href: "/explore" },
@@ -123,9 +140,23 @@ export default function ExploreObjectResourceDetailPage() {
               </div>
             </div>
             
-            <div className={cn("px-3 py-2 rounded-xl border flex flex-col items-center shrink-0 w-32", statusConfig.bg, statusConfig.border)}>
-              <span className="text-[10px] uppercase font-bold text-slate-500 tracking-widest mb-1">Status</span>
-              <Badge status={statusConfig.color as any} text={<span className="font-bold text-sm tracking-tight">{statusConfig.text}</span>} />
+            <div className="flex items-center gap-3">
+              {viewDetail.sync_mode === "on_demand" && (
+                <Tooltip title="Trigger Manual Sync">
+                  <Button
+                    icon={<RefreshCw size={16} className={cn(isSyncing && "animate-spin")} />}
+                    onClick={handleSync}
+                    loading={isSyncing}
+                    className="flex items-center gap-2 border border-slate-200 bg-white text-slate-600 hover:text-indigo-600 hover:border-indigo-300 hover:bg-indigo-50 font-bold h-[46px] px-4 rounded-xl transition-all shadow-sm shrink-0"
+                  >
+                    Sync Now
+                  </Button>
+                </Tooltip>
+              )}
+              <div className={cn("px-4 py-2 rounded-xl border flex flex-col items-center shrink-0 md:min-w-[120px]", statusConfig.bg, statusConfig.border)}>
+                <span className="text-[10px] uppercase font-bold text-slate-500 tracking-widest mb-1">Status</span>
+                <Badge status={statusConfig.color as any} text={<span className="font-bold text-sm tracking-tight">{statusConfig.text}</span>} />
+              </div>
             </div>
           </div>
       </div>

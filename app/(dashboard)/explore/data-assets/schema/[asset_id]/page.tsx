@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { Table, Badge, Input, message, Tooltip, Progress, Space, Tag } from "antd";
+import { Table, Badge, Input, message, Tooltip, Progress, Space, Tag, Dropdown } from "antd";
+import type { MenuProps } from "antd";
 import {
   Search,
   Database,
@@ -13,11 +14,13 @@ import {
   Shield,
   Layers,
   FileText,
+  MoreVertical,
 } from "lucide-react";
 import { useRouter, useParams, useSearchParams } from "next/navigation";
 import { serviceService } from "@/features/services/services/service.service";
 import { CatalogAsset } from "@/features/services/types";
 import { PageHeader } from "@/shared/components/layout/PageHeader";
+import { CreateCatalogViewModal } from "@/features/explore/components/CreateCatalogViewModal";
 import { cn } from "@/shared/utils/cn";
 import type { ColumnsType } from "antd/es/table";
 
@@ -28,6 +31,8 @@ export default function SchemaAssetsPage() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [activeType, setActiveType] = useState<string>("all");
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedEndpointContext, setSelectedEndpointContext] = useState<any>(null);
 
   const searchParams = useSearchParams();
   const eid = searchParams.get("eid");
@@ -182,12 +187,56 @@ export default function SchemaAssetsPage() {
       ),
     },
     {
-      title: "",
+      title: "Action",
       key: "action",
-      width: "5%",
-      render: () => (
-        <ChevronRight size={16} className="text-slate-300 group-hover:text-blue-500 transition-colors" />
-      ),
+      width: "8%",
+      render: (_, record) => {
+        const isEligible = record.asset_type === "table" || record.asset_type === "view";
+
+        const items: MenuProps["items"] = [
+          {
+            key: "view_details",
+            label: "View Asset Details",
+            icon: <Eye size={14} className="text-slate-500" />,
+            onClick: (e) => {
+              e.domEvent.stopPropagation();
+              const params = new URLSearchParams(searchParams.toString());
+              params.set("sn", sn || "");
+              params.set("an", record.display_name || record.name);
+              params.set("sid", asset_id as string);
+              router.push(`/explore/data-assets/details/${record.id}?${params.toString()}`);
+            },
+          },
+        ];
+
+        if (isEligible) {
+          items.push({ type: "divider" });
+          items.push({
+            key: "create_view",
+            label: "Create Catalog View",
+            icon: <Layers size={14} className="text-blue-500" />,
+            onClick: (e) => {
+              e.domEvent.stopPropagation();
+              setSelectedEndpointContext({
+                source_connection_id: eid as string,
+                source_schema: sn as string,
+                source_table: record.name,
+              });
+              setIsModalOpen(true);
+            },
+          });
+        }
+
+        return (
+          <div className="flex items-center justify-end pr-3" onClick={(e) => e.stopPropagation()}>
+            <Dropdown menu={{ items }} trigger={["click"]} placement="bottomRight">
+              <button className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors">
+                <MoreVertical size={16} />
+              </button>
+            </Dropdown>
+          </div>
+        );
+      },
     },
   ];
 
@@ -278,6 +327,20 @@ export default function SchemaAssetsPage() {
           />
         </div>
       </div>
+      
+      {selectedEndpointContext && (
+        <CreateCatalogViewModal
+          open={isModalOpen}
+          initialEndpointContext={selectedEndpointContext}
+          onCancel={() => {
+            setIsModalOpen(false);
+            setTimeout(() => setSelectedEndpointContext(null), 300);
+          }}
+          onSuccess={(id) => {
+            if (id) router.push(`/explore/object-resources/${id}`);
+          }}
+        />
+      )}
     </div>
   );
 }
