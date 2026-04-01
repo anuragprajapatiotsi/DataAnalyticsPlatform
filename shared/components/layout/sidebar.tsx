@@ -212,7 +212,7 @@ export function Sidebar() {
     <aside
       className={cn(
         "hidden shrink-0 border-r border-slate-200 bg-slate-100/90 py-6 transition-all duration-300 ease-in-out lg:flex lg:flex-col overflow-y-auto no-scrollbar",
-        collapsed ? "w-[72px] px-3" : "w-[260px] px-4",
+        collapsed ? "w-[72px] px-3" : "w-[220px] px-4",
       )}
     >
       <div

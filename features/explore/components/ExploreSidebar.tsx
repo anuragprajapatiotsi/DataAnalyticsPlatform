@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   Database,
   Cpu,
@@ -16,15 +17,16 @@ import {
   Files as FilesIcon,
   Globe,
   TrendingUp,
+  Layers,
+  Package
 } from "lucide-react";
 import { cn } from "@/shared/utils/cn";
 
 const ASSET_CATEGORIES = [
-  { id: "database", label: "Database", icon: Database },
+  { id: "database", label: "Database Services", icon: Database },
   { id: "api", label: "API", icon: Cpu },
   { id: "messaging", label: "Messaging", icon: MessageSquare },
   { id: "dashboards", label: "Dashboards", icon: LayoutDashboard },
-  { id: "pipelines", label: "Pipelines", icon: GitBranch },
   { id: "ml-models", label: "ML Models", icon: Zap },
   { id: "storages", label: "Storages", icon: HardDrive },
   { id: "metadata", label: "Metadata", icon: Search },
@@ -42,6 +44,8 @@ export type ExploreView =
   | "storages"
   | "metadata"
   | "kpis"
+  | "object-resources"
+  | "data-assets"
   | "drives"
   | "ftp-servers"
   | "files";
@@ -52,25 +56,38 @@ interface ExploreSidebarProps {
   onViewChange: (view: ExploreView) => void;
   onCategoryChange: (categoryId: string) => void;
 }
-
 export function ExploreSidebar({
   activeView,
   activeCategory,
   onViewChange,
   onCategoryChange,
 }: ExploreSidebarProps) {
-  const [catalogExpanded, setCatalogExpanded] = useState(false);
-  const [sourcesExpanded, setSourcesExpanded] = useState(false);
+  const router = useRouter();
+  const [catalogExpanded, setCatalogExpanded] = useState(true);
+  const [dataExpanded, setDataExpanded] = useState(false);
+  const [sourcesExpanded, setSourcesExpanded] = useState(true);
+
+  const handleCategoryClick = (id: string) => {
+    // Map sidebar IDs to service_type route parameters
+    const typeMap: Record<string, string> = {
+      database: "databases",
+      api: "apis",
+      storages: "storages",
+      drives: "drive",
+    };
+    const serviceType = typeMap[id] || id;
+    router.push(`/explore/${serviceType}`);
+  };
 
   return (
-    <aside className="w-[260px] flex-shrink-0 border-r border-slate-200 px-4 py-2  flex flex-col h-full bg-white transition-all duration-300">
-      <nav className="flex flex-col gap-1.5 overflow-y-auto pr-2 custom-scrollbar h-full">
+    <aside className="w-[200px] flex-shrink-0 border-r border-slate-200 px-4 py-2  flex flex-col h-full bg-white transition-all duration-300">
+      <nav className="flex flex-col gap-1.5 overflow-y-auto pr-2 no-scrollbar h-full">
         {/* Catalog Section */}
         <div className="flex flex-col">
           <button
             onClick={() => setCatalogExpanded(!catalogExpanded)}
             className={cn(
-              "group flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
+              "group flex items-center gap-3 px-3 py-2.5 rounded-lg text-[14px] font-medium transition-all duration-200",
               activeView === "catalog" || activeView === "data"
                 ? "bg-blue-50/50 text-blue-600"
                 : "text-slate-600 hover:bg-slate-100 hover:text-slate-900",
@@ -94,20 +111,79 @@ export function ExploreSidebar({
           {catalogExpanded && (
             <div className="flex flex-col gap-0.5 mt-1 ml-3 pl-2 border-l border-slate-100 px-1">
               <button
-                onClick={() => onViewChange("data")}
+                onClick={() => setDataExpanded(!dataExpanded)}
                 className={cn(
-                  "group flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium transition-all duration-200",
-                  activeView === "data"
+                  "group flex items-center justify-between px-3 py-2 rounded-lg text-[14px] font-medium transition-all duration-200 w-full",
+                  activeView === "data" ||
+                    activeView === "object-resources" ||
+                    activeView === "data-assets" ||
+                    activeView === "kpis"
                     ? "text-blue-600 font-bold bg-blue-50/30"
                     : "text-slate-500 hover:text-slate-800 hover:bg-slate-50",
                 )}
               >
-                <div className={cn(
-                  "w-1.5 h-1.5 rounded-full transition-colors",
-                  activeView === "data" ? "bg-blue-600" : "bg-slate-300 group-hover:bg-blue-400"
-                )} />
-                Data
+                <div className="flex items-center gap-3">
+                  <div
+                    className={cn(
+                      "w-1.5 h-1.5 rounded-full transition-colors",
+                      activeView === "data" ||
+                        activeView === "object-resources" ||
+                        activeView === "data-assets" ||
+                        activeView === "kpis"
+                        ? "bg-blue-600"
+                        : "bg-slate-300 group-hover:bg-blue-400",
+                    )}
+                  />
+                  <span>Data</span>
+                </div>
+                {dataExpanded ? (
+                  <ChevronDown size={12} className="text-slate-400" />
+                ) : (
+                  <ChevronRight size={12} className="text-slate-400" />
+                )}
               </button>
+
+              {/* Data Sub-menus */}
+              {dataExpanded && (
+                <div className="flex flex-col gap-0.5 mt-1 ml-2 pl-3 border-l border-slate-100 px-1 py-1">
+                  <button
+                    onClick={() => onViewChange("object-resources")}
+                    className={cn(
+                      "flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-[14px] transition-all duration-200",
+                      activeView === "object-resources"
+                        ? "text-blue-700 bg-blue-50/50 font-semibold"
+                        : "text-slate-500 hover:text-slate-700 hover:bg-slate-50",
+                    )}
+                  >
+                    <Layers size={14} className={activeView === "object-resources" ? "text-blue-600" : "text-slate-400"} />
+                    Object Resources
+                  </button>
+                  <button
+                    onClick={() => onViewChange("data-assets")}
+                    className={cn(
+                      "flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-[14px] transition-all duration-200",
+                      activeView === "data-assets"
+                        ? "text-blue-700 bg-blue-50/50 font-semibold"
+                        : "text-slate-500 hover:text-slate-700 hover:bg-slate-50",
+                    )}
+                  >
+                    <Database size={14} className={activeView === "data-assets" ? "text-blue-600" : "text-slate-400"} />
+                    Data Assets
+                  </button>
+                  <button
+                    onClick={() => onViewChange("kpis")}
+                    className={cn(
+                      "flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-[14px] transition-all duration-200",
+                      activeView === "kpis"
+                        ? "text-blue-700 bg-blue-50/50 font-semibold"
+                        : "text-slate-500 hover:text-slate-700 hover:bg-slate-50",
+                    )}
+                  >
+                    <TrendingUp size={14} className={activeView === "kpis" ? "text-blue-600" : "text-slate-400"} />
+                    KPI
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -117,8 +193,8 @@ export function ExploreSidebar({
           <button
             onClick={() => setSourcesExpanded(!sourcesExpanded)}
             className={cn(
-              "group flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
-              activeView === "kpis" || activeView === "drives" || activeView === "ftp-servers" || ASSET_CATEGORIES.some(c => c.id === activeView)
+              "group flex items-center gap-3 px-3 py-2.5 rounded-lg text-[14px] font-medium transition-all duration-200",
+              activeView === "drives" || activeView === "ftp-servers" || ASSET_CATEGORIES.some(c => c.id === activeView)
                 ? "bg-blue-50/50 text-blue-600"
                 : "text-slate-600 hover:bg-slate-100 hover:text-slate-900",
             )}
@@ -126,7 +202,7 @@ export function ExploreSidebar({
             <Zap
               size={18}
               className={
-                activeView === "kpis" || activeView === "drives" || activeView === "ftp-servers" || ASSET_CATEGORIES.some(c => c.id === activeView) ? "text-blue-600" : "text-slate-400"
+                activeView === "drives" || activeView === "ftp-servers" || ASSET_CATEGORIES.some(c => c.id === activeView) ? "text-blue-600" : "text-slate-400"
               }
             />
             <span className="flex-1 text-left">Sources</span>
@@ -147,9 +223,9 @@ export function ExploreSidebar({
                 return (
                   <button
                     key={category.id}
-                    onClick={() => onViewChange(category.id as ExploreView)}
+                    onClick={() => handleCategoryClick(category.id)}
                     className={cn(
-                      "group flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium transition-all duration-200",
+                      "group flex items-center gap-3 px-3 py-2 rounded-lg text-[14px] font-medium transition-all duration-200",
                       isActive
                         ? "text-blue-600 font-bold bg-blue-50/30"
                         : "text-slate-500 hover:text-slate-800 hover:bg-slate-50",
@@ -171,7 +247,7 @@ export function ExploreSidebar({
               <button
                 onClick={() => onViewChange("drives")}
                 className={cn(
-                  "group flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium transition-all duration-200",
+                  "group flex items-center gap-3 px-3 py-2 rounded-lg text-[14px] font-medium transition-all duration-200",
                   activeView === "drives"
                     ? "text-blue-600 font-bold bg-blue-50/30"
                     : "text-slate-500 hover:text-slate-800 hover:bg-slate-50",
@@ -191,7 +267,7 @@ export function ExploreSidebar({
               <button
                 onClick={() => onViewChange("ftp-servers")}
                 className={cn(
-                  "group flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium transition-all duration-200",
+                  "group flex items-center gap-3 px-3 py-2 rounded-lg text-[14px] font-medium transition-all duration-200",
                   activeView === "ftp-servers"
                     ? "text-blue-600 font-bold bg-blue-50/30"
                     : "text-slate-500 hover:text-slate-800 hover:bg-slate-50",
@@ -206,35 +282,53 @@ export function ExploreSidebar({
                 />
                 FTP Servers
               </button>
-
-              {/* KPIs */}
-              <button
-                onClick={() => onViewChange("kpis")}
-                className={cn(
-                  "group flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium transition-all duration-200",
-                  activeView === "kpis"
-                    ? "text-blue-600 font-bold bg-blue-50/30"
-                    : "text-slate-500 hover:text-slate-800 hover:bg-slate-50",
-                )}
-              >
-                <TrendingUp
-                  size={14}
-                  className={cn(
-                    "transition-colors",
-                    activeView === "kpis" ? "text-blue-600" : "text-slate-400",
-                  )}
-                />
-                KPIs
-              </button>
             </div>
           )}
         </div>
+
+        {/* Pipelines */}
+        <button
+          onClick={() => onViewChange("pipelines")}
+          className={cn(
+            "group flex items-center gap-3 px-3 py-2.5 rounded-lg text-[14px] font-medium transition-all duration-200",
+            activeView === "pipelines"
+              ? "bg-blue-50 text-blue-600 shadow-sm shadow-blue-100/30"
+              : "text-slate-600 hover:bg-slate-100 hover:text-slate-900",
+          )}
+        >
+          <GitBranch
+            size={18}
+            className={
+              activeView === "pipelines" ? "text-blue-600" : "text-slate-400"
+            }
+          />
+          Pipelines
+        </button>
+
+        {/* KPIs */}
+        <button
+          onClick={() => onViewChange("kpis")}
+          className={cn(
+            "group flex items-center gap-3 px-3 py-2.5 rounded-lg text-[14px] font-medium transition-all duration-200",
+            activeView === "kpis"
+              ? "bg-blue-50 text-blue-600 shadow-sm shadow-blue-100/30"
+              : "text-slate-600 hover:bg-slate-100 hover:text-slate-900",
+          )}
+        >
+          <TrendingUp
+            size={18}
+            className={
+              activeView === "kpis" ? "text-blue-600" : "text-slate-400"
+            }
+          />
+          KPIs
+        </button>
 
         {/* Files */}
         <button
           onClick={() => onViewChange("files")}
           className={cn(
-            "group flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
+            "group flex items-center gap-3 px-3 py-2.5 rounded-lg text-[14px] font-medium transition-all duration-200",
             activeView === "files"
               ? "bg-blue-50 text-blue-600 shadow-sm shadow-blue-100/30"
               : "text-slate-600 hover:bg-slate-100 hover:text-slate-900",

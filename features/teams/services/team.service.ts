@@ -51,8 +51,14 @@ export const teamService = {
     return response.data;
   },
 
-  async getMembers(id: string) {
-    const response = await api.get<TeamMember[]>(`/teams/${id}/members`);
+  async getMembers(id: string, orgId?: string) {
+    const response = await api.get<TeamMember[]>(`/teams/${id}/members`, {
+      params: {
+        org_id: orgId,
+        roles: true,
+        policies: true,
+      },
+    });
     return response.data;
   },
 
@@ -69,13 +75,17 @@ export const teamService = {
     return response.data;
   },
 
-  async getRoles(id: string) {
-    const response = await api.get<Role[]>(`/teams/${id}/roles`);
+  async getRoles(id: string, orgId?: string) {
+    const response = await api.get<Role[]>(`/teams/${id}/roles`, {
+      params: { org_id: orgId },
+    });
     return response.data;
   },
 
-  async getPolicies(id: string) {
-    const response = await api.get<Policy[]>(`/teams/${id}/policies`);
+  async getPolicies(id: string, orgId?: string) {
+    const response = await api.get<Policy[]>(`/teams/${id}/policies`, {
+      params: { org_id: orgId },
+    });
     return response.data;
   },
 
@@ -84,8 +94,10 @@ export const teamService = {
     return response.data;
   },
 
-  async addRole(teamId: string, roleId: string) {
-    const response = await api.post(`/teams/${teamId}/roles/${roleId}`);
+  async addRole(teamId: string, roleId: string, orgId: string) {
+    const params = { org_id: orgId };
+    console.log(`Adding role ${roleId} with params:`, params);
+    const response = await api.post(`/teams/${teamId}/roles/${roleId}`, {}, { params });
     return response.data;
   },
 
@@ -94,17 +106,18 @@ export const teamService = {
     return response.data;
   },
 
-  async assignRoles(teamId: string, roleIds: string[]) {
-    // Current API might only support single assignments, but requested structure suggests bulk
-    // For now, if the API doesn't support bulk, we could loop, but user requested POST /teams/{team_id}/roles with role_ids array
-    const response = await api.post(`/teams/${teamId}/roles`, {
-      role_ids: roleIds,
-    });
+  async assignRoles(teamId: string, roleIds: string[], orgId: string) {
+    const params = { org_id: orgId };
+    const body = { role_ids: roleIds };
+    console.log("Assigning roles with params:", params, "and body:", body);
+    const response = await api.post(`/teams/${teamId}/roles`, body, { params });
     return response.data;
   },
 
-  async addPolicy(teamId: string, policyId: string) {
-    const response = await api.post(`/teams/${teamId}/policies/${policyId}`);
+  async addPolicy(teamId: string, policyId: string, orgId: string) {
+    const params = { org_id: orgId };
+    console.log(`Adding policy ${policyId} with params:`, params);
+    const response = await api.post(`/teams/${teamId}/policies/${policyId}`, {}, { params });
     return response.data;
   },
 
@@ -113,10 +126,11 @@ export const teamService = {
     return response.data;
   },
 
-  async assignPolicies(teamId: string, policyIds: string[]) {
-    const response = await api.post(`/teams/${teamId}/policies`, {
-      policy_ids: policyIds,
-    });
+  async assignPolicies(teamId: string, policyIds: string[], orgId: string) {
+    const params = { org_id: orgId };
+    const body = { policy_ids: policyIds };
+    console.log("Assigning policies with params:", params, "and body:", body);
+    const response = await api.post(`/teams/${teamId}/policies`, body, { params });
     return response.data;
   },
 
