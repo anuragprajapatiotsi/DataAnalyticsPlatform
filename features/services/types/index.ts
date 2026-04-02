@@ -337,3 +337,24 @@ export interface CatalogView {
   created_at?: string;
   updated_at?: string;
 }
+
+export interface SyncConfig {
+  sync_config: {
+    iceberg_table?: string;
+    last_export_rows?: number;
+    last_iceberg_table?: string;
+    last_airflow_run_id?: string;
+    last_export_columns?: string[];
+    current_airflow_run_id?: string;
+    last_export_finished_at?: string;
+    [key: string]: any;
+  };
+  effective_config: {
+    batch_size?: number;
+    max_rows_per_table?: number;
+    parquet_compression?: string;
+    parquet_partition_col?: string;
+    max_concurrent_syncs?: number;
+    [key: string]: any;
+  };
+}

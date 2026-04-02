@@ -1,5 +1,5 @@
 import { api } from "@/shared/api/axios";
-import { Service, GetServicesParams, CreateServiceRequest, UpdateServiceRequest, ServiceEndpoint, ServiceEndpointRequest, DatabaseInfo, GroupedServiceCategory, SchemaInfo, DBObjectInfo, DBTableDetail, Bot, GetBotsParams, BotRun, GetBotRunsParams, ConnectorMetadata, AggregatedDatabase, CatalogResponse, CatalogAsset, DataAssetDetail, DataAssetProfile, DataColumnDetail, ColumnProfilingResponse, UpdateColumnRequest, BulkUpdateColumnItem, CatalogView } from "../types";
+import { Service, GetServicesParams, CreateServiceRequest, UpdateServiceRequest, ServiceEndpoint, ServiceEndpointRequest, DatabaseInfo, GroupedServiceCategory, SchemaInfo, DBObjectInfo, DBTableDetail, Bot, GetBotsParams, BotRun, GetBotRunsParams, ConnectorMetadata, AggregatedDatabase, CatalogResponse, CatalogAsset, DataAssetDetail, DataAssetProfile, DataColumnDetail, ColumnProfilingResponse, UpdateColumnRequest, BulkUpdateColumnItem, CatalogView, SyncConfig } from "../types";
 
 export const serviceService = {
   async getLatestAssetProfile(assetId: string) {
@@ -283,6 +283,11 @@ export const serviceService = {
   
   async executeTrinoQuery(payload: { sql: string; catalog: string; schema: string; limit: number }, signal?: AbortSignal) {
     const response = await api.post("/integrations/trino/query", payload, { signal });
+    return response.data;
+  },
+  
+  async getSyncConfig(id: string) {
+    const response = await api.get<SyncConfig>(`/catalog-views/${id}/sync-config`);
     return response.data;
   }
 };
