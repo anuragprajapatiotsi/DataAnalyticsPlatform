@@ -1,5 +1,5 @@
 import { api } from "@/shared/api/axios";
-import { Service, GetServicesParams, CreateServiceRequest, UpdateServiceRequest, ServiceEndpoint, ServiceEndpointRequest, DatabaseInfo, GroupedServiceCategory, SchemaInfo, DBObjectInfo, DBTableDetail, Bot, GetBotsParams, BotRun, GetBotRunsParams, ConnectorMetadata, AggregatedDatabase, CatalogResponse, CatalogAsset, DataAssetDetail, DataAssetProfile, DataColumnDetail, ColumnProfilingResponse, UpdateColumnRequest, BulkUpdateColumnItem, CatalogView, SyncConfig } from "../types";
+import { Service, GetServicesParams, CreateServiceRequest, UpdateServiceRequest, ServiceEndpoint, ServiceEndpointRequest, DatabaseInfo, GroupedServiceCategory, SchemaInfo, DBObjectInfo, DBTableDetail, Bot, GetBotsParams, BotRun, GetBotRunsParams, ConnectorMetadata, AggregatedDatabase, CatalogResponse, CatalogAsset, DataAssetDetail, DataAssetProfile, DataColumnDetail, ColumnProfilingResponse, UpdateColumnRequest, BulkUpdateColumnItem, CatalogView, SyncConfig, TrinoCatalog, TrinoSchema, TrinoTable, TrinoColumn, TrinoTableDetail, TrinoQueryRequest, TrinoQueryResponse } from "../types";
 
 export const serviceService = {
   async getLatestAssetProfile(assetId: string) {
@@ -281,13 +281,40 @@ export const serviceService = {
     return response.data;
   },
   
-  async executeTrinoQuery(payload: { sql: string; catalog: string; schema: string; limit: number }, signal?: AbortSignal) {
-    const response = await api.post("/integrations/trino/query", payload, { signal });
+  async executeTrinoQuery(payload: TrinoQueryRequest, signal?: AbortSignal) {
+    const response = await api.post<TrinoQueryResponse>("/integrations/trino/query", {
+      ...payload,
+    }, { signal });
     return response.data;
   },
   
   async getSyncConfig(id: string) {
     const response = await api.get<SyncConfig>(`/catalog-views/${id}/sync-config`);
+    return response.data;
+  },
+
+  async getTrinoCatalogs() {
+    const response = await api.get<TrinoCatalog[]>("/integrations/trino/catalogs");
+    return response.data;
+  },
+
+  async getTrinoSchemas(catalog: string) {
+    const response = await api.get<TrinoSchema[]>(`/integrations/trino/catalogs/${catalog}/schemas`);
+    return response.data;
+  },
+
+  async getTrinoTables(catalog: string, schema: string) {
+    const response = await api.get<TrinoTable[]>(`/integrations/trino/catalogs/${catalog}/${schema}/tables`);
+    return response.data;
+  },
+
+  async getTrinoTableDetail(catalog: string, schema: string, table: string) {
+    const response = await api.get<TrinoTableDetail>(`/integrations/trino/catalogs/${catalog}/${schema}/${table}`);
+    return response.data;
+  },
+  
+  async getTrinoCatalogViewTables() {
+    const response = await api.get<TrinoTable[]>("/integrations/trino/catalogs/iceberg/catalog_views/tables");
     return response.data;
   }
 };

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { Table, Input, message, Tooltip, Empty, Button, Spin } from "antd";
 import {
   Search,
@@ -56,9 +56,10 @@ export default function ExploreObjectResourcesPage() {
   const breadcrumbItems = [
     { label: "Catalog", href: "/explore" },
     { label: "Data", href: "/explore/object-resources" },
-    { label: "Object Resources" },
+    { label: "Catalog Views" },
   ];
 
+  const isInitialMount = useRef(true);
   const fetchCatalogViews = useCallback(async () => {
     try {
       setLoading(true);
@@ -76,7 +77,10 @@ export default function ExploreObjectResourcesPage() {
   }, [pagination.skip, pagination.limit]);
 
   useEffect(() => {
-    fetchCatalogViews();
+    if (isInitialMount.current) {
+      fetchCatalogViews();
+      isInitialMount.current = false;
+    }
   }, [fetchCatalogViews]);
 
   const filteredViews = useMemo(() => {
@@ -216,7 +220,7 @@ export default function ExploreObjectResourcesPage() {
         <div className="max-w-[1400px] mx-auto pb-4">
           <div className="flex items-center justify-between">
             <PageHeader
-              title="Object Resources"
+              title="Catalog Views"
               description="Browse and manage aggregated catalog views mapped from connected data sources."
               breadcrumbItems={breadcrumbItems}
             />
@@ -298,7 +302,7 @@ export default function ExploreObjectResourcesPage() {
                     description={
                       <div className="flex flex-col gap-1">
                         <span className="text-slate-700 font-medium text-sm">No Catalog Views Found</span>
-                        <span className="text-slate-400 text-[13px]">No synced object resources match your search criteria.</span>
+                        <span className="text-slate-400 text-[13px]">No synced Catalog Views match your search criteria.</span>
                       </div>
                     }
                   />

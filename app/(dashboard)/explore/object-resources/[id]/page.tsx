@@ -36,6 +36,8 @@ import relativeTime from "dayjs/plugin/relativeTime";
 
 dayjs.extend(relativeTime);
 
+import { registerSqlAutocomplete } from "@/features/sql-editor/services/autocomplete";
+
 interface ResultTab {
   id: string;
   name: string;
@@ -293,6 +295,7 @@ export default function ExploreObjectResourceDetailPage() {
   };
 
   const handleEditorDidMount = (editor: any, monaco: any) => {
+    registerSqlAutocomplete(monaco);
     editorRef.current = editor;
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, () => {
       const selection = editor.getSelection();
@@ -334,10 +337,11 @@ export default function ExploreObjectResourceDetailPage() {
   const breadcrumbItems = [
     { label: "Catalog", href: "/explore" },
     { label: "Data", href: "/explore/object-resources" },
-    { label: "Object Resources", href: "/explore/object-resources" },
+    { label: "Catalog Views", href: "/explore/object-resources" },
     { label: viewDetail?.display_name || "Loading..." },
   ];
 
+  const isInitialMount = useRef(true);
   const fetchDetail = useCallback(async () => {
     try {
       setLoading(true);
@@ -352,7 +356,10 @@ export default function ExploreObjectResourceDetailPage() {
   }, [viewId]);
 
   useEffect(() => {
-    fetchDetail();
+    if (isInitialMount.current) {
+      fetchDetail();
+      isInitialMount.current = false;
+    }
   }, [fetchDetail]);
 
   const getStatusConfig = (status?: string) => {

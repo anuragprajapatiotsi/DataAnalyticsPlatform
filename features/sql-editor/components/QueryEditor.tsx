@@ -15,7 +15,8 @@ import { useSqlEditorContext } from "../contexts/SqlEditorContext";
 import { cn } from "@/shared/utils/cn";
 import { Button } from "@/shared/components/ui/button";
 import { loader } from "@monaco-editor/react";
-import { registerSqlAutocomplete } from "../services/autocomplete";
+import { registerSqlAutocomplete, setAutocompleteContext } from "../services/autocomplete";
+import { useEffect } from "react";
 
 // Ensure Monaco is available window-wide for the plugin if needed,
 // but @monaco-editor/react handles loader.
@@ -37,14 +38,46 @@ export function QueryEditor() {
   } = useSqlEditorContext();
 
   const editorRef = useRef<any>(null);
+  
+  // Step 4: Reactive Autocomplete Context Sync
+  useEffect(() => {
+    if (activeTab) {
+      setAutocompleteContext({
+        catalog: activeTab.catalog,
+        schema: activeTab.schema,
+      });
+    }
+  }, [activeTab?.catalog, activeTab?.schema]);
 
-  const handleEditorDidMount = (editor: any) => {
+  const handleEditorDidMount = (editor: any, monaco: any) => {
     editorRef.current = editor;
+    
+    // Step 4: Core Keyboard Shortcut Integration
+    editor.addAction({
+      id: "run-query",
+      label: "Run Query",
+      keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter],
+      contextMenuGroupId: "navigation",
+      contextMenuOrder: 1,
+      run: () => {
+        handleExecute();
+      },
+    });
   };
 
   const handleExecute = () => {
-    if (!activeTabId) return;
-    executeQuery(activeTabId);
+    if (!activeTabId || !editorRef.current) return;
+    
+    // Step 4: Selection-Aware Querying
+    const selection = editorRef.current.getSelection();
+    const model = editorRef.current.getModel();
+    let selectedText = "";
+    
+    if (selection && model) {
+      selectedText = model.getValueInRange(selection);
+    }
+    
+    executeQuery(activeTabId, selectedText || undefined);
   };
 
   const handleCancel = () => {

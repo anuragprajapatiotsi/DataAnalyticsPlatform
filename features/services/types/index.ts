@@ -358,3 +358,44 @@ export interface SyncConfig {
     [key: string]: any;
   };
 }
+
+export interface TrinoCatalog {
+  name: string;
+}
+
+export interface TrinoSchema {
+  name: string;
+}
+
+export interface TrinoTable {
+  name: string;
+  type: "TABLE" | "VIEW";
+}
+
+export interface TrinoColumn {
+  name: string;
+  type: string;
+}
+
+export interface TrinoTableDetail {
+  columns: TrinoColumn[];
+}
+
+export interface TrinoQueryRequest {
+  sql: string;
+  catalog: string;
+  schema: string;
+  limit?: number;
+  offset?: number;
+}
+
+export interface TrinoQueryResponse {
+  columns: string[];
+  rows: any[][];
+  stats?: {
+    executionTimeMs?: number;
+    processedRows?: number;
+    [key: string]: any;
+  };
+  error?: string | null;
+}

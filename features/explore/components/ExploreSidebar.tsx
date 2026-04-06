@@ -165,7 +165,7 @@ export function ExploreSidebar({
                           : "text-slate-400"
                       }
                     />
-                    Object Resources
+                    Catalog Views
                   </button>
                   <button
                     onClick={() => onViewChange("data-assets")}
