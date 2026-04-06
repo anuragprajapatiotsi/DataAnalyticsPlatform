@@ -1,5 +1,4 @@
 "use client";
-
 import React from "react";
 import { SqlEditorWorkspace } from "@/features/sql-editor/components/SqlEditorWorkspace";
 import { PageHeader } from "@/shared/components/layout/PageHeader";
