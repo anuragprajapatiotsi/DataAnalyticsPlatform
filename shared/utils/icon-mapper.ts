@@ -26,6 +26,7 @@ import {
   Radar,
   ShieldCheck,
   Sparkles,
+  Terminal,
   type LucideIcon,
 } from "lucide-react";
 
@@ -57,6 +58,7 @@ export const iconMap: Record<string, LucideIcon> = {
   observability: Radar,
   govern: ShieldCheck,
   domains: Sparkles,
+  terminal: Terminal,
 };
 
 export function getIcon(iconName: string): LucideIcon {

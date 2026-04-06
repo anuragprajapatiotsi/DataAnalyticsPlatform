@@ -272,22 +272,42 @@ export function Sidebar() {
           <div className="px-3 py-2 text-xs text-red-500 text-center">
             Failed to load navigation
           </div>
-        ) : (
-          sortedNavItems.map((item) => (
-            <SidebarItem
-              key={item.id}
-              item={item}
-              level={0}
-              collapsed={collapsed}
-              pathname={pathname}
-              expandedMenus={expandedMenus}
-              toggleMenu={toggleMenu}
-              onMouseEnter={handleMouseEnter}
-              onMouseLeave={handleMouseLeave}
-            />
-          ))
-        )}
-      </nav>
+          ) : (
+            <>
+              {sortedNavItems.map((item) => (
+                <SidebarItem
+                  key={item.id}
+                  item={item}
+                  level={0}
+                  collapsed={collapsed}
+                  pathname={pathname}
+                  expandedMenus={expandedMenus}
+                  toggleMenu={toggleMenu}
+                  onMouseEnter={handleMouseEnter}
+                  onMouseLeave={handleMouseLeave}
+                />
+              ))}
+              <SidebarItem
+                item={{
+                  id: "sql-editor",
+                  slug: "sql-editor",
+                  display_name: "SQL Editor",
+                  icon: "terminal",
+                  nav_url: "/sql-editor",
+                  sort_order: 100,
+                  has_children: false,
+                }}
+                level={0}
+                collapsed={collapsed}
+                pathname={pathname}
+                expandedMenus={expandedMenus}
+                toggleMenu={toggleMenu}
+                onMouseEnter={handleMouseEnter}
+                onMouseLeave={handleMouseLeave}
+              />
+            </>
+          )}
+        </nav>
 
       {/* Flyout for collapsed mode */}
       {collapsed &&

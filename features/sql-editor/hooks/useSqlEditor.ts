@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import type { QueryResponse } from "@/shared/types";
 
 import { queryApi } from "@/shared/api/query";
+import { serviceService } from "@/features/services/services/service.service";
+import { qualifyColumns } from "../utils/query-parser";
 
 export interface SqlTab {
   id: string;
@@ -11,6 +12,9 @@ export interface SqlTab {
   query: string;
   results: QueryResultState[];
   activeResultTabId: string | null;
+  catalog?: string;
+  schema?: string;
+  table?: string;
 }
 
 export interface QueryResultState {
@@ -27,6 +31,8 @@ export interface QueryResultState {
     pageSize: number;
     current: number;
   };
+  status: "loading" | "success" | "error";
+  totalCount?: number;
 }
 
 export function useSqlEditor() {
@@ -34,7 +40,7 @@ export function useSqlEditor() {
     {
       id: "tab-1",
       name: "Query 1",
-      query: "SELECT * FROM public.users LIMIT 10;",
+      query: "SELECT * FROM public.users LIMIT 10",
       results: [],
       activeResultTabId: null,
     },
@@ -71,44 +77,93 @@ export function useSqlEditor() {
     setTabs((prev) => prev.map((t) => (t.id === id ? { ...t, query } : t)));
   }, []);
 
-  const executeQuery = useCallback(
-    async (tabId: string) => {
-      const tab = tabs.find((t) => t.id === tabId);
-      if (!tab || !tab.query) return;
-
-      const resultId = `res-${Date.now()}`;
-      const newResult: QueryResultState = {
-        id: resultId,
-        query: tab.query,
-        data: [],
-        columns: [],
-        totalRows: 0,
-        executionTime: 0,
-        loading: true,
-        error: null,
-        queryId: null,
-        pagination: { pageSize: 50, current: 0 },
-      };
-
+  const updateTabContext = useCallback(
+    (id: string, context: { catalog?: string; schema?: string; table?: string }) => {
       setTabs((prev) =>
-        prev.map((t) =>
-          t.id === tabId
-            ? {
-                ...t,
-                results: [newResult, ...t.results].slice(0, 5), // Keep last 5 results
-                activeResultTabId: resultId,
-              }
-            : t,
-        ),
+        prev.map((t) => (t.id === id ? { ...t, ...context } : t)),
       );
+    },
+    [],
+  );
+
+  const executeQuery = useCallback(
+    async (tabId: string, selectedQuery?: string, options?: { page?: number; pageSize?: number }) => {
+      const tab = tabs.find((t) => t.id === tabId);
+      if (!tab || (!tab.query && !selectedQuery)) return;
+
+      const activeResult = tab.results.find(r => r.id === tab.activeResultTabId);
+      const isAlreadyRunning = activeResult?.status === "loading";
+      if (isAlreadyRunning) return;
+
+      const queryToRun = selectedQuery || tab.query;
+      const currentPage = options?.page ?? activeResult?.pagination.current ?? 0;
+      const currentPageSize = options?.pageSize ?? activeResult?.pagination.pageSize ?? 50;
+      
+      const resultId = activeResult && options ? activeResult.id : `res-${Date.now()}`;
+      
+      if (!options) {
+        // Initial execution: Create new result
+        const newResult: QueryResultState = {
+          id: resultId,
+          query: queryToRun,
+          data: [],
+          columns: [],
+          totalRows: 0,
+          executionTime: 0,
+          loading: true,
+          error: null,
+          queryId: null,
+          pagination: { pageSize: currentPageSize, current: currentPage },
+          status: "loading",
+        };
+
+        setTabs((prev) =>
+          prev.map((t) =>
+            t.id === tabId
+              ? {
+                  ...t,
+                  results: [newResult, ...t.results].slice(0, 5),
+                  activeResultTabId: resultId,
+                }
+              : t,
+          ),
+        );
+      } else {
+        // Paging execution: Update existing result status
+        setTabs((prev) =>
+          prev.map((t) =>
+            t.id === tabId
+              ? {
+                  ...t,
+                  results: t.results.map(r => r.id === resultId ? { 
+                    ...r, 
+                    status: "loading", 
+                    loading: true,
+                    pagination: { pageSize: currentPageSize, current: currentPage } 
+                  } : r)
+                }
+              : t,
+          ),
+        );
+      }
 
       try {
         const startTime = Date.now();
-        const response = await queryApi.execute({
-          query: tab.query,
-          limit: newResult.pagination.pageSize,
-          offset: newResult.pagination.current * newResult.pagination.pageSize,
+        
+        // Step 4: Execute using Trino API with context
+        const hasLimit = /\bLIMIT\s+\d+/i.test(queryToRun);
+        const response = await serviceService.executeTrinoQuery({
+          sql: queryToRun,
+          catalog: tab.catalog || "default",
+          schema: tab.schema || "default",
+          ...(hasLimit ? {} : { 
+            limit: currentPageSize,
+            offset: currentPage * currentPageSize
+          }),
         });
+
+        const qualifiedCols = qualifyColumns(queryToRun, response.columns);
+        
         const endTime = Date.now();
 
         setTabs((prev) =>
@@ -121,12 +176,15 @@ export function useSqlEditor() {
                       ? {
                           ...r,
                           loading: false,
-                          data: response.data,
-                          columns: response.columns,
-                          totalRows: response.total_rows,
+                          data: response.rows,
+                          columns: qualifiedCols,
+                          totalRows: response.rows.length,
+                          totalCount: r.totalCount ?? (response.rows.length < currentPageSize 
+                            ? (currentPage * currentPageSize) + response.rows.length 
+                            : response.stats?.processedRows),
                           executionTime:
-                            response.execution_time_ms || endTime - startTime,
-                          queryId: response.query_id,
+                            response.stats?.executionTimeMs || endTime - startTime,
+                          status: "success",
                         }
                       : r,
                   ),
@@ -147,7 +205,9 @@ export function useSqlEditor() {
                           loading: false,
                           error:
                             error.response?.data?.message ||
-                            "Failed to execute query",
+                            error.message ||
+                            "Failed to execute Trino query",
+                          status: "error",
                         }
                       : r,
                   ),
@@ -159,6 +219,24 @@ export function useSqlEditor() {
     },
     [tabs],
   );
+
+  const goToPage = useCallback((tabId: string, resultId: string, page: number) => {
+    const tab = tabs.find(t => t.id === tabId);
+    if (!tab) return;
+    const result = tab.results.find(r => r.id === resultId);
+    if (!result) return;
+    
+    executeQuery(tabId, result.query, { page, pageSize: result.pagination.pageSize });
+  }, [tabs, executeQuery]);
+
+  const updatePageSize = useCallback((tabId: string, resultId: string, pageSize: number) => {
+    const tab = tabs.find(t => t.id === tabId);
+    if (!tab) return;
+    const result = tab.results.find(r => r.id === resultId);
+    if (!result) return;
+    
+    executeQuery(tabId, result.query, { page: 0, pageSize });
+  }, [tabs, executeQuery]);
 
   const cancelQuery = useCallback(
     async (tabId: string, resultId: string) => {
@@ -179,6 +257,7 @@ export function useSqlEditor() {
                           ...r,
                           loading: false,
                           error: "Query cancelled by user",
+                          status: "error",
                         }
                       : r,
                   ),
@@ -204,7 +283,10 @@ export function useSqlEditor() {
     addTab,
     closeTab,
     updateTabQuery,
+    updateTabContext,
     executeQuery,
+    goToPage,
+    updatePageSize,
     cancelQuery,
   };
 }

@@ -18,7 +18,7 @@ export function SidebarProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     // Only trigger collapse/expand when crossing the boundary of the /explore scope
-    const isExplore = pathname?.startsWith("/explore");
+    const isExplore = pathname?.startsWith("/explore") || pathname?.startsWith("/sql-editor");
     const wasExplore = lastPathname?.startsWith("/explore");
 
     if (isExplore && !wasExplore) {

@@ -18,7 +18,7 @@ import {
   Globe,
   TrendingUp,
   Layers,
-  Package
+  Package,
 } from "lucide-react";
 import { cn } from "@/shared/utils/cn";
 
@@ -96,7 +96,9 @@ export function ExploreSidebar({
             <Library
               size={18}
               className={
-                activeView === "catalog" || activeView === "data" ? "text-blue-600" : "text-slate-400"
+                activeView === "catalog" || activeView === "data"
+                  ? "text-blue-600"
+                  : "text-slate-400"
               }
             />
             <span className="flex-1 text-left">Catalog</span>
@@ -155,8 +157,15 @@ export function ExploreSidebar({
                         : "text-slate-500 hover:text-slate-700 hover:bg-slate-50",
                     )}
                   >
-                    <Layers size={14} className={activeView === "object-resources" ? "text-blue-600" : "text-slate-400"} />
-                    Object Resources
+                    <Layers
+                      size={14}
+                      className={
+                        activeView === "object-resources"
+                          ? "text-blue-600"
+                          : "text-slate-400"
+                      }
+                    />
+                    Catalog Views
                   </button>
                   <button
                     onClick={() => onViewChange("data-assets")}
@@ -167,7 +176,14 @@ export function ExploreSidebar({
                         : "text-slate-500 hover:text-slate-700 hover:bg-slate-50",
                     )}
                   >
-                    <Database size={14} className={activeView === "data-assets" ? "text-blue-600" : "text-slate-400"} />
+                    <Database
+                      size={14}
+                      className={
+                        activeView === "data-assets"
+                          ? "text-blue-600"
+                          : "text-slate-400"
+                      }
+                    />
                     Data Assets
                   </button>
                   <button
@@ -179,7 +195,14 @@ export function ExploreSidebar({
                         : "text-slate-500 hover:text-slate-700 hover:bg-slate-50",
                     )}
                   >
-                    <TrendingUp size={14} className={activeView === "kpis" ? "text-blue-600" : "text-slate-400"} />
+                    <TrendingUp
+                      size={14}
+                      className={
+                        activeView === "kpis"
+                          ? "text-blue-600"
+                          : "text-slate-400"
+                      }
+                    />
                     KPI
                   </button>
                 </div>
@@ -187,6 +210,24 @@ export function ExploreSidebar({
             </div>
           )}
         </div>
+          {/* Files Section */}
+        <button
+          onClick={() => onViewChange("files")}
+          className={cn(
+            "group flex items-center gap-3 px-3 py-2.5 rounded-lg text-[14px] font-medium transition-all duration-200",
+            activeView === "files"
+              ? "bg-blue-50 text-blue-600 shadow-sm shadow-blue-100/30"
+              : "text-slate-600 hover:bg-slate-100 hover:text-slate-900",
+          )}
+        >
+          <FilesIcon
+            size={18}
+            className={
+              activeView === "files" ? "text-blue-600" : "text-slate-400"
+            }
+          />
+          Files
+        </button>
 
         {/* Sources Section */}
         <div className="flex flex-col mt-1">
@@ -194,7 +235,9 @@ export function ExploreSidebar({
             onClick={() => setSourcesExpanded(!sourcesExpanded)}
             className={cn(
               "group flex items-center gap-3 px-3 py-2.5 rounded-lg text-[14px] font-medium transition-all duration-200",
-              activeView === "drives" || activeView === "ftp-servers" || ASSET_CATEGORIES.some(c => c.id === activeView)
+              activeView === "drives" ||
+                activeView === "ftp-servers" ||
+                ASSET_CATEGORIES.some((c) => c.id === activeView)
                 ? "bg-blue-50/50 text-blue-600"
                 : "text-slate-600 hover:bg-slate-100 hover:text-slate-900",
             )}
@@ -202,7 +245,11 @@ export function ExploreSidebar({
             <Zap
               size={18}
               className={
-                activeView === "drives" || activeView === "ftp-servers" || ASSET_CATEGORIES.some(c => c.id === activeView) ? "text-blue-600" : "text-slate-400"
+                activeView === "drives" ||
+                activeView === "ftp-servers" ||
+                ASSET_CATEGORIES.some((c) => c.id === activeView)
+                  ? "text-blue-600"
+                  : "text-slate-400"
               }
             />
             <span className="flex-1 text-left">Sources</span>
@@ -257,7 +304,9 @@ export function ExploreSidebar({
                   size={14}
                   className={cn(
                     "transition-colors",
-                    activeView === "drives" ? "text-blue-600" : "text-slate-400",
+                    activeView === "drives"
+                      ? "text-blue-600"
+                      : "text-slate-400",
                   )}
                 />
                 Drives
@@ -277,7 +326,9 @@ export function ExploreSidebar({
                   size={14}
                   className={cn(
                     "transition-colors",
-                    activeView === "ftp-servers" ? "text-blue-600" : "text-slate-400",
+                    activeView === "ftp-servers"
+                      ? "text-blue-600"
+                      : "text-slate-400",
                   )}
                 />
                 FTP Servers
@@ -322,25 +373,6 @@ export function ExploreSidebar({
             }
           />
           KPIs
-        </button>
-
-        {/* Files */}
-        <button
-          onClick={() => onViewChange("files")}
-          className={cn(
-            "group flex items-center gap-3 px-3 py-2.5 rounded-lg text-[14px] font-medium transition-all duration-200",
-            activeView === "files"
-              ? "bg-blue-50 text-blue-600 shadow-sm shadow-blue-100/30"
-              : "text-slate-600 hover:bg-slate-100 hover:text-slate-900",
-          )}
-        >
-          <FilesIcon
-            size={18}
-            className={
-              activeView === "files" ? "text-blue-600" : "text-slate-400"
-            }
-          />
-          Files
         </button>
       </nav>
     </aside>

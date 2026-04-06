@@ -337,3 +337,65 @@ export interface CatalogView {
   created_at?: string;
   updated_at?: string;
 }
+
+export interface SyncConfig {
+  sync_config: {
+    iceberg_table?: string;
+    last_export_rows?: number;
+    last_iceberg_table?: string;
+    last_airflow_run_id?: string;
+    last_export_columns?: string[];
+    current_airflow_run_id?: string;
+    last_export_finished_at?: string;
+    [key: string]: any;
+  };
+  effective_config: {
+    batch_size?: number;
+    max_rows_per_table?: number;
+    parquet_compression?: string;
+    parquet_partition_col?: string;
+    max_concurrent_syncs?: number;
+    [key: string]: any;
+  };
+}
+
+export interface TrinoCatalog {
+  name: string;
+}
+
+export interface TrinoSchema {
+  name: string;
+}
+
+export interface TrinoTable {
+  name: string;
+  type: "TABLE" | "VIEW";
+}
+
+export interface TrinoColumn {
+  name: string;
+  type: string;
+}
+
+export interface TrinoTableDetail {
+  columns: TrinoColumn[];
+}
+
+export interface TrinoQueryRequest {
+  sql: string;
+  catalog: string;
+  schema: string;
+  limit?: number;
+  offset?: number;
+}
+
+export interface TrinoQueryResponse {
+  columns: string[];
+  rows: any[][];
+  stats?: {
+    executionTimeMs?: number;
+    processedRows?: number;
+    [key: string]: any;
+  };
+  error?: string | null;
+}

@@ -1,5 +1,4 @@
 "use client";
-
 import React, { useState } from "react";
 import {
   Group as ResizablePanelGroup,
@@ -10,11 +9,17 @@ import { SchemaExplorer } from "./SchemaExplorer";
 import { QueryEditor } from "./QueryEditor";
 import { ResultPanel } from "./ResultPanel";
 import { SqlEditorProvider } from "../contexts/SqlEditorContext";
+import { useSidebar } from "@/shared/contexts/sidebar-context";
 
 export function SqlEditorWorkspace() {
+  const { setCollapsed } = useSidebar();
+
   return (
     <SqlEditorProvider>
-      <div className="h-full w-full flex flex-col bg-slate-50 overflow-hidden">
+      <div 
+        className="h-full w-full flex flex-col bg-slate-50 overflow-hidden"
+        onMouseDownCapture={() => setCollapsed(true)}
+      >
         <ResizablePanelGroup
           orientation="horizontal"
           id="sql-main-layout"
