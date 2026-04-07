@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import {
   ChevronRight,
   ChevronDown,
@@ -19,7 +20,16 @@ import { useSqlEditorContext } from "../contexts/SqlEditorContext";
 import { useQueryClient } from "@tanstack/react-query";
 import { serviceService } from "@/features/services/services/service.service";
 
-type ExplorerNodeType = "catalog" | "folder" | "trino-service" | "database" | "schema" | "table" | "column" | "placeholder";
+type ExplorerNodeType =
+  | "catalog"
+  | "folder"
+  | "trino-service"
+  | "database"
+  | "schema"
+  | "table"
+  | "column"
+  | "placeholder"
+  | "load-more";
 
 interface ExplorerNode {
   id: string;
@@ -33,6 +43,7 @@ interface ExplorerNode {
   data_type?: string;
   error?: string | null;
   isLoaded?: boolean;
+  visibleCount?: number;
 }
 
 const getIcon = (type: ExplorerNodeType) => {
@@ -51,6 +62,8 @@ const getIcon = (type: ExplorerNodeType) => {
       return Table;
     case "column":
       return Type;
+    case "load-more":
+      return FolderOpen;
     case "placeholder":
       return Package;
     default:
@@ -59,15 +72,17 @@ const getIcon = (type: ExplorerNodeType) => {
 };
 
 const STORAGE_KEYS = {
-  TREE_DATA: "sql_explorer_tree_data_v9",
-  EXPANDED_KEYS: "sql_explorer_expanded_keys_v9",
-  SELECTED_ID: "sql_explorer_selected_id_v9",
+  TREE_DATA: "sql_explorer_tree_data_v11",
+  EXPANDED_KEYS: "sql_explorer_expanded_keys_v11",
+  SELECTED_ID: "sql_explorer_selected_id_v11",
 };
 
 export function SchemaExplorer() {
+  const router = useRouter();
   const queryClient = useQueryClient();
-  const { activeTabId, updateTabQuery, updateTabContext } = useSqlEditorContext();
-  
+  const { activeTabId, updateTabQuery, updateTabContext } =
+    useSqlEditorContext();
+
   // Core State with dual-discovery roots
   const [treeData, setTreeData] = useState<ExplorerNode[]>(() => {
     if (typeof window !== "undefined") {
@@ -100,15 +115,31 @@ export function SchemaExplorer() {
         hasChildren: true,
         children: [],
         isLoaded: false,
-      }
-    ]; 
+      },
+      {
+        id: "root-sources",
+        name: "Sources",
+        type: "folder",
+        hasChildren: true,
+        children: [
+          {
+            id: "source-databases",
+            name: "Database Sources",
+            type: "database",
+            hasChildren: false,
+            children: [],
+          },
+        ],
+        isLoaded: true,
+      },
+    ];
   });
 
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(() => {
     if (typeof window !== "undefined") {
       return localStorage.getItem(STORAGE_KEYS.SELECTED_ID);
     }
-    return null;
+    return "root-catalog_views";
   });
 
   const [expandedKeys, setExpandedKeys] = useState<Set<string>>(() => {
@@ -122,7 +153,7 @@ export function SchemaExplorer() {
         }
       }
     }
-    return new Set();
+    return new Set(["root-catalog_views"]);
   });
 
   const [loadingNodes, setLoadingNodes] = useState<Set<string>>(new Set());
@@ -130,13 +161,16 @@ export function SchemaExplorer() {
   const [discoveryError, setDiscoveryError] = useState<string | null>(null);
 
   // Persistence Auto-Sync
-// ... (Persistence effects remain same)
+  // ... (Persistence effects remain same)
   useEffect(() => {
     localStorage.setItem(STORAGE_KEYS.TREE_DATA, JSON.stringify(treeData));
   }, [treeData]);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.EXPANDED_KEYS, JSON.stringify(Array.from(expandedKeys)));
+    localStorage.setItem(
+      STORAGE_KEYS.EXPANDED_KEYS,
+      JSON.stringify(Array.from(expandedKeys)),
+    );
   }, [expandedKeys]);
 
   useEffect(() => {
@@ -147,18 +181,56 @@ export function SchemaExplorer() {
     }
   }, [selectedNodeId]);
 
+  // Trigger Discovery for default expanded roots on mount
+  useEffect(() => {
+    const rootCV = treeData.find((n) => n.id === "root-catalog_views");
+    if (rootCV && expandedKeys.has(rootCV.id) && !rootCV.isLoaded) {
+      toggleNode(rootCV);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const toggleNode = async (targetNode: ExplorerNode) => {
+    // Handle Load More
+    if (targetNode.type === "load-more") {
+      const parentId = targetNode.id.replace("load-more-", "");
+      setTreeData((prev) => {
+        const updateVisibleCount = (nodes: ExplorerNode[]): ExplorerNode[] => {
+          return nodes.map((node) => {
+            if (node.id === parentId) {
+              return { ...node, visibleCount: (node.visibleCount || 10) + 10 };
+            }
+            if (node.children && node.children.length > 0) {
+              return { ...node, children: updateVisibleCount(node.children) };
+            }
+            return node;
+          });
+        };
+        return updateVisibleCount(prev);
+      });
+      return;
+    }
+
     const isExpanded = expandedKeys.has(targetNode.id);
     const isLoading = loadingNodes.has(targetNode.id);
 
     if (isLoading || targetNode.error) return;
 
     // Discovery Diagnostics
-    console.info(`[SQL Explorer] Toggle Node: ${targetNode.name} (${targetNode.id}), type: ${targetNode.type}, isExpanded: ${isExpanded}`);
+    console.info(
+      `[SQL Explorer] Toggle Node: ${targetNode.name} (${targetNode.id}), type: ${targetNode.type}, isExpanded: ${isExpanded}`,
+    );
+
+    // Handle Source Navigation Redirection
+    if (targetNode.id === "source-databases") {
+      router.push("/sql-editor/sources/databases");
+      setSelectedNodeId(targetNode.id);
+      return;
+    }
 
     // Toggle Expansion State immediately for UX snappiness
     const shouldOpen = !isExpanded;
-    setExpandedKeys(prev => {
+    setExpandedKeys((prev) => {
       const next = new Set(prev);
       if (shouldOpen) next.add(targetNode.id);
       else next.delete(targetNode.id);
@@ -174,7 +246,10 @@ export function SchemaExplorer() {
           schema: targetNode.schema || "catalog_views",
           table: targetNode.name,
         });
-        updateTabQuery(activeTabId, `SELECT * FROM ${targetNode.name} LIMIT 10`);
+        updateTabQuery(
+          activeTabId,
+          `SELECT * FROM ${targetNode.name} LIMIT 10`,
+        );
       }
     } else if (targetNode.type === "column") {
       setSelectedNodeId(targetNode.id);
@@ -182,24 +257,26 @@ export function SchemaExplorer() {
 
     // Handle Discovery/Loading for Dynamic Folders
     if (shouldOpen && targetNode.hasChildren && !targetNode.isLoaded) {
-      setLoadingNodes(prev => new Set(prev).add(targetNode.id));
+      setLoadingNodes((prev) => new Set(prev).add(targetNode.id));
 
       try {
         let children: ExplorerNode[] = [];
-        
+
         if (targetNode.id === "root-catalog_views") {
           // Direct Service Call for Discovery Reliability
           const tables = await serviceService.getTrinoCatalogViewTables();
           const rawTables = Array.isArray(tables) ? tables : [];
 
           if (rawTables.length === 0) {
-            children = [{
-              id: `empty-cv-${targetNode.id}`,
-              name: "No curated views found",
-              type: "placeholder",
-              hasChildren: false,
-              children: [],
-            }];
+            children = [
+              {
+                id: `empty-cv-${targetNode.id}`,
+                name: "No curated views found",
+                type: "placeholder",
+                hasChildren: false,
+                children: [],
+              },
+            ];
           } else {
             children = rawTables.map((item: any) => ({
               id: `cv-${item.name}`,
@@ -213,25 +290,34 @@ export function SchemaExplorer() {
               isLoaded: false,
             }));
           }
-        }
- else if (targetNode.id === "root-data-assets") {
+        } else if (targetNode.id === "root-data-assets") {
           const assets = await serviceService.getDataAssets({ limit: 100 });
-          const rawAssets = (Array.isArray(assets) ? assets : []).filter((item: any) => 
-            item.asset_type && ["table", "view"].includes(item.asset_type.toLowerCase())
+          const rawAssets = (Array.isArray(assets) ? assets : []).filter(
+            (item: any) =>
+              item.asset_type &&
+              ["table", "view"].includes(item.asset_type.toLowerCase()),
           );
           if (rawAssets.length === 0) {
-            children = [{
-              id: `empty-da-${targetNode.id}`,
-              name: "No platform assets found",
-              type: "placeholder",
-              hasChildren: false,
-              children: [],
-            }];
+            children = [
+              {
+                id: `empty-da-${targetNode.id}`,
+                name: "No platform assets found",
+                type: "placeholder",
+                hasChildren: false,
+                children: [],
+              },
+            ];
           } else {
             children = rawAssets.map((item: any) => ({
               id: `da-${item.id}`,
-              name: item.display_name || item.name || item.sn || "Unnamed Asset",
-              type: (item.asset_type === "view" || item.asset_type === "table") ? "table" : (item.type === "database" ? "database" : "table"),
+              name:
+                item.display_name || item.name || item.sn || "Unnamed Asset",
+              type:
+                item.asset_type === "view" || item.asset_type === "table"
+                  ? "table"
+                  : item.type === "database"
+                    ? "database"
+                    : "table",
               catalog: item.extra_metadata?.catalog || "iceberg",
               schema: item.extra_metadata?.schema || "catalog_views",
               table: item.name,
@@ -243,8 +329,12 @@ export function SchemaExplorer() {
         } else if (targetNode.type === "table") {
           const catalog = targetNode.catalog || "iceberg";
           const schema = targetNode.schema || "catalog_views";
-          
-          const detail = await serviceService.getTrinoTableDetail(catalog, schema, targetNode.name);
+
+          const detail = await serviceService.getTrinoTableDetail(
+            catalog,
+            schema,
+            targetNode.name,
+          );
 
           children = (detail?.columns || []).map((item) => ({
             id: `column-${catalog}-${schema}-${targetNode.name}-${item.name}`,
@@ -276,7 +366,7 @@ export function SchemaExplorer() {
           }),
         );
       } finally {
-        setLoadingNodes(prev => {
+        setLoadingNodes((prev) => {
           const next = new Set(prev);
           next.delete(targetNode.id);
           return next;
@@ -318,9 +408,13 @@ export function SchemaExplorer() {
         <div
           className={cn(
             "flex items-center py-2 px-3 cursor-pointer hover:bg-slate-100 rounded text-sm group transition-all",
-            isOpen || isSelected ? "font-bold text-blue-600 mb-0.5" : "text-slate-600",
+            isOpen || isSelected
+              ? "font-bold text-blue-600 mb-0.5"
+              : "text-slate-600",
             isSelected && "bg-blue-50 ring-1 ring-blue-100/50",
             node.type === "placeholder" && "opacity-40 italic",
+            node.type === "load-more" &&
+              "text-blue-500 hover:text-blue-700 italic font-semibold mt-1",
             node.error && "opacity-60",
           )}
           style={{ paddingLeft: `${depth * 16}px` }}
@@ -333,7 +427,10 @@ export function SchemaExplorer() {
               isOpen ? (
                 <ChevronDown size={14} className="text-blue-500" />
               ) : (
-                <ChevronRight size={14} className="text-slate-400 group-hover:text-blue-400" />
+                <ChevronRight
+                  size={14}
+                  className="text-slate-400 group-hover:text-blue-400"
+                />
               )
             ) : null}
           </div>
@@ -341,7 +438,9 @@ export function SchemaExplorer() {
             size={16}
             className={cn(
               "mr-2 shrink-0 transition-colors",
-              isOpen || isSelected ? "text-blue-500" : "text-slate-400 group-hover:text-blue-500",
+              isOpen || isSelected
+                ? "text-blue-500"
+                : "text-slate-400 group-hover:text-blue-500",
               node.error && "text-slate-300",
             )}
           />
@@ -359,10 +458,33 @@ export function SchemaExplorer() {
             </span>
           )}
         </div>
-        
+
         {isOpen && node.children && node.children.length > 0 && (
           <div className="flex flex-col w-full animate-in fade-in slide-in-from-top-1 duration-200">
-            {node.children.map((child: ExplorerNode) => renderNode(child, depth + 1))}
+            {(() => {
+              const visibleLimit = node.visibleCount || 10;
+              const visibleChildren = node.children.slice(0, visibleLimit);
+              const hasMore = node.children.length > visibleLimit;
+
+              return (
+                <>
+                  {visibleChildren.map((child: ExplorerNode) =>
+                    renderNode(child, depth + 1),
+                  )}
+                  {hasMore &&
+                    renderNode(
+                      {
+                        id: `load-more-${node.id}`,
+                        name: `More... (${node.children.length - visibleLimit} left)`,
+                        type: "load-more",
+                        hasChildren: false,
+                        children: [],
+                      },
+                      depth + 1,
+                    )}
+                </>
+              );
+            })()}
           </div>
         )}
       </div>
@@ -370,7 +492,7 @@ export function SchemaExplorer() {
   };
 
   return (
-    <div className="h-full flex flex-col bg-white border-r border-slate-200 shadow-sm">
+    <div className="h-full flex flex-col overflow-hidden">
       <div className="p-4 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
         <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
           <div className="w-1 h-3 bg-blue-500 rounded-full" />

@@ -100,7 +100,7 @@ export default function ExploreServiceTypePage() {
   }, [categories, selectedConnectorSlug, searchTerm]);
 
   const isDatabaseService = serviceType === "database" || serviceType === "databases";
-  const serviceLabel = isDatabaseService ? "Database Services" : 
+  const serviceLabel = isDatabaseService ? "Database" : 
     (serviceType.charAt(0).toUpperCase() + serviceType.slice(1));
 
   const breadcrumbItems = [
@@ -232,92 +232,93 @@ export default function ExploreServiceTypePage() {
       </div>
 
       {/* Main Content Area */}
-      <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-4">
-        {/* Toolbar */}
-        <div className="flex items-center justify-between gap-4 bg-white p-2 rounded-xl border border-slate-200 shadow-sm">
-          <div className="flex-1 flex items-center gap-2 px-2">
-            <Search size={16} className="text-slate-400" />
-            <Input
-              placeholder="Search by name or description..."
-              variant="borderless"
-              className="h-9 shadow-none px-2 text-[14px] w-full max-w-md focus:ring-0"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+      <div className="flex-1 overflow-y-auto p-6">
+        <div className="flex flex-col gap-4">
+          {/* Toolbar */}
+          <div className="flex items-center justify-between gap-4 bg-white p-2 rounded-xl border border-slate-200 shadow-sm shrink-0">
+            <div className="flex-1 flex items-center gap-2 px-2">
+              <Search size={16} className="text-slate-400" />
+              <Input
+                placeholder="Search by name or description..."
+                variant="borderless"
+                className="h-9 shadow-none px-2 text-[14px] w-full max-w-md focus:ring-0"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+            
+            <div className="flex items-center gap-3 pr-2 border-l border-slate-100 pl-4">
+              {isDatabaseService && (
+                <div className="flex items-center gap-2">
+                  <Filter size={14} className="text-slate-400" />
+                  <Select
+                    placeholder="Filter Connector"
+                    variant="borderless"
+                    className="w-40 bg-slate-50 rounded-md custom-filter-select"
+                    options={connectors.map(c => ({ label: c.display_label, value: c.slug }))}
+                    onChange={(val) => setSelectedConnectorSlug(val)}
+                    value={selectedConnectorSlug}
+                  />
+                </div>
+              )}
+              
+              <Tooltip title="Refresh Data">
+                <Button 
+                  type="text"
+                  icon={<RefreshCw size={16} className={cn("text-slate-500", loading && "animate-spin")} />} 
+                  className="flex items-center justify-center h-8 w-8 rounded-md hover:bg-slate-100 transition-colors"
+                  onClick={fetchData}
+                  disabled={loading}
+                />
+              </Tooltip>
+            </div>
+          </div>
+
+          {/* Table Container */}
+          <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+            <Table
+              dataSource={filteredConnections}
+              columns={columns}
+              rowKey="id"
+              loading={{
+                spinning: loading,
+                indicator: <Spin indicator={<RefreshCw className="animate-spin text-blue-600" size={24} />} />
+              }}
+              onRow={(record) => ({
+                onClick: () => router.push(`/explore/${serviceType}/${record.id}`),
+                className: "cursor-pointer"
+              })}
+              pagination={{ 
+                pageSize: 50, 
+                hideOnSinglePage: true,
+                className: "px-6 py-4 border-t border-slate-100 !mb-0 bg-white" 
+              }}
+              className="custom-explore-table"
+              locale={{
+                emptyText: (
+                  <Empty
+                    image={
+                      <div className="w-16 h-16 rounded-full bg-slate-50 flex items-center justify-center mx-auto mb-4 border border-slate-100">
+                        <Server className="text-slate-300" size={28} />
+                      </div>
+                    }
+                    description={
+                      <div className="flex flex-col gap-1">
+                        <span className="text-slate-700 font-medium text-sm">
+                          {selectedConnectorSlug ? "No instances found" : "Select a connector"}
+                        </span>
+                        <span className="text-slate-400 text-[13px]">
+                          {selectedConnectorSlug 
+                            ? "Try adjusting your search or filters." 
+                            : "Please select a connector to view available databases."}
+                        </span>
+                      </div>
+                    }
+                  />
+                ),
+              }}
             />
           </div>
-          
-          <div className="flex items-center gap-3 pr-2 border-l border-slate-100 pl-4">
-            {isDatabaseService && (
-              <div className="flex items-center gap-2">
-                <Filter size={14} className="text-slate-400" />
-                <Select
-                  placeholder="Filter Connector"
-                  variant="borderless"
-                  className="w-40 bg-slate-50 rounded-md custom-filter-select"
-                  options={connectors.map(c => ({ label: c.display_label, value: c.slug }))}
-                  onChange={(val) => setSelectedConnectorSlug(val)}
-                  value={selectedConnectorSlug}
-                />
-              </div>
-            )}
-            
-            <Tooltip title="Refresh Data">
-              <Button 
-                type="text"
-                icon={<RefreshCw size={16} className={cn("text-slate-500", loading && "animate-spin")} />} 
-                className="flex items-center justify-center h-8 w-8 rounded-md hover:bg-slate-100 transition-colors"
-                onClick={fetchData}
-                disabled={loading}
-              />
-            </Tooltip>
-          </div>
-        </div>
-
-        {/* Table Container */}
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex-1 flex flex-col min-h-0">
-          <Table
-            dataSource={filteredConnections}
-            columns={columns}
-            rowKey="id"
-            loading={{
-              spinning: loading,
-              indicator: <Spin indicator={<RefreshCw className="animate-spin text-blue-600" size={24} />} />
-            }}
-            scroll={{ y: "calc(100vh - 310px)" }}
-            onRow={(record) => ({
-              onClick: () => router.push(`/explore/${serviceType}/${record.id}`),
-              className: "cursor-pointer"
-            })}
-            pagination={{ 
-              pageSize: 50, 
-              hideOnSinglePage: true,
-              className: "px-6 py-4 border-t border-slate-100 mt-auto !mb-0 flex-shrink-0 bg-white" 
-            }}
-            className="custom-explore-table flex-1 flex flex-col h-full"
-            locale={{
-              emptyText: (
-                <Empty
-                  image={
-                    <div className="w-16 h-16 rounded-full bg-slate-50 flex items-center justify-center mx-auto mb-4 border border-slate-100">
-                      <Server className="text-slate-300" size={28} />
-                    </div>
-                  }
-                  description={
-                    <div className="flex flex-col gap-1">
-                      <span className="text-slate-700 font-medium text-sm">
-                        {selectedConnectorSlug ? "No instances found" : "Select a connector"}
-                      </span>
-                      <span className="text-slate-400 text-[13px]">
-                        {selectedConnectorSlug 
-                          ? "Try adjusting your search or filters." 
-                          : "Please select a connector to view available databases."}
-                      </span>
-                    </div>
-                  }
-                />
-              ),
-            }}
-          />
         </div>
       </div>
 
@@ -334,7 +335,7 @@ export default function ExploreServiceTypePage() {
           font-size: 13px;
         }
         
-        /* Modern Table Styles */
+        /* Modern Table Styles with Sticky Header */
         .custom-explore-table .ant-table {
           background: transparent !important;
         }
@@ -347,6 +348,10 @@ export default function ExploreServiceTypePage() {
           letter-spacing: 0.05em !important;
           border-bottom: 1px solid #E2E8F0 !important;
           padding: 12px 24px !important;
+          /* Sticky Header Logic */
+          position: sticky;
+          top: 0;
+          z-index: 10;
         }
         .custom-explore-table .ant-table-thead > tr > th::before {
           display: none !important; /* Remove Antd default column separators */
@@ -359,21 +364,7 @@ export default function ExploreServiceTypePage() {
         .custom-explore-table .ant-table-tbody > tr:hover > td {
           background: #F8FAFC !important;
         }
-        /* Custom scrollbar for the table */
-        .custom-explore-table .ant-table-body::-webkit-scrollbar {
-          width: 6px;
-          height: 6px;
-        }
-        .custom-explore-table .ant-table-body::-webkit-scrollbar-track {
-          background: transparent;
-        }
-        .custom-explore-table .ant-table-body::-webkit-scrollbar-thumb {
-          background: #CBD5E1;
-          border-radius: 4px;
-        }
-        .custom-explore-table .ant-table-body::-webkit-scrollbar-thumb:hover {
-          background: #94A3B8;
-        }
+
       `}</style>
     </div>
   );

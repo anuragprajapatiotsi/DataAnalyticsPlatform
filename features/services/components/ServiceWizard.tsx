@@ -307,6 +307,7 @@ export function ServiceWizard({
         name="json_config"
         noStyle
         hidden
+        help={null}
         rules={[
           { required: isDatabaseFlow, message: "JSON config is required" },
         ]}
@@ -370,7 +371,7 @@ export function ServiceWizard({
         </div>
 
         {/* Scrollable Content Section */}
-        <div className="flex-1 overflow-y-auto min-h-0 custom-scrollbar p-6 md:p-10">
+        <div className="flex-1 overflow-y-auto min-h-0 custom-scrollbar p-6 md:p-6">
           <div className="max-w-4xl mx-auto pb-24">
             {steps[currentStep].content}
           </div>

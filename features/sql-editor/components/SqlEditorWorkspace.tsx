@@ -9,51 +9,21 @@ import { SchemaExplorer } from "./SchemaExplorer";
 import { QueryEditor } from "./QueryEditor";
 import { ResultPanel } from "./ResultPanel";
 import { SqlEditorProvider } from "../contexts/SqlEditorContext";
-import { useSidebar } from "@/shared/contexts/sidebar-context";
 
 export function SqlEditorWorkspace() {
-  const { setCollapsed } = useSidebar();
-
   return (
-    <SqlEditorProvider>
-      <div 
-        className="h-full w-full flex flex-col bg-slate-50 overflow-hidden"
-        onMouseDownCapture={() => setCollapsed(true)}
-      >
-        <ResizablePanelGroup
-          orientation="horizontal"
-          id="sql-main-layout"
-          className="flex-1"
-        >
-          {/* Left Panel: Schema Explorer */}
-          <ResizablePanel
-            defaultSize={20}
-            minSize={15}
-            className="bg-white border-r border-slate-200"
-          >
-            <SchemaExplorer />
-          </ResizablePanel>
+    <ResizablePanelGroup orientation="vertical" id="sql-editor-results" className="h-full w-full">
+      {/* Top Workspace: Query Editor */}
+      <ResizablePanel defaultSize={60} minSize={20} className="bg-white">
+        <QueryEditor />
+      </ResizablePanel>
 
-          <ResizableHandle className="w-1 bg-slate-200 hover:bg-blue-400 transition-colors" />
+      <ResizableHandle className="h-[2px] bg-slate-200 hover:bg-blue-400 transition-colors cursor-row-resize active:bg-blue-600 after:absolute after:inset-x-0 after:-inset-y-1 after:z-50" />
 
-          {/* Right Panel: SQL Editor and Results */}
-          <ResizablePanel defaultSize={80}>
-            <ResizablePanelGroup orientation="vertical" id="sql-editor-results">
-              {/* Top Workspace: Query Editor */}
-              <ResizablePanel defaultSize={60} minSize={20}>
-                <QueryEditor />
-              </ResizablePanel>
-
-              <ResizableHandle className="h-1 bg-slate-200 hover:bg-blue-400 transition-colors" />
-
-              {/* Bottom Workspace: Result Panel */}
-              <ResizablePanel defaultSize={40} minSize={10}>
-                <ResultPanel />
-              </ResizablePanel>
-            </ResizablePanelGroup>
-          </ResizablePanel>
-        </ResizablePanelGroup>
-      </div>
-    </SqlEditorProvider>
+      {/* Bottom Workspace: Result Panel */}
+      <ResizablePanel defaultSize={40} minSize={10} className="bg-[#FAFAFA]">
+        <ResultPanel />
+      </ResizablePanel>
+    </ResizablePanelGroup>
   );
 }

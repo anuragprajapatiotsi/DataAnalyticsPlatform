@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { Form, Input, InputNumber, Select, Button, message, Alert } from "antd";
-import { Play } from "lucide-react";
+import { Play, CheckCircle2 } from "lucide-react";
 import Editor from "@monaco-editor/react";
 import { serviceService } from "../../services/service.service";
 import { cn } from "@/shared/utils/cn";
@@ -47,7 +47,7 @@ export function ConnectionDetailsStep({
   const jsonConfig = Form.useWatch("json_config", form);
 
   return (
-    <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+    <div className="space-y-2 animate-in fade-in slide-in-from-bottom-1 duration-300">
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-xl font-bold text-slate-900 tracking-tight leading-tight">
@@ -68,7 +68,6 @@ export function ConnectionDetailsStep({
 
       <div className="mt-2">
         {isDatabase ? (
-          <div className="space-y-4">
             <Form.Item
               name="json_config"
               rules={[
@@ -138,74 +137,92 @@ export function ConnectionDetailsStep({
                 },
               ]}
               className="mb-0"
+              help={null}
+              validateStatus={undefined}
+              noStyle
             >
-              <div className="border border-slate-200 rounded-xl overflow-hidden bg-slate-950 shadow-lg ring-1 ring-slate-800">
-                <Editor
-                  height="350px"
-                  defaultLanguage="json"
-                  theme="vs-dark"
-                  value={jsonConfig || "{}"}
-                  options={{
-                    minimap: { enabled: false },
-                    fontSize: 13,
-                    lineNumbers: "on",
-                    scrollBeyondLastLine: false,
-                    automaticLayout: true,
-                    tabSize: 2,
-                    formatOnPaste: true,
-                    formatOnType: true,
-                    padding: { top: 16, bottom: 16 },
-                    renderLineHighlight: "all",
-                    cursorBlinking: "smooth",
-                    fixedOverflowWidgets: true,
-                  }}
-                  onChange={(value) =>
-                    form.setFieldsValue({ json_config: value })
-                  }
-                />
-              </div>
-            </Form.Item>
+              {(() => {
+                const fieldErrors = form.getFieldError("json_config");
+                const hasFieldError = fieldErrors.length > 0;
+                const hasConnectionError = testResult && !testResult.success;
+                const showAnyError = hasFieldError || hasConnectionError;
+                const showSuccess = !hasFieldError && testResult && testResult.success === true;
 
-            <p className="text-[11px] text-slate-400 italic px-1">
-              * The values above will be sent exactly as represented to the
-              service endpoint.
-            </p>
-
-            {testResult && (
-              <Alert
-                title={
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-bold uppercase tracking-tight">
-                      {testResult.success
-                        ? "Connection Verified"
-                        : "Connection Failed"}
-                    </span>
-                  </div>
-                }
-                description={
-                  <div className="mt-1 space-y-1">
-                    <p className="text-xs leading-relaxed opacity-90">
-                      {testResult.message}
-                    </p>
-                    {testResult.detail && (
-                      <div className="p-2 bg-black/5 rounded font-mono text-[10px] break-all border border-black/5 mt-2">
-                        {testResult.detail}
+                return (
+                  <div className="flex flex-col gap-3">
+                    {/* Integrated Unified Error Message Above Editor */}
+                    {showAnyError && (
+                      <div className="bg-red-50 border border-red-200 rounded-xl p-4 animate-in fade-in slide-in-from-top-1 duration-200">
+                        <div className="flex flex-col gap-2">
+                          <div className="flex items-center gap-2 text-red-700">
+                            <span className="text-[12px] font-bold uppercase tracking-tight">
+                              {hasConnectionError ? "Connection Failed" : "Validation Error"}
+                            </span>
+                          </div>
+                          <p className="text-[12px] text-red-600 leading-tight font-medium">
+                            {hasConnectionError ? testResult.message : fieldErrors[0]}
+                          </p>
+                          {hasConnectionError && testResult.detail && (
+                            <div className="p-2 bg-red-100/50 rounded font-mono text-[10px] break-all border border-red-200/50 mt-1 text-red-800">
+                              {testResult.detail}
+                            </div>
+                          )}
+                        </div>
                       </div>
                     )}
+
+                    {/* Integrated Unified Success Message Above Editor */}
+                    {showSuccess && (
+                      <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 animate-in fade-in slide-in-from-top-1 duration-200">
+                        <div className="flex items-center gap-2 text-emerald-700">
+                          <CheckCircle2 size={16} className="shrink-0" />
+                          <span className="text-[12px] font-bold uppercase tracking-tight">
+                            Connection Successful
+                          </span>
+                        </div>
+                        <p className="text-[12px] text-emerald-600 leading-tight font-medium mt-1">
+                          {testResult.message || "Successfully connected to the service."}
+                        </p>
+                      </div>
+                    )}
+
+                    <div className={cn(
+                      "border rounded-xl overflow-hidden bg-slate-950 transition-all duration-200 shadow-lg",
+                      showAnyError 
+                        ? "border-red-500 ring-2 ring-red-500/20 shadow-red-500/5" 
+                        : showSuccess
+                        ? "border-emerald-500 ring-2 ring-emerald-500/20 shadow-emerald-500/5"
+                        : "border-slate-200 ring-1 ring-slate-800"
+                    )}>
+                      <Editor
+                        height="350px"
+                        defaultLanguage="json"
+                        theme="vs-dark"
+                        value={jsonConfig || "{}"}
+                        options={{
+                          minimap: { enabled: false },
+                          fontSize: 13,
+                          lineNumbers: "on",
+                          scrollBeyondLastLine: false,
+                          automaticLayout: true,
+                          tabSize: 2,
+                          formatOnPaste: true,
+                          formatOnType: true,
+                          padding: { top: 16, bottom: 16 },
+                          renderLineHighlight: "all",
+                          cursorBlinking: "smooth",
+                          fixedOverflowWidgets: true,
+                        }}
+                        onChange={(value) => {
+                          form.setFieldsValue({ json_config: value });
+                          form.validateFields(["json_config"]);
+                        }}
+                      />
+                    </div>
                   </div>
-                }
-                type={testResult.success ? "success" : "error"}
-                showIcon
-                closable
-                className={cn(
-                  "p-3 rounded-xl border shadow-sm animate-in zoom-in-95 duration-200",
-                  testResult.success
-                    ? "bg-green-50/50 border-green-200"
-                    : "bg-red-50/50 border-red-200",
-                )}
-              />
-            )}
-          </div>
+                );
+              })()}
+            </Form.Item>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-slate-50/50 p-6 rounded-xl border border-slate-100">
             {isApi && (

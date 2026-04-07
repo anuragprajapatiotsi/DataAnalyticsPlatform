@@ -45,8 +45,22 @@ export function DatabaseSelectionStep({ form, onSelect }: DatabaseSelectionStepP
 
   useEffect(() => {
     const filtered = allDatabases.filter(db => {
+      const slug = db.slug.toLowerCase();
       const matchesSearch = db.display_label.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesCategory = category === "all" || db.slug.toLowerCase().includes(category.toLowerCase());
+      
+      let matchesCategory = category === "all";
+      if (!matchesCategory) {
+        if (category === "sql") {
+          // Robust SQL identification (explicit types + slug check)
+          const sqlKeywords = ["sql", "postgres", "mysql", "oracle", "mariadb", "sqlite", "server"];
+          matchesCategory = sqlKeywords.some(kw => slug.includes(kw)) && !slug.includes("nosql");
+        } else if (category === "nosql") {
+          matchesCategory = slug.includes("nosql") || slug.includes("mongo") || slug.includes("cassandra") || slug.includes("redis");
+        } else {
+          matchesCategory = slug.includes(category.toLowerCase());
+        }
+      }
+      
       return matchesSearch && matchesCategory;
     });
     setFilteredDatabases(filtered);
@@ -84,7 +98,7 @@ export function DatabaseSelectionStep({ form, onSelect }: DatabaseSelectionStepP
           onChange={setCategory}
           className="w-full"
           options={[
-            { label: "All Database Services", value: "all" },
+            { label: "All Database", value: "all" },
             { label: "SQL Databases", value: "sql" },
             { label: "NoSQL Databases", value: "nosql" },
           ]}
