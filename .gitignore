@@ -39,3 +39,11 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+.claude
+.mcp.json
+AGENTS.md
+.opencode*
+.windsurf*
+.cursor*
+GEMINI.md
+CLAUDE.md
