@@ -184,10 +184,10 @@ export default function ExploreDataAssetsPage() {
 
       {/* Main Content Area */}
       <div className="flex-1 overflow-y-auto p-6">
-        <div className="max-w-[1400px] mx-auto flex flex-col gap-4 h-full">
+        <div className="max-w-[1400px] w-full mx-auto flex flex-col gap-4">
           
           {/* Unified Toolbar */}
-          <div className="flex items-center justify-between gap-4 bg-white p-2 rounded-xl border border-slate-200 shadow-sm">
+          <div className="flex items-center justify-between gap-4 bg-white p-2 rounded-xl border border-slate-200 shadow-sm shrink-0">
             <div className="flex-1 flex items-center gap-2 px-2">
               <Search size={16} className="text-slate-400" />
               <Input
@@ -201,7 +201,7 @@ export default function ExploreDataAssetsPage() {
           </div>
 
           {/* Table Container */}
-          <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex-1 flex flex-col min-h-0">
+          <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
             <Table
               dataSource={filteredServices}
               columns={columns}
@@ -210,13 +210,12 @@ export default function ExploreDataAssetsPage() {
                 spinning: loading,
                 indicator: <Spin indicator={<RefreshCw className="animate-spin text-blue-600" size={24} />} />
               }}
-              scroll={{ y: "calc(100vh - 280px)" }}
               pagination={{
                 pageSize: 50,
                 hideOnSinglePage: true,
-                className: "px-6 py-4 border-t border-slate-100 mt-auto !mb-0 shrink-0 bg-white",
+                className: "px-6 py-4 border-t border-slate-100 !mb-0 bg-white",
               }}
-              className="custom-explore-table flex-1 flex flex-col h-full"
+              className="custom-explore-table"
               onRow={(record) => ({
                 onClick: () => router.push(`/explore/data-assets/${record.id}`),
                 className: "cursor-pointer group",
@@ -240,7 +239,7 @@ export default function ExploreDataAssetsPage() {
       </div>
 
       <style jsx global>{`
-        /* Modern Table "Ghost" Styles */
+        /* Modern Table "Ghost" Styles with Sticky Header */
         .custom-explore-table .ant-table {
           background: transparent !important;
         }
@@ -253,6 +252,10 @@ export default function ExploreDataAssetsPage() {
           letter-spacing: 0.05em !important;
           border-bottom: 1px solid #E2E8F0 !important;
           padding: 12px 24px !important;
+          /* Sticky Header Logic */
+          position: sticky;
+          top: 0;
+          z-index: 10;
         }
         .custom-explore-table .ant-table-thead > tr > th::before {
           display: none !important;
@@ -264,21 +267,6 @@ export default function ExploreDataAssetsPage() {
         }
         .custom-explore-table .ant-table-tbody > tr:hover > td {
           background: #F8FAFC !important;
-        }
-        /* Custom scrollbar */
-        .custom-explore-table .ant-table-body::-webkit-scrollbar {
-          width: 6px;
-          height: 6px;
-        }
-        .custom-explore-table .ant-table-body::-webkit-scrollbar-track {
-          background: transparent;
-        }
-        .custom-explore-table .ant-table-body::-webkit-scrollbar-thumb {
-          background: #CBD5E1;
-          border-radius: 4px;
-        }
-        .custom-explore-table .ant-table-body::-webkit-scrollbar-thumb:hover {
-          background: #94A3B8;
         }
       `}</style>
     </div>

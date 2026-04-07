@@ -86,16 +86,16 @@ export default function CurrentUserProfilePage() {
   const breadcrumbItems = [
     {
       label: "Dashboard",
-      href: "/dashboard",
+      href: "/",
     },
-    { label: "My Profile" },
+    { label: "Profile" },
   ];
 
   return (
     <div className="flex flex-col min-h-screen bg-[#f8fafc]/50">
       <div className="px-4 py-2 max-w-[1400px] mx-auto w-full">
         <PageHeader
-          title="My Profile"
+          title="Profile"
           description="Manage your account settings, teams, roles, and assigned policies."
           breadcrumbItems={breadcrumbItems}
         />

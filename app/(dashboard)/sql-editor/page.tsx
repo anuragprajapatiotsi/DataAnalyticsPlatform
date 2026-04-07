@@ -9,11 +9,5 @@ export default function SqlEditorPage() {
     { label: "SQL Editor" },
   ];
 
-  return (
-    <div className="flex flex-col h-full overflow-hidden">
-      <div className="flex-1 min-h-0">
-        <SqlEditorWorkspace />
-      </div>
-    </div>
-  );
+  return <SqlEditorWorkspace />;
 }

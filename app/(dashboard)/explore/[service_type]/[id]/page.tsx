@@ -202,7 +202,7 @@ export default function ConnectionDetailPage() {
   };
 
   const isDatabaseService = serviceType === "database" || serviceType === "databases";
-  const serviceLabel = isDatabaseService ? "Database Services" : 
+  const serviceLabel = isDatabaseService ? "Database" : 
     (serviceType.charAt(0).toUpperCase() + serviceType.slice(1));
 
   const breadcrumbItems = [

@@ -10,7 +10,10 @@ import {
   RefreshCw,
   PlusCircle,
   Loader2,
+  ChevronDown,
+  FileCode,
 } from "lucide-react";
+import { Dropdown, Space, MenuProps, message } from "antd";
 import { useSqlEditorContext } from "../contexts/SqlEditorContext";
 import { cn } from "@/shared/utils/cn";
 import { Button } from "@/shared/components/ui/button";
@@ -60,12 +63,12 @@ export function QueryEditor() {
       contextMenuGroupId: "navigation",
       contextMenuOrder: 1,
       run: () => {
-        handleExecute();
+        handleExecute(false);
       },
     });
   };
 
-  const handleExecute = () => {
+  const handleExecute = (openNewTab: boolean = false) => {
     if (!activeTabId || !editorRef.current) return;
     
     // Step 4: Selection-Aware Querying
@@ -77,7 +80,13 @@ export function QueryEditor() {
       selectedText = model.getValueInRange(selection);
     }
     
-    executeQuery(activeTabId, selectedText || undefined);
+    const queryToRun = selectedText || activeTab?.query || "";
+    if (queryToRun.trim().length === 0) {
+      message.warning("Please type or select a valid SQL query to execute.");
+      return;
+    }
+    
+    executeQuery(activeTabId, selectedText || undefined, { openNewTab });
   };
 
   const handleCancel = () => {
@@ -142,26 +151,58 @@ export function QueryEditor() {
 
         {/* Action Toolbar */}
         <div className="flex items-center gap-2 pb-2 pl-4">
-          <Button
-            size="sm"
-            variant="default"
-            onClick={handleExecute}
-            disabled={isRunning || !activeTab?.query}
-            className="h-8 bg-blue-600 hover:bg-blue-700 font-bold gap-2 shadow-sm"
-          >
-            {isRunning ? (
-              <Loader2 size={14} className="animate-spin" />
-            ) : (
-              <Play size={14} fill="currentColor" />
-            )}
-            Run
-          </Button>
+          <Space.Compact className="shadow-sm">
+            <Button
+              size="sm"
+              variant="default"
+              onClick={() => handleExecute(false)}
+              disabled={isRunning || !activeTab?.query}
+              className="h-8 bg-blue-600 hover:bg-blue-700 font-bold gap-2 rounded-r-none border-r border-blue-700"
+            >
+              {isRunning ? (
+                <Loader2 size={14} className="animate-spin" />
+              ) : (
+                <Play size={14} fill="currentColor" />
+              )}
+              Run
+            </Button>
+            <Dropdown
+              disabled={isRunning || !activeTab?.query}
+              trigger={["click"]}
+              placement="bottomRight"
+              menu={{
+                items: [
+                  {
+                    key: "run-current",
+                    label: "Run in Current Tab",
+                    icon: <Play size={14} />,
+                    onClick: () => handleExecute(false),
+                  },
+                  {
+                    key: "run-new",
+                    label: "Run in New Tab",
+                    icon: <FileCode size={14} />,
+                    onClick: () => handleExecute(true),
+                  },
+                ],
+              }}
+            >
+              <Button
+                size="sm"
+                variant="default"
+                className="h-8 bg-blue-600 hover:bg-blue-700 rounded-l-none px-2"
+                disabled={isRunning || !activeTab?.query}
+              >
+                <ChevronDown size={14} />
+              </Button>
+            </Dropdown>
+          </Space.Compact>
           <Button
             size="sm"
             variant="outline"
             onClick={handleCancel}
             disabled={!isRunning}
-            className="h-8 border-slate-200 text-slate-600 font-bold hover:bg-slate-50"
+            className="h-8 border-slate-200 text-slate-600 font-bold hover:bg-slate-50 shadow-sm"
           >
             <Square size={12} fill="currentColor" className="mr-2" />
             Stop

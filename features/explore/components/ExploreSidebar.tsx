@@ -23,7 +23,7 @@ import {
 import { cn } from "@/shared/utils/cn";
 
 const ASSET_CATEGORIES = [
-  { id: "database", label: "Database Services", icon: Database },
+  { id: "database", label: "Database", icon: Database },
   { id: "api", label: "API", icon: Cpu },
   { id: "messaging", label: "Messaging", icon: MessageSquare },
   { id: "dashboards", label: "Dashboards", icon: LayoutDashboard },
@@ -56,6 +56,7 @@ interface ExploreSidebarProps {
   onViewChange: (view: ExploreView) => void;
   onCategoryChange: (categoryId: string) => void;
 }
+
 export function ExploreSidebar({
   activeView,
   activeCategory,
@@ -64,7 +65,6 @@ export function ExploreSidebar({
 }: ExploreSidebarProps) {
   const router = useRouter();
   const [catalogExpanded, setCatalogExpanded] = useState(true);
-  const [dataExpanded, setDataExpanded] = useState(false);
   const [sourcesExpanded, setSourcesExpanded] = useState(true);
 
   const handleCategoryClick = (id: string) => {
@@ -80,7 +80,7 @@ export function ExploreSidebar({
   };
 
   return (
-    <aside className="w-[200px] flex-shrink-0 border-r border-slate-200 px-4 py-2  flex flex-col h-full bg-white transition-all duration-300">
+    <aside className="w-full h-full flex-shrink-0 border-r border-slate-200 px-4 py-2 flex flex-col bg-white transition-all duration-300">
       <nav className="flex flex-col gap-1.5 overflow-y-auto pr-2 no-scrollbar h-full">
         {/* Catalog Section */}
         <div className="flex flex-col">
@@ -88,7 +88,7 @@ export function ExploreSidebar({
             onClick={() => setCatalogExpanded(!catalogExpanded)}
             className={cn(
               "group flex items-center gap-3 px-3 py-2.5 rounded-lg text-[14px] font-medium transition-all duration-200",
-              activeView === "catalog" || activeView === "data"
+              activeView === "catalog" || activeView === "data" || ["object-resources", "data-assets", "kpis"].includes(activeView)
                 ? "bg-blue-50/50 text-blue-600"
                 : "text-slate-600 hover:bg-slate-100 hover:text-slate-900",
             )}
@@ -96,7 +96,7 @@ export function ExploreSidebar({
             <Library
               size={18}
               className={
-                activeView === "catalog" || activeView === "data"
+                activeView === "catalog" || activeView === "data" || ["object-resources", "data-assets", "kpis"].includes(activeView)
                   ? "text-blue-600"
                   : "text-slate-400"
               }
@@ -109,104 +109,64 @@ export function ExploreSidebar({
             )}
           </button>
 
-          {/* Nested Catalog Menu */}
+          {/* Nested Catalog Menu - Flattened */}
           {catalogExpanded && (
             <div className="flex flex-col gap-0.5 mt-1 ml-3 pl-2 border-l border-slate-100 px-1">
               <button
-                onClick={() => setDataExpanded(!dataExpanded)}
+                onClick={() => onViewChange("object-resources")}
                 className={cn(
-                  "group flex items-center justify-between px-3 py-2 rounded-lg text-[14px] font-medium transition-all duration-200 w-full",
-                  activeView === "data" ||
-                    activeView === "object-resources" ||
-                    activeView === "data-assets" ||
-                    activeView === "kpis"
-                    ? "text-blue-600 font-bold bg-blue-50/30"
-                    : "text-slate-500 hover:text-slate-800 hover:bg-slate-50",
+                  "flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-[14px] transition-all duration-200",
+                  activeView === "object-resources"
+                    ? "text-blue-700 bg-blue-50/50 font-semibold"
+                    : "text-slate-500 hover:text-slate-700 hover:bg-slate-50",
                 )}
               >
-                <div className="flex items-center gap-3">
-                  <div
-                    className={cn(
-                      "w-1.5 h-1.5 rounded-full transition-colors",
-                      activeView === "data" ||
-                        activeView === "object-resources" ||
-                        activeView === "data-assets" ||
-                        activeView === "kpis"
-                        ? "bg-blue-600"
-                        : "bg-slate-300 group-hover:bg-blue-400",
-                    )}
-                  />
-                  <span>Data</span>
-                </div>
-                {dataExpanded ? (
-                  <ChevronDown size={12} className="text-slate-400" />
-                ) : (
-                  <ChevronRight size={12} className="text-slate-400" />
-                )}
+                <Layers
+                  size={14}
+                  className={
+                    activeView === "object-resources"
+                      ? "text-blue-600"
+                      : "text-slate-400"
+                  }
+                />
+                Catalog Views
               </button>
-
-              {/* Data Sub-menus */}
-              {dataExpanded && (
-                <div className="flex flex-col gap-0.5 mt-1 ml-2 pl-3 border-l border-slate-100 px-1 py-1">
-                  <button
-                    onClick={() => onViewChange("object-resources")}
-                    className={cn(
-                      "flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-[14px] transition-all duration-200",
-                      activeView === "object-resources"
-                        ? "text-blue-700 bg-blue-50/50 font-semibold"
-                        : "text-slate-500 hover:text-slate-700 hover:bg-slate-50",
-                    )}
-                  >
-                    <Layers
-                      size={14}
-                      className={
-                        activeView === "object-resources"
-                          ? "text-blue-600"
-                          : "text-slate-400"
-                      }
-                    />
-                    Catalog Views
-                  </button>
-                  <button
-                    onClick={() => onViewChange("data-assets")}
-                    className={cn(
-                      "flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-[14px] transition-all duration-200",
-                      activeView === "data-assets"
-                        ? "text-blue-700 bg-blue-50/50 font-semibold"
-                        : "text-slate-500 hover:text-slate-700 hover:bg-slate-50",
-                    )}
-                  >
-                    <Database
-                      size={14}
-                      className={
-                        activeView === "data-assets"
-                          ? "text-blue-600"
-                          : "text-slate-400"
-                      }
-                    />
-                    Data Assets
-                  </button>
-                  <button
-                    onClick={() => onViewChange("kpis")}
-                    className={cn(
-                      "flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-[14px] transition-all duration-200",
-                      activeView === "kpis"
-                        ? "text-blue-700 bg-blue-50/50 font-semibold"
-                        : "text-slate-500 hover:text-slate-700 hover:bg-slate-50",
-                    )}
-                  >
-                    <TrendingUp
-                      size={14}
-                      className={
-                        activeView === "kpis"
-                          ? "text-blue-600"
-                          : "text-slate-400"
-                      }
-                    />
-                    KPI
-                  </button>
-                </div>
-              )}
+              <button
+                onClick={() => onViewChange("data-assets")}
+                className={cn(
+                  "flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-[14px] transition-all duration-200",
+                  activeView === "data-assets"
+                    ? "text-blue-700 bg-blue-50/50 font-semibold"
+                    : "text-slate-500 hover:text-slate-700 hover:bg-slate-50",
+                )}
+              >
+                <Database
+                  size={14}
+                  className={
+                    activeView === "data-assets"
+                      ? "text-blue-600"
+                      : "text-slate-400"
+                  }
+                />
+                Data Assets
+              </button>
+              <button
+                onClick={() => onViewChange("kpis")}
+                className={cn(
+                  "flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-[14px] transition-all duration-200",
+                  activeView === "kpis"
+                    ? "text-blue-700 bg-blue-50/50 font-semibold"
+                    : "text-slate-500 hover:text-slate-700 hover:bg-slate-50",
+                )}
+              >
+                <TrendingUp
+                  size={14}
+                  className={
+                    activeView === "kpis" ? "text-blue-600" : "text-slate-400"
+                  }
+                />
+                KPI
+              </button>
             </div>
           )}
         </div>

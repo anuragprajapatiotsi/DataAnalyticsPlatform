@@ -87,7 +87,7 @@ export function useSqlEditor() {
   );
 
   const executeQuery = useCallback(
-    async (tabId: string, selectedQuery?: string, options?: { page?: number; pageSize?: number }) => {
+    async (tabId: string, selectedQuery?: string, options?: { page?: number; pageSize?: number; openNewTab?: boolean }) => {
       const tab = tabs.find((t) => t.id === tabId);
       if (!tab || (!tab.query && !selectedQuery)) return;
 
@@ -99,35 +99,64 @@ export function useSqlEditor() {
       const currentPage = options?.page ?? activeResult?.pagination.current ?? 0;
       const currentPageSize = options?.pageSize ?? activeResult?.pagination.pageSize ?? 50;
       
-      const resultId = activeResult && options ? activeResult.id : `res-${Date.now()}`;
+      const isPaging = options?.page !== undefined || options?.pageSize !== undefined;
+      const openNewTab = options?.openNewTab ?? false;
       
-      if (!options) {
-        // Initial execution: Create new result
-        const newResult: QueryResultState = {
-          id: resultId,
-          query: queryToRun,
-          data: [],
-          columns: [],
-          totalRows: 0,
-          executionTime: 0,
-          loading: true,
-          error: null,
-          queryId: null,
-          pagination: { pageSize: currentPageSize, current: currentPage },
-          status: "loading",
-        };
+      const createNewResult = openNewTab || !activeResult;
+      const resultId = createNewResult ? `res-${Date.now()}` : activeResult.id;
+      
+      if (!isPaging) {
+        if (createNewResult) {
+          // Initial execution: Create new result
+          const newResult: QueryResultState = {
+            id: resultId,
+            query: queryToRun,
+            data: [],
+            columns: [],
+            totalRows: 0,
+            executionTime: 0,
+            loading: true,
+            error: null,
+            queryId: null,
+            pagination: { pageSize: currentPageSize, current: 0 },
+            status: "loading",
+          };
 
-        setTabs((prev) =>
-          prev.map((t) =>
-            t.id === tabId
-              ? {
-                  ...t,
-                  results: [newResult, ...t.results].slice(0, 5),
-                  activeResultTabId: resultId,
-                }
-              : t,
-          ),
-        );
+          setTabs((prev) =>
+            prev.map((t) =>
+              t.id === tabId
+                ? {
+                    ...t,
+                    results: [newResult, ...t.results].slice(0, 5), // Keep max 5 results in history
+                    activeResultTabId: resultId,
+                  }
+                : t,
+            ),
+          );
+        } else {
+          // Overwrite existing active result
+          setTabs((prev) =>
+            prev.map((t) =>
+              t.id === tabId
+                ? {
+                    ...t,
+                    results: t.results.map(r => r.id === resultId ? {
+                      ...r,
+                      query: queryToRun,
+                      data: [],
+                      columns: [],
+                      totalRows: 0,
+                      executionTime: 0,
+                      error: null,
+                      status: "loading",
+                      loading: true,
+                      pagination: { pageSize: currentPageSize, current: 0 } 
+                    } : r)
+                  }
+                : t,
+            ),
+          );
+        }
       } else {
         // Paging execution: Update existing result status
         setTabs((prev) =>
