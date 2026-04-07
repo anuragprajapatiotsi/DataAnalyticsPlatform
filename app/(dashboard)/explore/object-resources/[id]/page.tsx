@@ -902,22 +902,22 @@ export default function ExploreObjectResourceDetailPage() {
                                         icon: <FileCode size={14} />,
                                         onClick: () => handleExecuteQuery(true),
                                       },
-                                      { type: "divider" },
-                                      {
-                                        key: "run_new_tab",
-                                        label: "Run in New Browser Tab",
-                                        icon: <ExternalLink size={14} />,
-                                        onClick: () => {
-                                          const url = new URL(
-                                            window.location.href,
-                                          );
-                                          url.searchParams.set(
-                                            "sql",
-                                            encodeURIComponent(qTab.query),
-                                          );
-                                          window.open(url.toString(), "_blank");
-                                        },
-                                      },
+                                      // { type: "divider" },
+                                      // {
+                                      //   key: "run_new_tab",
+                                      //   label: "Run in New Browser Tab",
+                                      //   icon: <ExternalLink size={14} />,
+                                      //   onClick: () => {
+                                      //     const url = new URL(
+                                      //       window.location.href,
+                                      //     );
+                                      //     url.searchParams.set(
+                                      //       "sql",
+                                      //       encodeURIComponent(qTab.query),
+                                      //     );
+                                      //     window.open(url.toString(), "_blank");
+                                      //   },
+                                      // },
                                     ],
                                   }}
                                   disabled={isExecuting || !qTab.query}
