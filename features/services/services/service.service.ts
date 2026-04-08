@@ -117,8 +117,8 @@ export const serviceService = {
     return response.data;
   },
 
-  async getBots(params: GetBotsParams = { skip: 0, limit: 50 }) {
-    const response = await api.get<Bot[]>("/bots", {
+  async getBots(endpointId: string, params: GetBotsParams = { skip: 0, limit: 50 }) {
+    const response = await api.get<Bot[]>(`/bots/for-endpoint/${endpointId}`, {
       params: {
         ...params,
         name: "primary",
@@ -132,8 +132,11 @@ export const serviceService = {
     return response.data;
   },
 
-  async runBot(botId: string, config: Record<string, any> = {}) {
-    const response = await api.post<{ message: string; success: boolean }>(`/bots/${botId}/run`, { config });
+  async runBot(botId: string, service_endpoint_id: string, config: Record<string, any> = {}) {
+    const response = await api.post<{ message: string; success: boolean }>(`/bots/${botId}/run`, { 
+      service_endpoint_id,
+      config 
+    });
     return response.data;
   },
 
@@ -274,6 +277,11 @@ export const serviceService = {
       return response.data.data;
     }
     return Array.isArray(response.data) ? response.data : [];
+  },
+
+  async getDataAssetColumns(assetId: string) {
+    const response = await api.get<any[]>(`/data-assets/${assetId}/columns`);
+    return response.data;
   },
 
   async syncCatalogView(id: string, payload: { sync_data: boolean; force: boolean }) {

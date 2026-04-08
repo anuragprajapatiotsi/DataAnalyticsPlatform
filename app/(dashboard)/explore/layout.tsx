@@ -162,10 +162,8 @@ export default function ExploreLayout({
         </div>
 
         {/* Dynamic Content Area - Centered Relative to Space */}
-        <main className="flex-1 overflow-y-auto bg-white">
-          <div className="h-full flex flex-col">
-            {children}
-          </div>
+        <main className="flex-1 flex flex-col min-w-0 min-h-0 relative bg-white overflow-hidden">
+          {children}
         </main>
       </div>
     </div>

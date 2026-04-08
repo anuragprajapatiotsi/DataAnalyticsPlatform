@@ -222,7 +222,7 @@ export default function ConnectionDetailPage() {
   }
 
   return (
-    <div className="flex flex-col h-full bg-[#FAFAFA] animate-in fade-in duration-500">
+    <div className="flex flex-col h-full w-full bg-[#FAFAFA] animate-in fade-in duration-500 overflow-hidden relative">
       {/* Header Area */}
       <div className="px-6 pt-5 bg-white border-b border-slate-200">
         <div className="max-w-[1400px] mx-auto flex flex-col gap-4">
@@ -716,7 +716,7 @@ function AgentsTabView({ connectionId }: { connectionId: string }) {
   const fetchBots = useCallback(async () => {
     try {
       setLoading(true);
-      const data = await serviceService.getBots(filters);
+      const data = await serviceService.getBots(connectionId, filters);
       setBots(data || []);
     } catch (err) {
       message.error("Failed to load metadata agents.");
@@ -728,11 +728,16 @@ function AgentsTabView({ connectionId }: { connectionId: string }) {
   useEffect(() => { fetchBots(); }, [fetchBots]);
 
   const handleRunBot = async (botId: string) => {
+    if (!connectionId) {
+      message.error("Please select a service endpoint before running the agent");
+      return;
+    }
+    
     try {
       setIsActionLoading(true);
-      const res = await serviceService.runBot(botId);
+      const res = await serviceService.runBot(botId, connectionId);
       if (res.success) {
-        message.success("Agent execution started");
+        message.success("Agent run started successfully");
         fetchBots();
       }
     } catch (err: any) {
@@ -787,7 +792,7 @@ function AgentsTabView({ connectionId }: { connectionId: string }) {
       if (typeof config === "string") {
         try { config = JSON.parse(config); } catch (e) {}
       }
-      await serviceService.updateBot(editingBot.id, { ...values, config, service_endpoint_id: connectionId });
+      await serviceService.updateBot((editingBot as any).bot_id || editingBot.id!, { ...values, config, service_endpoint_id: connectionId });
       message.success("Agent updated");
       setIsEditModalOpen(false);
       fetchBots();
@@ -818,7 +823,7 @@ function AgentsTabView({ connectionId }: { connectionId: string }) {
       width: "15%",
       render: (text) => (
         <span className="inline-flex items-center px-2 py-1 rounded bg-slate-50 border border-slate-200 text-slate-600 text-[11px] font-medium capitalize">
-          {text}
+          {text || "Unknown"}
         </span>
       ),
     },
@@ -837,31 +842,31 @@ function AgentsTabView({ connectionId }: { connectionId: string }) {
         </div>
       ),
     },
-    {
-      title: "Recent Run",
-      key: "recent_runs",
-      width: "20%",
-      render: (_, record) => (
-        record.last_run_status ? (
-          <div className={cn(
-            "inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-medium border w-fit",
-            record.last_run_status === "success" && "bg-emerald-50 text-emerald-700 border-emerald-200",
-            record.last_run_status === "failed" && "bg-red-50 text-red-700 border-red-200",
-            (record.last_run_status === "running" || record.last_run_status === "pending") && "bg-blue-50 text-blue-700 border-blue-200"
-          )}>
-            <span className={cn(
-              "w-1.5 h-1.5 rounded-full",
-              record.last_run_status === "success" && "bg-emerald-500",
-              record.last_run_status === "failed" && "bg-red-500",
-              (record.last_run_status === "running" || record.last_run_status === "pending") && "bg-blue-500 animate-pulse"
-            )} />
-            <span className="capitalize">{record.last_run_status}</span>
-          </div>
-        ) : (
-          <span className="text-slate-400 text-[13px]">—</span>
-        )
-      ),
-    },
+    // {
+    //   title: "Recent Run",
+    //   key: "recent_runs",
+    //   width: "20%",
+    //   render: (_, record) => (
+    //     record.last_run_status ? (
+    //       <div className={cn(
+    //         "inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-medium border w-fit",
+    //         record.last_run_status === "success" && "bg-emerald-50 text-emerald-700 border-emerald-200",
+    //         record.last_run_status === "failed" && "bg-red-50 text-red-700 border-red-200",
+    //         (record.last_run_status === "running" || record.last_run_status === "pending") && "bg-blue-50 text-blue-700 border-blue-200"
+    //       )}>
+    //         <span className={cn(
+    //           "w-1.5 h-1.5 rounded-full",
+    //           record.last_run_status === "success" && "bg-emerald-500",
+    //           record.last_run_status === "failed" && "bg-red-500",
+    //           (record.last_run_status === "running" || record.last_run_status === "pending") && "bg-blue-500 animate-pulse"
+    //         )} />
+    //         <span className="capitalize">{record.last_run_status}</span>
+    //       </div>
+    //     ) : (
+    //       <span className="text-slate-400 text-[13px]">—</span>
+    //     )
+    //   ),
+    // },
     {
       title: "Trigger",
       dataIndex: "trigger_mode",
@@ -870,12 +875,12 @@ function AgentsTabView({ connectionId }: { connectionId: string }) {
       render: (text) => (
         <div className="flex items-center gap-1.5 text-[12px] text-slate-600 capitalize">
           <Zap size={12} className="text-slate-400" />
-          {text}
+          {text || "Manual"}
         </div>
       ),
     },
     {
-      title: "",
+      title: "Actions",
       key: "actions",
       width: "5%",
       align: "right",
@@ -883,15 +888,15 @@ function AgentsTabView({ connectionId }: { connectionId: string }) {
         <Dropdown
           menu={{
             items: [
-              ...(record.is_enabled && !["running", "pending"].includes(record.last_run_status || "") ? [{ key: "run", label: "Run Agent", icon: <Play size={14} />, onClick: () => handleRunBot(record.id) }] : []),
-              { key: "toggle", label: record.is_enabled ? "Disable" : "Enable", icon: record.is_enabled ? <Pause size={14} /> : <CheckCircle2 size={14} />, onClick: () => handleToggleBotStatus(record.id, record.is_enabled) },
+              ...(record.is_enabled && !["running", "pending"].includes(record.last_run_status || "") ? [{ key: "run", label: "Run Agent", icon: <Play size={14} />, disabled: !connectionId, onClick: () => handleRunBot((record as any).bot_id || record.id!) }] : []),
+              { key: "toggle", label: record.is_enabled ? "Disable" : "Enable", icon: record.is_enabled ? <Pause size={14} /> : <CheckCircle2 size={14} />, onClick: () => handleToggleBotStatus((record as any).bot_id || record.id!, record.is_enabled) },
               { key: "edit", label: "Edit Config", icon: <Edit2 size={14} />, onClick: () => {
                 setEditingBot(record);
                 form.setFieldsValue({ ...record, config: record.config ? (typeof record.config === "object" ? JSON.stringify(record.config, null, 2) : record.config) : "" });
                 setIsEditModalOpen(true);
               }},
               { type: "divider" },
-              { key: "kill", label: "Delete Agent", icon: <Trash2 size={14} />, danger: true, onClick: () => handleDeleteBot(record.id) },
+              { key: "kill", label: "Delete Agent", icon: <Trash2 size={14} />, danger: true, onClick: () => handleDeleteBot((record as any).bot_id || record.id!) },
             ],
           }}
           trigger={["click"]}
@@ -903,10 +908,21 @@ function AgentsTabView({ connectionId }: { connectionId: string }) {
     },
   ];
 
+  if (!connectionId) {
+    return (
+      <div className="flex flex-col gap-4 animate-in fade-in duration-500 h-full w-full justify-center">
+        <Empty
+          image={Empty.PRESENTED_IMAGE_SIMPLE}
+          description={<span className="text-slate-500 font-medium">Select a service endpoint to view agents</span>}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col gap-4 animate-in fade-in duration-500">
       {/* Toolbar */}
-      <div className="flex items-center justify-between gap-4 bg-white p-2 rounded-xl border border-slate-200 shadow-sm">
+      {/* <div className="flex items-center justify-between gap-4 bg-white p-2 rounded-xl border border-slate-200 shadow-sm">
         <div className="flex-1 flex items-center gap-2 px-2">
           <Search size={16} className="text-slate-400" />
           <Input
@@ -942,13 +958,13 @@ function AgentsTabView({ connectionId }: { connectionId: string }) {
             Deploy New
           </Button>
         </div>
-      </div>
+      </div> */}
 
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
         <Table
           dataSource={bots}
           columns={columns}
-          rowKey="id"
+          rowKey={(record) => record.id || (record as any).bot_id || record.name}
           loading={loading}
           pagination={false}
           className="custom-explore-table"
@@ -982,14 +998,14 @@ function AgentRunsTabView({ connectionId }: { connectionId: string }) {
   const fetchBotsAndRuns = useCallback(async () => {
     try {
       setLoading(true);
-      const currentBots = await serviceService.getBots({ skip: 0, limit: 100 });
+      const currentBots = await serviceService.getBots(connectionId, { skip: 0, limit: 100 });
       setBots(currentBots || []);
       
       if (!currentBots?.length) return setRuns([]);
 
       const runsPromises = currentBots.map(async (bot: Bot) => {
         try {
-          const botRuns = await serviceService.getBotRuns(bot.id, { limit: 20 });
+          const botRuns = await serviceService.getBotRuns((bot as any).bot_id || bot.id!, { limit: 20 });
           return botRuns.map((run: BotRun) => ({ ...run, bot_name: bot.name, bot_type: bot.bot_type }));
         } catch { return []; }
       });

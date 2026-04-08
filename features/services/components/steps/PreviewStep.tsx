@@ -39,7 +39,7 @@ export function PreviewStep({ form }: PreviewStepProps) {
               <Descriptions.Item label={<span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Service Name</span>} span={1}>
                 <span className="text-slate-700 text-[11px] font-bold">{data.service_name || "Untitled Service"}</span>
               </Descriptions.Item>
-              <Descriptions.Item label={<span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Integration</span>} span={1}>
+              <Descriptions.Item label={<span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Integration</span>} span={2}>
                 <span className="text-slate-700 text-[11px] font-medium">{data.integration_label || data.service_name || "No Integration Selected"}</span>
               </Descriptions.Item>
               {data.description && (

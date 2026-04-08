@@ -178,7 +178,7 @@ export default function SchemasExplorerPage() {
   }
 
   return (
-    <div className="flex flex-col h-full bg-[#FAFAFA] animate-in fade-in duration-500 overflow-hidden">
+    <div className="flex flex-col h-full w-full bg-[#FAFAFA] animate-in fade-in duration-500 overflow-hidden">
       {/* Header Area */}
       <div className="px-6 pt-5 bg-white border-b border-slate-200">
         <div className="max-w-[1400px] mx-auto flex flex-col gap-4">
@@ -222,7 +222,7 @@ export default function SchemasExplorerPage() {
 
       {/* Main Content Area */}
       <div className="flex-1 overflow-y-auto p-6">
-        <div className="max-w-[1400px] mx-auto flex flex-col gap-4 h-full">
+        <div className="max-w-[1400px] w-full mx-auto flex flex-col gap-4">
           
           {/* Unified Toolbar */}
           <div className="flex items-center justify-between gap-4 bg-white p-2 rounded-xl border border-slate-200 shadow-sm">
@@ -246,20 +246,19 @@ export default function SchemasExplorerPage() {
           </div>
 
           {/* Table Container */}
-          <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex-1 flex flex-col min-h-0">
+          <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden min-h-[400px]">
             <Table
               dataSource={filteredSchemas}
               columns={columns}
               rowKey="name"
               loading={loading}
               pagination={false}
-              scroll={{ y: "calc(100vh - 340px)" }}
               onRow={(record) => ({
                 onClick: () =>
                   router.push(`/explore/${serviceType}/${id}/${database}/${record.name}/objects`),
                 className: "cursor-pointer",
               })}
-              className="custom-explore-table flex-1 flex flex-col h-full"
+              className="custom-explore-table"
               locale={{
                 emptyText: loading ? (
                   <Spin className="my-8" />
@@ -290,6 +289,9 @@ export default function SchemasExplorerPage() {
           letter-spacing: 0.05em !important;
           border-bottom: 1px solid #E2E8F0 !important;
           padding: 12px 24px !important;
+          position: sticky;
+          top: 0;
+          z-index: 10;
         }
         .custom-explore-table .ant-table-thead > tr > th::before {
           display: none !important; /* Remove Antd default column separators */

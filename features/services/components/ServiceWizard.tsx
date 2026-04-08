@@ -75,7 +75,7 @@ export function ServiceWizard({
 
   // Early initialization for specific database types (skipping selection step)
   React.useEffect(() => {
-    if (isDatabaseFlow && !form.getFieldValue("json_config")) {
+    if (isDatabaseFlow && !form.getFieldValue("service_name")) {
       const lowerType = serviceType.toLowerCase();
       let protocol = lowerType.includes("postgres")
         ? "postgresql"
@@ -83,24 +83,12 @@ export function ServiceWizard({
           ? "mysql"
           : lowerType;
 
-      const defaultJson = JSON.stringify(
-        {
-          base_url: `${protocol}://host:5432`,
-          extra: {
-            host: "host",
-            port: 5432,
-            user: "",
-            password: "",
-            database: "",
-          },
-          internal_connection: true,
-          auto_trigger_bots: false,
-        },
-        null,
-        2,
-      );
       form.setFieldsValue({
-        json_config: defaultJson,
+        host: "localhost",
+        port: 5432,
+        user: "",
+        password: "",
+        database: "",
         service_name: lowerType, // Initialize for direct routes
         description: `Service for ${lowerType}`, // Initialize for direct routes
         integration_slug: lowerType, // Initialize for direct routes
@@ -133,22 +121,11 @@ export function ServiceWizard({
               service_name: db.slug, // Source of truth from Step 1
               description: db.description || db.display_label, // Source of truth from Step 1
               integration_label: db.display_label,
-              json_config: JSON.stringify(
-                {
-                  base_url: `${protocol}://host:5432`,
-                  extra: {
-                    host: "host",
-                    port: 5432,
-                    user: "",
-                    password: "",
-                    database: "",
-                  },
-                  internal_connection: true,
-                  auto_trigger_bots: false,
-                },
-                null,
-                2
-              ),
+              host: "localhost",
+              port: 5432,
+              user: "",
+              password: "",
+              database: "",
             });
             setIsTestSuccessful(false); // Reset test success when type changes
           }}
@@ -167,7 +144,7 @@ export function ServiceWizard({
   // Step: Connection Details
   steps.push({
     title: "Connection Details",
-    fields: isDatabaseFlow ? ["json_config"] : ["baseUrl", "path"],
+    fields: isDatabaseFlow ? ["host", "port", "user", "password", "database"] : ["baseUrl", "path"],
     content: (
       <ConnectionDetailsStep
         form={form}
@@ -189,15 +166,19 @@ export function ServiceWizard({
       setTesting(true);
       setTestResult(null);
 
-      const jsonConfig = form.getFieldValue("json_config");
-      await form.validateFields(["json_config", "service_name"]);
+      await form.validateFields(["host", "port", "user", "password", "database", "service_name"]);
 
-      const parsed = JSON.parse(jsonConfig);
+      const host = form.getFieldValue("host");
+      const port = form.getFieldValue("port");
+      const user = form.getFieldValue("user");
+      const password = form.getFieldValue("password");
+      const database = form.getFieldValue("database");
+
       const serviceName = form.getFieldValue("service_name") || serviceType;
       const integrationSlug = form.getFieldValue("integration_slug") || "";
       
-      // Determine driver from service name or slug
-      const driverSource = (integrationSlug || serviceName).toLowerCase();
+      // Determine driver from slug explicitly. 
+      const driverSource = (integrationSlug || serviceType).toLowerCase();
       const driver = driverSource.includes("postgres")
         ? "postgres"
         : driverSource.includes("mysql")
@@ -207,22 +188,20 @@ export function ServiceWizard({
             : driverSource;
 
       // Strict validation for required fields in connection_object
-      if (!parsed.extra?.host) throw new Error("Database host is required for testing.");
-      if (!parsed.extra?.port) throw new Error("Database port is required for testing.");
-      if (!parsed.extra?.user) throw new Error("Database username is required for testing.");
-      if (!parsed.extra?.password) throw new Error("Database password is required for testing.");
-      if (!parsed.extra?.database) throw new Error("Database name is required for testing.");
+      if (!host) throw new Error("Database host is required for testing.");
+      if (!port) throw new Error("Database port is required for testing.");
+      if (!database) throw new Error("Database name is required for testing.");
 
       const testPayload = {
-        service: serviceName,
+        service: serviceType, // Send the generic bucket explicitly (e.g. "databases")
         service_type: "database",
         driver: driver,
         connection_object: {
-          host: parsed.extra.host,
-          port: parsed.extra.port,
-          user: parsed.extra.user,
-          password: parsed.extra.password,
-          database: parsed.extra.database,
+          host: host,
+          port: Number(port),
+          user: user,
+          password: password,
+          database: database,
         },
       };
 
@@ -283,7 +262,31 @@ export function ServiceWizard({
     try {
       const validated = await form.validateFields();
       const allValues = form.getFieldsValue(true);
-      onFinish({ ...allValues, ...validated });
+      const payload = { ...allValues, ...validated };
+
+      if (isDatabaseFlow) {
+        let protocol = payload.integration_slug?.toLowerCase().includes("postgres")
+          ? "postgresql"
+          : payload.integration_slug?.toLowerCase().includes("mysql")
+            ? "mysql"
+            : payload.integration_slug?.toLowerCase() || "database";
+
+        const builtJson = {
+          base_url: `${protocol}://${payload.host}:${payload.port}/${payload.database}`,
+          extra: {
+            host: payload.host,
+            port: Number(payload.port),
+            user: payload.user,
+            password: payload.password,
+            database: payload.database,
+          },
+          internal_connection: false,
+          auto_trigger_bots: false,
+        };
+        payload.json_config = JSON.stringify(builtJson);
+      }
+
+      onFinish(payload);
     } catch (error: any) {
       console.error("Final submit validation failed:", error);
       message.error("Please fix the errors before submitting.");
@@ -303,15 +306,7 @@ export function ServiceWizard({
       className="max-w-4xl mx-auto space-y-6 pb-8 px-4 sm:px-6 lg:px-8"
     >
       {/* Hidden fields to preserve state and ensure registration across steps with rules */}
-      <Form.Item
-        name="json_config"
-        noStyle
-        hidden
-        help={null}
-        rules={[
-          { required: isDatabaseFlow, message: "JSON config is required" },
-        ]}
-      >
+      <Form.Item name="json_config" noStyle hidden>
         <Input />
       </Form.Item>
       <Form.Item

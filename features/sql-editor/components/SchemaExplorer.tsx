@@ -14,6 +14,7 @@ import {
   Database,
   Type,
   Folders,
+  Activity,
 } from "lucide-react";
 import { cn } from "@/shared/utils/cn";
 import { useSqlEditorContext } from "../contexts/SqlEditorContext";
@@ -28,6 +29,7 @@ type ExplorerNodeType =
   | "schema"
   | "table"
   | "column"
+  | "connection"
   | "placeholder"
   | "load-more";
 
@@ -40,6 +42,9 @@ interface ExplorerNode {
   catalog?: string;
   schema?: string;
   table?: string;
+  connection_id?: string;
+  database?: string;
+  asset_id?: string;
   data_type?: string;
   error?: string | null;
   isLoaded?: boolean;
@@ -62,6 +67,8 @@ const getIcon = (type: ExplorerNodeType) => {
       return Table;
     case "column":
       return Type;
+    case "connection":
+      return Activity;
     case "load-more":
       return FolderOpen;
     case "placeholder":
@@ -126,8 +133,9 @@ export function SchemaExplorer() {
             id: "source-databases",
             name: "Database Sources",
             type: "database",
-            hasChildren: false,
+            hasChildren: true,
             children: [],
+            isLoaded: false,
           },
         ],
         isLoaded: true,
@@ -221,12 +229,14 @@ export function SchemaExplorer() {
       `[SQL Explorer] Toggle Node: ${targetNode.name} (${targetNode.id}), type: ${targetNode.type}, isExpanded: ${isExpanded}`,
     );
 
-    // Handle Source Navigation Redirection
+    // Removed Source Navigation Redirection to allow hierarchical expansion
+    /*
     if (targetNode.id === "source-databases") {
       router.push("/sql-editor/sources/databases");
       setSelectedNodeId(targetNode.id);
       return;
     }
+    */
 
     // Toggle Expansion State immediately for UX snappiness
     const shouldOpen = !isExpanded;
@@ -290,6 +300,39 @@ export function SchemaExplorer() {
               isLoaded: false,
             }));
           }
+        } else if (targetNode.id === "source-databases") {
+          // Level 1: Connections Discovery
+          const result = await serviceService.getServiceEndpointsByType("databases", undefined, "primary");
+          // The API might return categories or flat connections depending on the logic in service.service.ts
+          let connections: any[] = [];
+          if (Array.isArray(result)) {
+             // If it's categories, flatten them
+             if (result.length > 0 && result[0].connections) {
+               connections = result.flatMap((cat: any) => cat.connections || []);
+             } else {
+               connections = result;
+             }
+          }
+
+          if (connections.length === 0) {
+            children = [{
+              id: `empty-src-${targetNode.id}`,
+              name: "No database connections found",
+              type: "placeholder",
+              hasChildren: false,
+              children: []
+            }];
+          } else {
+            children = connections.map((conn: any) => ({
+              id: `conn-${conn.id}`,
+              name: conn.service_name,
+              type: "connection",
+              connection_id: conn.id,
+              hasChildren: true,
+              children: [],
+              isLoaded: false,
+            }));
+          }
         } else if (targetNode.id === "root-data-assets") {
           const assets = await serviceService.getDataAssets({ limit: 100 });
           const rawAssets = (Array.isArray(assets) ? assets : []).filter(
@@ -321,33 +364,159 @@ export function SchemaExplorer() {
               catalog: item.extra_metadata?.catalog || "iceberg",
               schema: item.extra_metadata?.schema || "catalog_views",
               table: item.name,
+              asset_id: item.id,
+              hasChildren: true,
+              children: [],
+              isLoaded: false,
+            }));
+          }
+        } else if (targetNode.type === "connection") {
+          // Level 2: Databases Discovery
+          const dbs = await serviceService.getDatabases(targetNode.connection_id!);
+          if (!dbs || dbs.length === 0) {
+            children = [{
+              id: `empty-db-${targetNode.id}`,
+              name: "No databases found",
+              type: "placeholder",
+              hasChildren: false,
+              children: []
+            }];
+          } else {
+            children = dbs.map((db: any) => ({
+              id: `db-${targetNode.connection_id}-${db.name}`,
+              name: db.name,
+              type: "database",
+              connection_id: targetNode.connection_id,
+              database: db.name,
+              hasChildren: true,
+              children: [],
+              isLoaded: false,
+            }));
+          }
+        } else if (targetNode.type === "database" && targetNode.connection_id) {
+          // Level 3: Schemas Discovery
+          const schemas = await serviceService.getSchemas(targetNode.connection_id, targetNode.database!);
+          if (!schemas || schemas.length === 0) {
+            children = [{
+              id: `empty-schema-${targetNode.id}`,
+              name: "No schemas found",
+              type: "placeholder",
+              hasChildren: false,
+              children: []
+            }];
+          } else {
+            children = schemas.map((sch: any) => ({
+              id: `sch-${targetNode.connection_id}-${targetNode.database}-${sch.name}`,
+              name: sch.name,
+              type: "schema",
+              connection_id: targetNode.connection_id,
+              database: targetNode.database,
+              schema: sch.name,
+              hasChildren: true,
+              children: [],
+              isLoaded: false,
+            }));
+          }
+        } else if (targetNode.type === "schema" && targetNode.connection_id) {
+          // Level 4: Tables/Objects Discovery
+          const objects = await serviceService.getDBObjects(targetNode.connection_id, targetNode.database!, targetNode.schema!);
+          if (!objects || objects.length === 0) {
+            children = [{
+              id: `empty-obj-${targetNode.id}`,
+              name: "No tables found",
+              type: "placeholder",
+              hasChildren: false,
+              children: []
+            }];
+          } else {
+            children = objects.map((obj: any) => ({
+              id: `obj-${targetNode.connection_id}-${targetNode.database}-${targetNode.schema}-${obj.name}`,
+              name: obj.name,
+              type: "table",
+              connection_id: targetNode.connection_id,
+              database: targetNode.database,
+              schema: targetNode.schema,
+              table: obj.name,
               hasChildren: true,
               children: [],
               isLoaded: false,
             }));
           }
         } else if (targetNode.type === "table") {
-          const catalog = targetNode.catalog || "iceberg";
-          const schema = targetNode.schema || "catalog_views";
+          if (targetNode.asset_id) {
+            // New Requirement: Data Asset Native API Pathway
+            const columns = await serviceService.getDataAssetColumns(targetNode.asset_id);
+            children = (columns || []).map((col: any) => ({
+              id: `col-da-${targetNode.asset_id}-${col.id || col.name}`,
+              name: col.display_name || col.name,
+              type: "column",
+              data_type: col.data_type,
+              hasChildren: false,
+              children: [],
+              isLoaded: true,
+            }));
 
-          const detail = await serviceService.getTrinoTableDetail(
-            catalog,
-            schema,
-            targetNode.name,
-          );
+            if (children.length === 0) {
+              children = [{
+                id: `empty-da-${targetNode.id}`,
+                name: "No columns available",
+                type: "placeholder",
+                hasChildren: false,
+                children: []
+              }];
+            }
+          } else if (targetNode.connection_id) {
+            // Level 5: Columns Discovery for Database Sources
+            const detail = await serviceService.getTableDetail(
+              targetNode.connection_id,
+              targetNode.database!,
+              targetNode.schema!,
+              targetNode.table!
+            );
+            
+            children = (detail?.columns || []).map((col: any) => ({
+              id: `col-src-${targetNode.connection_id}-${targetNode.database}-${targetNode.schema}-${targetNode.table}-${col.name}`,
+              name: col.name,
+              type: "column",
+              data_type: col.data_type,
+              hasChildren: false,
+              children: [],
+              isLoaded: true,
+            }));
 
-          children = (detail?.columns || []).map((item) => ({
-            id: `column-${catalog}-${schema}-${targetNode.name}-${item.name}`,
-            name: item.name,
-            type: "column",
-            catalog: catalog,
-            schema: schema,
-            table: targetNode.name,
-            data_type: item.type,
-            hasChildren: false,
-            children: [],
-            isLoaded: true,
-          }));
+            if (children.length === 0) {
+              children = [{
+                id: `empty-col-${targetNode.id}`,
+                name: "No columns available",
+                type: "placeholder",
+                hasChildren: false,
+                children: []
+              }];
+            }
+          } else {
+            // Existing Trino Tables / Catalog Views Pathway
+            const catalog = targetNode.catalog || "iceberg";
+            const schema = targetNode.schema || "catalog_views";
+  
+            const detail = await serviceService.getTrinoTableDetail(
+              catalog,
+              schema,
+              targetNode.name,
+            );
+  
+            children = (detail?.columns || []).map((item) => ({
+              id: `column-${catalog}-${schema}-${targetNode.name}-${item.name}`,
+              name: item.name,
+              type: "column",
+              catalog: catalog,
+              schema: schema,
+              table: targetNode.name,
+              data_type: item.type,
+              hasChildren: false,
+              children: [],
+              isLoaded: true,
+            }));
+          }
         }
 
         setTreeData((prev) =>

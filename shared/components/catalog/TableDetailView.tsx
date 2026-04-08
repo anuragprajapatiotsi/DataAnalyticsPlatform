@@ -175,7 +175,7 @@ export function TableDetailView({
   ];
 
   return (
-    <div className="flex flex-col h-full bg-[#FAFAFA] animate-in fade-in duration-500 overflow-hidden">
+    <div className="flex flex-col h-full w-full bg-[#FAFAFA] animate-in fade-in duration-500 overflow-hidden relative">
       {/* Header Area */}
       <div className="px-6 pt-5 bg-white border-b border-slate-200 shrink-0">
         <div className="max-w-[1400px] mx-auto flex flex-col gap-4">
@@ -237,7 +237,7 @@ export function TableDetailView({
 
       {/* Main Content Area */}
       <div className="flex-1 overflow-y-auto p-6">
-        <div className="max-w-[1400px] mx-auto flex flex-col gap-4 h-full">
+        <div className="max-w-[1400px] w-full mx-auto flex flex-col gap-4">
           {activeTab === "columns" ? (
             <>
               {/* Unified Toolbar */}
@@ -255,14 +255,13 @@ export function TableDetailView({
               </div>
 
               {/* Table Container */}
-              <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex-1 flex flex-col min-h-0">
+              <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden min-h-[400px]">
                 <Table
                   dataSource={filteredColumns}
                   columns={columns}
                   rowKey="name"
                   loading={loading}
                   pagination={false}
-                  scroll={{ y: "calc(100vh - 350px)" }}
                   onRow={(record) => ({
                     onClick: () => {
                       setSelectedColumn(record);
@@ -270,7 +269,7 @@ export function TableDetailView({
                     },
                     className: "cursor-pointer group",
                   })}
-                  className="custom-discovery-table flex-1 flex flex-col h-full"
+                  className="custom-discovery-table"
                   locale={{
                     emptyText: loading ? (
                       <Spin className="my-8" />
@@ -315,6 +314,9 @@ export function TableDetailView({
           text-transform: uppercase !important;
           border-bottom: 1px solid #E2E8F0 !important;
           padding: 12px 24px !important;
+          position: sticky;
+          top: 0;
+          z-index: 10;
         }
         .custom-discovery-table .ant-table-tbody > tr > td {
           padding: 16px 24px !important;

@@ -19,6 +19,7 @@ export interface AuthPolicy {
 export type AuthUser = {
   id: string;
   org_id?: string;
+  default_org_id?: string;
   name: string;
   display_name: string;
   description?: string;
