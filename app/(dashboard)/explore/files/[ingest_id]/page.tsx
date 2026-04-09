@@ -2,22 +2,29 @@
 
 import React from "react";
 import { useParams } from "next/navigation";
-import { useQuery } from "@tanstack/react-query";
-import { Table, Spin, Alert, Descriptions, Tag, Empty, Tabs, Tooltip } from "antd";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Table, Spin, Alert, Descriptions, Tag, Empty, Tabs, Tooltip, Button, message } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import dayjs from "dayjs";
-import { File, HardDrive, Hash, Type, Fingerprint, Calendar, AlertCircle, Database } from "lucide-react";
+import { File, HardDrive, Hash, Type, Fingerprint, Calendar, AlertCircle, Database, CheckCircle2 } from "lucide-react";
 
 import { PageHeader } from "@/shared/components/layout/PageHeader";
 import {
   fileService,
+  type ConfirmIngestJobRequest,
   type IngestFilePreviewColumn,
 } from "@/features/explore/services/file.service";
+import { datasetService } from "@/features/explore/services/dataset.service";
+import { domainService } from "@/features/domains/services/domain.service";
+import { userService } from "@/features/users/services/user.service";
+import { ConfirmFileModal } from "@/features/explore/components/ConfirmFileModal";
 
 export default function ExploreFileDetailPage() {
   const params = useParams();
+  const queryClient = useQueryClient();
   const ingestId = params.ingest_id as string;
   const [activeTab, setActiveTab] = React.useState("sample-data");
+  const [isConfirmModalOpen, setIsConfirmModalOpen] = React.useState(false);
 
   const { data: file, isLoading, isError } = useQuery({
     queryKey: ["file", ingestId],
@@ -38,6 +45,45 @@ export default function ExploreFileDetailPage() {
     staleTime: 5 * 60 * 1000,
     gcTime: 15 * 60 * 1000,
     retry: 1,
+  });
+
+  const {
+    data: datasets = [],
+    isLoading: isDatasetsLoading,
+  } = useQuery({
+    queryKey: ["datasets", "file-confirm"],
+    queryFn: () => datasetService.getDatasets({ source_type: "file", skip: 0, limit: 100 }),
+    enabled: isConfirmModalOpen,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const { data: domains = [], isLoading: isDomainsLoading } = useQuery({
+    queryKey: ["catalog-domains", "file-confirm"],
+    queryFn: domainService.getDomains,
+    enabled: isConfirmModalOpen,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const { data: owners = [], isLoading: isOwnersLoading } = useQuery({
+    queryKey: ["admin-users", "file-confirm"],
+    queryFn: () => userService.getAdminUsers({ skip: 0, limit: 100, is_active: true }),
+    enabled: isConfirmModalOpen,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const confirmMutation = useMutation({
+    mutationFn: (payload: ConfirmIngestJobRequest) => fileService.confirmJob(ingestId, payload),
+    onSuccess: async () => {
+      message.success("Data Asset created successfully");
+      setIsConfirmModalOpen(false);
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["files"] }),
+        queryClient.invalidateQueries({ queryKey: ["file", ingestId] }),
+      ]);
+    },
+    onError: () => {
+      message.error("Failed to confirm file ingestion.");
+    },
   });
 
   const breadcrumbItems = [
@@ -171,6 +217,10 @@ export default function ExploreFileDetailPage() {
   }, [orderedSchema, renderTruncatedText]);
 
   const previewEmpty = !isPreviewLoading && !isPreviewError && orderedSchema.length === 0 && sampleRows.length === 0;
+  const defaultAssetName = React.useMemo(
+    () => (file?.file_name || "").replace(/\.[^.]+$/, ""),
+    [file?.file_name],
+  );
 
   const renderPreviewState = (mode: "sample" | "columns") => {
     if (isPreviewLoading) {
@@ -302,9 +352,19 @@ export default function ExploreFileDetailPage() {
                       </div>
                     </div>
                   </div>
-                  <Tag color={getStatusColor(file.status)} className="m-0 border uppercase font-semibold text-[11px] px-3 py-0.5 rounded-full">
-                    {file.status || "PENDING"}
-                  </Tag>
+                  <div className="flex items-center gap-3">
+                    <Tag color={getStatusColor(file.status)} className="m-0 border uppercase font-semibold text-[11px] px-3 py-0.5 rounded-full">
+                      {file.status || "PENDING"}
+                    </Tag>
+                    <Button
+                      type="primary"
+                      icon={<CheckCircle2 size={16} />}
+                      onClick={() => setIsConfirmModalOpen(true)}
+                      className="bg-slate-900 hover:bg-slate-800 text-white rounded-md font-medium h-9 px-4 shadow-sm border-none"
+                    >
+                      Confirm
+                    </Button>
+                  </div>
                 </div>
                 <div className="border-t border-slate-100 px-6 py-5">
                   <Descriptions
@@ -386,7 +446,40 @@ export default function ExploreFileDetailPage() {
         .custom-preview-table .ant-table-cell {
           white-space: nowrap;
         }
+        .custom-confirm-column-table .ant-table-cell {
+          vertical-align: middle !important;
+        }
       `}</style>
+      <ConfirmFileModal
+        open={isConfirmModalOpen}
+        onClose={() => setIsConfirmModalOpen(false)}
+        onSubmit={async (values) => {
+          await confirmMutation.mutateAsync({
+            dataset_id: values.dataset_id,
+            asset_name: values.asset_name.trim(),
+            display_name: values.display_name.trim(),
+            description: values.description?.trim() || undefined,
+            sensitivity: values.sensitivity || "internal",
+            is_pii: values.is_pii ?? false,
+            tier: values.tier || undefined,
+            tag_ids: values.tag_ids ?? [],
+            glossary_term_ids: values.glossary_term_ids ?? [],
+            domain_id: values.domain_id || undefined,
+            subject_area_id: values.subject_area_id?.trim() || undefined,
+            owner_ids: values.owner_ids ?? [],
+            column_overrides: values.column_overrides,
+          });
+        }}
+        isSubmitting={confirmMutation.isPending}
+        datasets={datasets}
+        isDatasetsLoading={isDatasetsLoading}
+        domains={domains}
+        owners={owners}
+        isOptionsLoading={isDomainsLoading || isOwnersLoading}
+        inferredSchema={orderedSchema}
+        defaultAssetName={defaultAssetName || file?.file_name || ""}
+        defaultDisplayName={file?.file_name || ""}
+      />
     </div>
   );
 }

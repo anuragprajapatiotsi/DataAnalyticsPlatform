@@ -41,6 +41,7 @@ export default function TableDetailsPage() {
       schema={schema}
       table={table}
       breadcrumbItems={breadcrumbItems}
+      enableDataPreview={isDatabaseService}
       onCreateCatalogView={() => {
         // Handle catalog view creation (can be navigated to or open a modal)
         router.push(`/explore/${serviceType}/${id}/${database}/${schema}/objects`); // fallback

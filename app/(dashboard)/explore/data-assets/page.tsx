@@ -1,114 +1,73 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
-import { Table, Input, message, Tooltip, Button, Spin, Empty } from "antd";
+import { useMemo, useState } from "react";
+import { Table, Input, Tooltip, Button, Spin, Empty, Alert } from "antd";
 import {
   Search,
-  Database,
-  Cpu,
-  HardDrive,
-  Globe,
-  Activity,
   Server,
   ArrowRight,
   RefreshCw
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { serviceService } from "@/features/services/services/service.service";
-import { ServiceEndpoint } from "@/features/services/types";
+import { ExplorerServiceEndpoint } from "@/features/services/types";
 import { PageHeader } from "@/shared/components/layout/PageHeader";
-import { cn } from "@/shared/utils/cn";
 import type { ColumnsType } from "antd/es/table";
+import { useQuery } from "@tanstack/react-query";
 
 export default function ExploreDataAssetsPage() {
   const router = useRouter();
-  const [services, setServices] = useState<ServiceEndpoint[]>([]);
-  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+
+  const getConnectionId = (connection: ExplorerServiceEndpoint) =>
+    connection.service_endpoint_id || connection.id;
 
   const breadcrumbItems = [
     { label: "Catalog", href: "/explore" },
     { label: "Data Assets" },
   ];
 
-  const fetchServices = useCallback(async () => {
-    try {
-      setLoading(true);
-      const resp = await serviceService.getServices({ skip: 0, limit: 100 });
-      setServices(resp.data || []);
-    } catch (err) {
-      console.error("Failed to fetch services:", err);
-      message.error("Failed to load service endpoints.");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchServices();
-  }, [fetchServices]);
-
-  const getTypeInfo = (nodePath?: string) => {
-    const defaultInfo = { label: "Service", icon: Server, route: "databases", color: "text-slate-600 bg-slate-50 border-slate-100" };
-    if (!nodePath) return defaultInfo;
-
-    const path = nodePath.toLowerCase();
-    if (path.includes("postgres")) return { label: "PostgreSQL", icon: Database, route: "databases", color: "text-blue-600 bg-blue-50 border-blue-100" };
-    if (path.includes("mysql")) return { label: "MySQL", icon: Database, route: "databases", color: "text-amber-600 bg-amber-50 border-amber-100" };
-    if (path.includes("mongodb")) return { label: "MongoDB", icon: Database, route: "databases", color: "text-emerald-600 bg-emerald-50 border-emerald-100" };
-    if (path.includes("api")) return { label: "REST API", icon: Cpu, route: "apis", color: "text-indigo-600 bg-indigo-50 border-indigo-100" };
-    if (path.includes("storage") || path.includes("s3")) return { label: "Storage", icon: HardDrive, route: "storages", color: "text-orange-600 bg-orange-50 border-orange-100" };
-    if (path.includes("drive")) return { label: "Google Drive", icon: Globe, route: "drive", color: "text-blue-500 bg-blue-50 border-blue-100" };
-
-    return defaultInfo;
-  };
+  const {
+    data: services = [],
+    isLoading: loading,
+    isError,
+    refetch,
+  } = useQuery({
+    queryKey: ["connections"],
+    queryFn: serviceService.getExplorerConnections,
+    staleTime: 5 * 60 * 1000,
+  });
 
   const filteredServices = useMemo(() => {
     return services.filter(
       (s) =>
         s.service_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         s.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        s.id.toLowerCase().includes(searchTerm.toLowerCase())
+        getConnectionId(s).toLowerCase().includes(searchTerm.toLowerCase())
     );
   }, [services, searchTerm]);
 
-  const columns: ColumnsType<ServiceEndpoint> = [
+  const columns: ColumnsType<ExplorerServiceEndpoint> = [
     {
       title: "Service Name",
       dataIndex: "service_name",
       key: "service_name",
       width: "30%",
       render: (name, record) => {
-        const typeInfo = getTypeInfo(record.extra?.setting_node_path);
-        const Icon = typeInfo.icon;
-        
         return (
           <div className="flex items-center gap-3 group/name">
-            <div className={cn("flex items-center justify-center w-8 h-8 rounded-md border", typeInfo.color)}>
-              <Icon size={14} />
+            <div className="flex items-center justify-center w-8 h-8 rounded-md border text-blue-600 bg-blue-50 border-blue-100">
+              <Server size={14} />
             </div>
             <div className="flex flex-col">
               <span className="font-semibold text-slate-900 group-hover/name:text-blue-600 transition-colors">
                 {name}
               </span>
               <span className="text-[10px] text-slate-400 font-mono truncate max-w-[200px]">
-                {record.id}
+                {getConnectionId(record)}
               </span>
             </div>
           </div>
-        );
-      },
-    },
-    {
-      title: "Type",
-      key: "type",
-      width: "15%",
-      render: (_, record) => {
-        const typeInfo = getTypeInfo(record.extra?.setting_node_path);
-        return (
-          <span className="inline-flex items-center px-2 py-1 rounded bg-slate-50 border border-slate-200 text-slate-600 text-[11px] font-medium capitalize">
-            {typeInfo.label}
-          </span>
         );
       },
     },
@@ -124,18 +83,30 @@ export default function ExploreDataAssetsPage() {
       ),
     },
     {
-      title: "Status",
-      dataIndex: "is_active",
-      key: "status",
-      width: "15%",
-      render: (isActive) => (
-        <div className={cn(
-          "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium border w-fit",
-          isActive ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-slate-50 text-slate-600 border-slate-200"
-        )}>
-          <span className={cn("w-1.5 h-1.5 rounded-full", isActive ? "bg-emerald-500 shadow-[0_0_4px_rgba(16,185,129,0.4)]" : "bg-slate-400")} />
-          {isActive ? "Active" : "Inactive"}
-        </div>
+      title: "Asset Count",
+      dataIndex: "asset_count",
+      key: "asset_count",
+      width: "13%",
+      render: (count) => (
+        <span className="text-[13px] font-medium text-slate-700">{count ?? 0}</span>
+      ),
+    },
+    {
+      title: "Database Count",
+      dataIndex: "database_count",
+      key: "database_count",
+      width: "13%",
+      render: (count) => (
+        <span className="text-[13px] font-medium text-slate-700">{count ?? 0}</span>
+      ),
+    },
+    {
+      title: "Schema Count",
+      dataIndex: "schema_count",
+      key: "schema_count",
+      width: "14%",
+      render: (count) => (
+        <span className="text-[13px] font-medium text-slate-700">{count ?? 0}</span>
       ),
     },
     {
@@ -172,7 +143,7 @@ export default function ExploreDataAssetsPage() {
               </div>
               <Tooltip title="Sync & Refresh Assets">
                 <Button
-                  onClick={fetchServices}
+                  onClick={() => refetch()}
                   icon={<RefreshCw size={14} className={loading ? "animate-spin" : ""} />}
                   className="h-9 w-9 p-0 flex items-center justify-center rounded-md border-slate-200 text-slate-500 hover:text-blue-600 hover:border-blue-200 hover:bg-blue-50"
                 />
@@ -202,10 +173,21 @@ export default function ExploreDataAssetsPage() {
 
           {/* Table Container */}
           <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+            {isError ? (
+              <div className="p-6">
+                <Alert
+                  title="Failed to load connections"
+                  description="We couldn't load the explorer connections right now."
+                  type="error"
+                  showIcon
+                  action={<Button size="small" onClick={() => refetch()}>Retry</Button>}
+                />
+              </div>
+            ) : (
             <Table
               dataSource={filteredServices}
               columns={columns}
-              rowKey="id"
+              rowKey={(record) => getConnectionId(record)}
               loading={{
                 spinning: loading,
                 indicator: <Spin indicator={<RefreshCw className="animate-spin text-blue-600" size={24} />} />
@@ -217,7 +199,7 @@ export default function ExploreDataAssetsPage() {
               }}
               className="custom-explore-table"
               onRow={(record) => ({
-                onClick: () => router.push(`/explore/data-assets/${record.id}`),
+                onClick: () => router.push(`/explore/data-assets/${getConnectionId(record)}`),
                 className: "cursor-pointer group",
               })}
               locale={{
@@ -234,6 +216,7 @@ export default function ExploreDataAssetsPage() {
                 ),
               }}
             />
+            )}
           </div>
         </div>
       </div>

@@ -1,22 +1,31 @@
 "use client";
 
 import React, { useState } from "react";
-import { Table, Spin, Empty, Tooltip, Button, Dropdown, message, Modal, Tabs, Tag, Alert } from "antd";
+import { Table, Spin, Empty, Tooltip, Button, Dropdown, message, Modal, Tabs, Tag, Alert, Input } from "antd";
 import type { MenuProps } from "antd";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import { File, RefreshCw, FileArchive, FileJson, FileSpreadsheet, FileUp, FileText, MoreVertical, Layers, Trash2 } from "lucide-react";
+import { File, RefreshCw, FileArchive, FileJson, FileSpreadsheet, FileUp, FileText, MoreVertical, Layers, Trash2, FolderOpen, Search } from "lucide-react";
 import { PageHeader } from "@/shared/components/layout/PageHeader";
 import { fileService, type IngestFile } from "@/features/explore/services/file.service";
+import { datasetService, type DatasetGroup } from "@/features/explore/services/dataset.service";
 import { FileUploadModal } from "@/features/explore/components/FileUploadModal";
+import { FileGroupModal } from "@/features/explore/components/FileGroupModal";
 import type { ColumnsType } from "antd/es/table";
 import dayjs from "dayjs";
 import { cn } from "@/shared/utils/cn";
+import { domainService } from "@/features/domains/services/domain.service";
+import { userService } from "@/features/users/services/user.service";
+import { useAuth } from "@/shared/hooks/use-auth";
 
 export default function ExploreFilesPage() {
   const router = useRouter();
+  const queryClient = useQueryClient();
+  const { currentOrgId } = useAuth();
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [isFileGroupModalOpen, setIsFileGroupModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("not-yet-confirm");
+  const [fileGroupSearch, setFileGroupSearch] = useState("");
 
   const breadcrumbItems = [
     { label: "Explore", href: "/explore" },
@@ -34,6 +43,35 @@ export default function ExploreFilesPage() {
     queryFn: () => fileService.getFiles({ limit: 100 }),
   });
 
+  const {
+    data: datasetGroups = [],
+    isLoading: isLoadingFileGroups,
+    isError: isFileGroupsError,
+    refetch: refetchFileGroups,
+  } = useQuery({
+    queryKey: ["file-groups", fileGroupSearch],
+    queryFn: () =>
+      datasetService.getDatasets({
+        source_type: "file",
+        search: fileGroupSearch || undefined,
+        skip: 0,
+        limit: 50,
+      }),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const { data: domains = [] } = useQuery({
+    queryKey: ["catalog-domains", "options"],
+    queryFn: domainService.getDomains,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const { data: users = [] } = useQuery({
+    queryKey: ["admin-users", "options"],
+    queryFn: () => userService.getAdminUsers({ skip: 0, limit: 100, is_active: true }),
+    staleTime: 5 * 60 * 1000,
+  });
+
   const sortedFiles = React.useMemo(() => {
     if (!files) return [];
     return [...files].sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime());
@@ -43,6 +81,29 @@ export default function ExploreFilesPage() {
     () => sortedFiles.filter((file) => String(file.status || "").toLowerCase() === "preview_ready"),
     [sortedFiles],
   );
+
+  const filteredFileGroups = React.useMemo(() => {
+    return datasetGroups
+      .filter((dataset) => String(dataset.source_type || "").toLowerCase() === "file")
+      .filter((dataset) => (currentOrgId && dataset.org_id ? dataset.org_id === currentOrgId : true))
+      .filter((dataset) => dataset.is_active !== false)
+      .sort(
+        (a, b) =>
+          new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime(),
+      );
+  }, [currentOrgId, datasetGroups]);
+
+  const createFileGroupMutation = useMutation({
+    mutationFn: datasetService.createDataset,
+    onSuccess: async () => {
+      message.success("File group created successfully.");
+      setIsFileGroupModalOpen(false);
+      await queryClient.invalidateQueries({ queryKey: ["file-groups"] });
+    },
+    onError: () => {
+      message.error("Failed to create file group. Please try again.");
+    },
+  });
 
   const getFileIcon = (filename: string, filenameType = "") => {
     const ext = filename?.split(".").pop()?.toLowerCase() || filenameType.toLowerCase();
@@ -243,6 +304,71 @@ export default function ExploreFilesPage() {
     },
   ];
 
+  const fileGroupColumns: ColumnsType<DatasetGroup> = [
+    {
+      title: "Display Name",
+      dataIndex: "display_name",
+      key: "display_name",
+      width: "18%",
+      render: (value, record) => (
+        <div className="min-w-0">
+          <div className="truncate font-semibold text-slate-900">{value || record.name || "-"}</div>
+          <div className="mt-1 text-xs text-slate-500">ID: {record.id?.slice(0, 8) || "-"}</div>
+        </div>
+      ),
+    },
+    {
+      title: "Name",
+      dataIndex: "name",
+      key: "name",
+      width: "16%",
+      render: (value) => <span className="font-mono text-[12px] text-slate-600">{value || "-"}</span>,
+    },
+    {
+      title: "Description",
+      dataIndex: "description",
+      key: "description",
+      width: "26%",
+      render: (value) => (
+        <Tooltip title={value || "-"}>
+          <div className="max-w-[360px] truncate text-sm text-slate-600">{value || "-"}</div>
+        </Tooltip>
+      ),
+    },
+    {
+      title: "Tags",
+      dataIndex: "tags",
+      key: "tags",
+      width: "18%",
+      render: (tags?: string[] | null) =>
+        Array.isArray(tags) && tags.length > 0 ? (
+          <div className="flex flex-wrap gap-1.5">
+            {tags.map((tag) => (
+              <Tag key={tag} className="m-0 rounded-full border-blue-200 bg-blue-50 px-2 py-0.5 text-[11px] text-blue-700">
+                {tag}
+              </Tag>
+            ))}
+          </div>
+        ) : (
+          <span className="text-sm text-slate-400">-</span>
+        ),
+    },
+    {
+      title: "Created At",
+      dataIndex: "created_at",
+      key: "created_at",
+      width: "14%",
+      render: (value) => <span className="text-sm text-slate-500">{value ? dayjs(value).format("MMM D, YYYY h:mm A") : "-"}</span>,
+    },
+    {
+      title: "Created By",
+      dataIndex: "created_by",
+      key: "created_by",
+      width: "12%",
+      render: (value) => <span className="text-sm text-slate-500">{value || "-"}</span>,
+    },
+  ];
+
   return (
     <div className="flex flex-col h-full w-full bg-[#FAFAFA] animate-in fade-in duration-500 overflow-hidden relative">
       {/* Header Area */}
@@ -289,15 +415,79 @@ export default function ExploreFilesPage() {
                   key: "file-group",
                   label: "File Group",
                   children: (
-                    <div className="p-8">
-                      <Empty
-                        description={
-                          <div className="flex flex-col gap-1">
-                            <span className="text-slate-700 font-medium text-sm">File Group feature coming soon</span>
-                            <span className="text-slate-400 text-[13px]">We’ll add grouped file workflows here in a future update.</span>
+                    <div className="flex flex-col">
+                      <div className="flex flex-col gap-4 border-b border-slate-100 px-6 py-4 md:flex-row md:items-center md:justify-between">
+                        <div>
+                          <div className="text-sm font-medium text-slate-900">File-based dataset groups</div>
+                          <div className="mt-1 text-sm text-slate-500">
+                            Organize related ingested files into reusable groups for cataloging and governance.
                           </div>
-                        }
-                      />
+                        </div>
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                          <Input
+                            allowClear
+                            value={fileGroupSearch}
+                            onChange={(event) => setFileGroupSearch(event.target.value)}
+                            placeholder="Search by name or description"
+                            prefix={<Search size={14} className="text-slate-400" />}
+                            className="w-full sm:w-[280px]"
+                          />
+                          <Button
+                            type="primary"
+                            onClick={() => setIsFileGroupModalOpen(true)}
+                            icon={<FolderOpen size={16} />}
+                            className="bg-slate-900 hover:bg-slate-800 text-white rounded-md font-medium h-9 px-4 shadow-sm border-none"
+                          >
+                            Create File Group
+                          </Button>
+                        </div>
+                      </div>
+
+                      {isFileGroupsError ? (
+                        <div className="p-6">
+                          <Alert
+                            title="Failed to load file groups"
+                            description="We encountered an error while fetching file-based datasets. Please try again."
+                            type="error"
+                            showIcon
+                            action={<Button size="small" onClick={() => refetchFileGroups()}>Retry</Button>}
+                          />
+                        </div>
+                      ) : (
+                        <Table
+                          dataSource={filteredFileGroups}
+                          columns={fileGroupColumns}
+                          rowKey={(record) => record.id}
+                          loading={{
+                            spinning: isLoadingFileGroups,
+                            indicator: <Spin indicator={<RefreshCw className="animate-spin text-indigo-600" size={24} />} />,
+                          }}
+                          pagination={{
+                            pageSize: 10,
+                            hideOnSinglePage: true,
+                            className: "px-6 py-4 border-t border-slate-100 !mb-0 bg-white",
+                          }}
+                          className="custom-explore-table"
+                          scroll={{ x: 980 }}
+                          locale={{
+                            emptyText: (
+                              <Empty
+                                image={
+                                  <div className="w-16 h-16 rounded-full bg-slate-50 flex items-center justify-center mx-auto mb-4 border border-slate-100">
+                                    <FolderOpen className="text-slate-300" size={28} />
+                                  </div>
+                                }
+                                description={
+                                  <div className="flex flex-col gap-1">
+                                    <span className="text-slate-700 font-medium text-sm">No File Groups available</span>
+                                    <span className="text-slate-400 text-[13px]">Create a file group to organize ingested files into reusable datasets.</span>
+                                  </div>
+                                }
+                              />
+                            ),
+                          }}
+                        />
+                      )}
                     </div>
                   ),
                 },
@@ -421,6 +611,26 @@ export default function ExploreFilesPage() {
       <FileUploadModal 
         open={isUploadModalOpen} 
         onClose={() => setIsUploadModalOpen(false)} 
+      />
+      <FileGroupModal
+        open={isFileGroupModalOpen}
+        onClose={() => setIsFileGroupModalOpen(false)}
+        onSubmit={async (values) => {
+          await createFileGroupMutation.mutateAsync({
+            name: values.name.trim(),
+            display_name: values.display_name.trim(),
+            description: values.description?.trim() || null,
+            domain_id: values.domain_id || null,
+            source_type: "file",
+            source_url: null,
+            tags: values.tags ?? [],
+            owner_ids: values.owner_ids ?? [],
+            expert_ids: values.expert_ids ?? [],
+          });
+        }}
+        domains={domains.filter((domain) => domain.is_active)}
+        users={users.filter((user) => user.is_active)}
+        isSubmitting={createFileGroupMutation.isPending}
       />
     </div>
   );

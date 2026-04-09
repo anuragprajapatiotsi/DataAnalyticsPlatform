@@ -37,6 +37,29 @@ export interface IngestFilePreview {
   [key: string]: unknown;
 }
 
+export interface ConfirmIngestColumnOverride {
+  name: string;
+  data_type: string;
+  nullable: boolean;
+  ordinal_position: number;
+}
+
+export interface ConfirmIngestJobRequest {
+  dataset_id: string;
+  asset_name: string;
+  display_name: string;
+  description?: string;
+  sensitivity?: string;
+  is_pii?: boolean;
+  tier?: string;
+  tag_ids?: string[];
+  glossary_term_ids?: string[];
+  domain_id?: string;
+  subject_area_id?: string;
+  owner_ids?: string[];
+  column_overrides?: ConfirmIngestColumnOverride[];
+}
+
 export const fileService = {
   /**
    * Fetch all uploaded files.
@@ -114,8 +137,8 @@ export const fileService = {
    * Confirm job to create Catalog View.
    * POST /ingest/jobs/{job_id}/confirm
    */
-  async confirmJob(job_id: string) {
-    const response = await api.post(`/ingest/jobs/${job_id}/confirm`);
+  async confirmJob(job_id: string, payload?: ConfirmIngestJobRequest) {
+    const response = await api.post(`/ingest/jobs/${job_id}/confirm`, payload ?? {});
     return response.data;
   },
 };
