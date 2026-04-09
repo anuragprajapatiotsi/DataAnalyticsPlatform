@@ -200,7 +200,7 @@ export default function ExploreServiceTypePage() {
   ];
 
   return (
-    <div className="flex flex-col h-full bg-[#FAFAFA] animate-in fade-in duration-500 overflow-hidden">
+    <div className="flex flex-col h-full w-full bg-[#FAFAFA] animate-in fade-in duration-500 overflow-hidden relative">
       {/* Header Area */}
       <div className="px-6 pt-5 pb-4 bg-white border-b border-slate-200">
         <div className="flex items-center justify-between">

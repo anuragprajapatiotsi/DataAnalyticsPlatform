@@ -18,7 +18,7 @@ export default function ExplorePage() {
   ];
 
   return (
-    <div className="flex flex-col h-full bg-white animate-in fade-in duration-500 overflow-hidden">
+    <div className="flex flex-col h-full w-full bg-white animate-in fade-in duration-500 overflow-hidden relative">
       {/* Header Area */}
       <div className="px-6 py-5 bg-white border-b border-slate-100 shrink-0">
         <PageHeader

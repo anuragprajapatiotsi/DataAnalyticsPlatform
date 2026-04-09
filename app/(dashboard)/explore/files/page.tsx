@@ -1,10 +1,11 @@
 "use client";
 
 import React, { useState } from "react";
-import { Table, Spin, Empty, Tooltip, Button } from "antd";
+import { Table, Spin, Empty, Tooltip, Button, Dropdown, message, Modal } from "antd";
+import type { MenuProps } from "antd";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import { File, ArrowRight, RefreshCw, FileArchive, FileJson, FileSpreadsheet, FileUp, FileText } from "lucide-react";
+import { File, ArrowRight, RefreshCw, FileArchive, FileJson, FileSpreadsheet, FileUp, FileText, MoreVertical, Layers, Trash2 } from "lucide-react";
 import { PageHeader } from "@/shared/components/layout/PageHeader";
 import { fileService } from "@/features/explore/services/file.service";
 import { FileUploadModal } from "@/features/explore/components/FileUploadModal";
@@ -154,20 +155,86 @@ export default function ExploreFilesPage() {
       ),
     },
     {
-      title: "",
+      title: "Actions",
       key: "action",
       width: "5%",
       align: "right",
-      render: (_, record) => (
-        <div className="flex items-center justify-end pr-2 pointer-events-none">
-          <ArrowRight size={16} className="text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity" />
-        </div>
-      ),
+      render: (_, record) => {
+        const isSuccess = record.status === "success";
+        const isProcessing = record.status === "processing";
+
+        const items: MenuProps["items"] = [
+          {
+            key: "create_catalog",
+            label: "Create Catalog View",
+            icon: <Layers size={14} className={cn("text-indigo-500", (isSuccess || isProcessing) && "opacity-50 grayscale")} />,
+            disabled: isSuccess || isProcessing,
+            onClick: (e) => {
+              e.domEvent.stopPropagation();
+              Modal.confirm({
+                title: "Create Catalog View",
+                content: "Do you want to create a catalog view from this file?",
+                okText: "Create View",
+                okType: "primary",
+                cancelText: "Cancel",
+                centered: true,
+                onOk: async () => {
+                  try {
+                    await fileService.confirmJob(record.job_id);
+                    message.success(`Job confirmed successfully: ${record.file_name || record.job_id}`);
+                    refetch();
+                  } catch (error) {
+                    message.error("Failed to generate catalog view. Please try again.");
+                  }
+                },
+              });
+            },
+          },
+          {
+            key: "delete",
+            label: <span className={cn("font-medium", isProcessing ? "text-slate-400" : "text-red-500")}>Delete File</span>,
+            icon: <Trash2 size={14} className={cn(isProcessing ? "text-slate-400" : "text-red-500")} />,
+            disabled: isProcessing,
+            onClick: (e) => {
+              e.domEvent.stopPropagation();
+              Modal.confirm({
+                title: "Are you sure you want to delete this file?",
+                content: `This will permanently delete the file "${record.file_name || record.job_id}". This action cannot be undone.`,
+                okText: "Delete",
+                okType: "danger",
+                cancelText: "Cancel",
+                centered: true,
+                onOk: async () => {
+                  try {
+                    await fileService.deleteFile(record.job_id);
+                    message.success(`Successfully deleted file: ${record.file_name || record.job_id}`);
+                    refetch();
+                  } catch (error) {
+                    message.error("Failed to delete the file. Please try again.");
+                  }
+                },
+              });
+            },
+          },
+        ];
+
+        return (
+          <div className="flex items-center justify-end pr-2" onClick={(e) => e.stopPropagation()}>
+            <Dropdown menu={{ items }} trigger={["click"]} placement="bottomRight">
+              <Button 
+                type="text" 
+                icon={<MoreVertical size={16} />} 
+                className="flex items-center justify-center text-slate-400 hover:text-slate-900 hover:bg-slate-100 w-8 h-8 rounded-md p-0"
+              />
+            </Dropdown>
+          </div>
+        );
+      },
     },
   ];
 
   return (
-    <div className="flex flex-col h-full bg-[#FAFAFA] animate-in fade-in duration-500 overflow-hidden">
+    <div className="flex flex-col h-full w-full bg-[#FAFAFA] animate-in fade-in duration-500 overflow-hidden relative">
       {/* Header Area */}
       <div className="px-6 pt-5 bg-white border-b border-slate-200 shadow-sm z-10 pb-4">
         <div className="max-w-[1400px] mx-auto flex items-center justify-between">

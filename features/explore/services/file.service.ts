@@ -77,4 +77,22 @@ export const fileService = {
     });
     return response.data;
   },
+
+  /**
+   * Delete a file by its job_id.
+   * DELETE /ingest/jobs/{job_id}
+   */
+  async deleteFile(job_id: string) {
+    const response = await api.delete(`/ingest/jobs/${job_id}`);
+    return response.data;
+  },
+
+  /**
+   * Confirm job to create Catalog View.
+   * POST /ingest/jobs/{job_id}/confirm
+   */
+  async confirmJob(job_id: string) {
+    const response = await api.post(`/ingest/jobs/${job_id}/confirm`);
+    return response.data;
+  },
 };

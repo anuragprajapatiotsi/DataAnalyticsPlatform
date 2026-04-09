@@ -89,7 +89,7 @@ export default function ExploreFileDetailPage() {
   };
 
   return (
-    <div className="flex flex-col h-full bg-[#FAFAFA] animate-in fade-in duration-500 overflow-hidden">
+    <div className="flex flex-col h-full w-full bg-[#FAFAFA] animate-in fade-in duration-500 overflow-hidden relative">
       {/* Header Area */}
       <div className="px-6 pt-5 bg-white border-b border-slate-200 shadow-sm z-10 pb-4">
         <div className="max-w-[1400px] mx-auto">

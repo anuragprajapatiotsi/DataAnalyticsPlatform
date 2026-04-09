@@ -16,6 +16,7 @@ import {
   AvatarImage,
 } from "@/shared/components/ui/avatar";
 import { PageHeader } from "@/shared/components/layout/PageHeader";
+import { cn } from "@/shared/utils/cn";
 import {
   Tabs,
   TabsList,
@@ -31,12 +32,25 @@ import {
   Calendar,
   ChevronRight,
   Info,
+  Building2,
+  CheckCircle2,
+  Star,
 } from "lucide-react";
-import { Spin, Card, Divider } from "antd";
+import { Spin, Card, Divider, Badge, List, Tag } from "antd";
+import { useQuery } from "@tanstack/react-query";
+import { authApi } from "@/shared/api/auth";
 
 export default function CurrentUserProfilePage() {
-  const { user, isLoading } = useAuth();
+  const { user, isLoading: isAuthLoading } = useAuth();
   const [activeTab, setActiveTab] = useState("overview");
+
+  const { data: orgs, isLoading: isOrgsLoading } = useQuery({
+    queryKey: ["my-orgs"],
+    queryFn: () => authApi.getMyOrgs(),
+    enabled: !!user,
+  });
+
+  const isLoading = isAuthLoading || (isOrgsLoading && !orgs);
 
   if (isLoading && !user) {
     return (
@@ -179,8 +193,6 @@ export default function CurrentUserProfilePage() {
                   </div>
                 </div>
 
-                <Divider className="my-6 border-slate-100" />
-
                 <div className="flex items-center gap-2 px-3 py-2 text-slate-400 bg-slate-50/50 rounded-lg border border-dashed border-slate-200">
                   <Calendar size={12} className="flex-shrink-0" />
                   <span className="text-[11px] font-medium leading-tight">
@@ -190,6 +202,30 @@ export default function CurrentUserProfilePage() {
                       : "N/A"}
                   </span>
                 </div>
+
+                {orgs && orgs.length > 0 && (
+                  <>
+                    <Divider className="my-6 border-slate-100" />
+                    <div className="space-y-4">
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">
+                        Current Organization
+                      </p>
+                      <div className="flex items-center gap-3 p-3 bg-blue-50/50 rounded-xl border border-blue-100/50">
+                        <div className="h-9 w-9 rounded-lg bg-blue-600 flex items-center justify-center text-white shadow-sm">
+                          <Building2 size={18} />
+                        </div>
+                        <div className="flex flex-col min-w-0">
+                          <span className="text-[14px] font-bold text-slate-900 truncate">
+                            {orgs.find(o => o.id === user?.org_id)?.name || "Default Org"}
+                          </span>
+                          <span className="text-[11px] font-medium text-slate-500 truncate uppercase tracking-wider">
+                            {orgs.find(o => o.id === user?.org_id)?.slug || "primary"}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           </div>
@@ -230,6 +266,14 @@ export default function CurrentUserProfilePage() {
                   >
                     <Lock size={14} />
                     Policies
+                  </TabsTrigger>
+                  <TabsTrigger
+                    active={activeTab === "organizations"}
+                    onClick={() => setActiveTab("organizations")}
+                    className="flex items-center gap-2 px-4 py-2 text-[13px] font-bold rounded-lg transition-all data-[state=active]:bg-amber-50 data-[state=active]:text-amber-600 hover:bg-slate-50 select-none cursor-pointer"
+                  >
+                    <Building2 size={14} />
+                    Organizations
                   </TabsTrigger>
                   <div className="flex-1" />
                   <TabsTrigger
@@ -298,6 +342,93 @@ export default function CurrentUserProfilePage() {
                         policies={policies as any}
                         isLoading={isLoading}
                       />
+                    </div>
+                  </TabsContent>
+
+                  <TabsContent value="organizations" activeValue={activeTab}>
+                    <div className="space-y-6">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h3 className="text-base font-bold text-slate-800">
+                            My Organizations
+                          </h3>
+                          <p className="text-sm text-slate-500 mt-0.5">
+                            You are a member of {orgs?.length || 0} organizations.
+                          </p>
+                        </div>
+                        <Tag color="blue" className="rounded-full px-3 py-0.5 font-semibold text-[11px] tracking-wider border-none bg-blue-50 text-blue-600">
+                          Current Org: {orgs?.find(o => o.id === user?.org_id)?.name || "N/A"}
+                        </Tag>
+                      </div>
+
+                      <div className="grid grid-cols-1 gap-4">
+                        {orgs?.map((org) => (
+                          <div 
+                            key={org.id}
+                            className={cn(
+                              "p-4 rounded-xl border transition-all hover:shadow-md",
+                              org.id === user?.org_id 
+                                ? "bg-blue-50/30 border-blue-200 ring-1 ring-blue-100" 
+                                : "bg-white border-slate-200 hover:border-slate-300"
+                            )}
+                          >
+                            <div className="flex items-center justify-between gap-4">
+                              <div className="flex items-center gap-4">
+                                <div className={cn(
+                                  "h-12 w-12 rounded-xl flex items-center justify-center shadow-sm",
+                                  org.id === user?.org_id ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-500"
+                                )}>
+                                  <Building2 size={24} />
+                                </div>
+                                <div className="flex flex-col">
+                                  <div className="flex items-center gap-2">
+                                    <span className="font-bold text-slate-900">{org.name}</span>
+                                    {org.id === user?.org_id && (
+                                      <Badge 
+                                        status="processing" 
+                                        text={<span className="text-[10px] font-bold text-blue-600 uppercase tracking-tighter">Current</span>}
+                                        className="bg-blue-100/50 px-2 py-0.5 rounded-full border border-blue-200"
+                                      />
+                                    )}
+                                    {org.id === user?.default_org_id && (
+                                      <div className="flex items-center gap-1 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
+                                        <Star size={10} className="text-amber-500 fill-amber-500" />
+                                        <span className="text-[10px] font-bold text-amber-600 uppercase tracking-tighter">Default</span>
+                                      </div>
+                                    )}
+                                  </div>
+                                  <span className="text-[12px] text-slate-500 font-medium">@{org.slug}</span>
+                                </div>
+                              </div>
+                              <div className="hidden sm:block text-right">
+                                <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1">Status</p>
+                                <Tag color={org.is_active ? "success" : "default"} className="m-0 rounded-lg text-[11px] font-bold uppercase tracking-wider px-2 border-0">
+                                  {org.is_active ? "Active" : "Inactive"}
+                                </Tag>
+                              </div>
+                            </div>
+                            {org.description && (
+                              <div className="mt-4 pt-4 border-t border-slate-100/50">
+                                <p className="text-[13px] text-slate-600 leading-relaxed italic">
+                                  "{org.description}"
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+
+                      {!isOrgsLoading && (!orgs || orgs.length === 0) && (
+                        <div className="flex flex-col items-center justify-center py-12 px-4 rounded-2xl bg-slate-50 border border-dashed border-slate-200">
+                          <div className="h-12 w-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 mb-4 text-2xl">
+                            🏢
+                          </div>
+                          <p className="text-slate-900 font-bold text-center">No organizations found</p>
+                          <p className="text-slate-500 text-sm text-center max-w-xs mt-1">
+                            You are not currently a member of any organization.
+                          </p>
+                        </div>
+                      )}
                     </div>
                   </TabsContent>
 

@@ -110,15 +110,21 @@ export interface DBTableDetail {
 }
 
 export interface Bot {
-  id: string;
+  id?: string;
+  bot_id: string;
   name: string;
   bot_type: string;
-  mode: string;
   is_enabled: boolean;
-  trigger_mode: string;
+  step_order?: number;
+  is_required?: boolean;
+  run_hint?: string;
+  description?: string;
+  
+  // Legacy / Runtime Execution Fields
+  mode?: string;
+  trigger_mode?: string;
   last_run_status?: string;
   last_run_at?: string;
-  description?: string;
   config?: any;
 }
 

@@ -6,6 +6,7 @@ import type {
   SessionResponse,
   SignupRequest,
   UpdateProfileRequest,
+  Organization,
 } from "@/shared/types";
 
 export const authApi = {
@@ -28,6 +29,10 @@ export const authApi = {
   },
   async me() {
     const response = await api.get<SessionResponse>("/auth/me?name=primary");
+    return response.data;
+  },
+  async getMyOrgs() {
+    const response = await api.get<Organization[]>("/auth/me/orgs?name=primary");
     return response.data;
   },
   async logout() {
