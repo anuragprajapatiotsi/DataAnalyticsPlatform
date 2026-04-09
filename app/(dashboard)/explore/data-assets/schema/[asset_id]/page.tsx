@@ -31,7 +31,7 @@ export default function SchemaAssetsPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [activeType, setActiveType] = useState<string>("all");
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedEndpointContext, setSelectedEndpointContext] = useState<any>(null);
+  const [selectedCatalogAssetId, setSelectedCatalogAssetId] = useState<string | null>(null);
 
   const searchParams = useSearchParams();
   const eid = searchParams.get("eid");
@@ -221,18 +221,14 @@ export default function SchemaAssetsPage() {
           items.push({ type: "divider" });
           items.push({
             key: "create_view",
-            label: "Create Catalog View",
-            icon: <Layers size={14} className="text-blue-500" />,
-            onClick: (e) => {
-              e.domEvent.stopPropagation();
-              setSelectedEndpointContext({
-                source_connection_id: eid as string,
-                source_schema: sn as string,
-                source_table: record.name,
-              });
-              setIsModalOpen(true);
-            },
-          });
+              label: "Create Catalog View",
+              icon: <Layers size={14} className="text-blue-500" />,
+              onClick: (e) => {
+                e.domEvent.stopPropagation();
+                setSelectedCatalogAssetId(record.id);
+                setIsModalOpen(true);
+              },
+            });
         }
 
         return (
@@ -412,19 +408,21 @@ export default function SchemaAssetsPage() {
         }
       `}</style>
 
-      {selectedEndpointContext && (
-        <CreateCatalogViewModal
-          open={isModalOpen}
-          initialEndpointContext={selectedEndpointContext}
-          onCancel={() => {
-            setIsModalOpen(false);
-            setTimeout(() => setSelectedEndpointContext(null), 300);
-          }}
-          onSuccess={(id) => {
-            if (id) router.push(`/explore/object-resources/${id}`);
-          }}
-        />
-      )}
+        {selectedCatalogAssetId && (
+          <CreateCatalogViewModal
+            open={isModalOpen}
+            initialAssetId={selectedCatalogAssetId}
+            onCancel={() => {
+              setIsModalOpen(false);
+              setTimeout(() => setSelectedCatalogAssetId(null), 300);
+            }}
+            onSuccess={(id) => {
+              if (id) {
+                router.push(`/explore/object-resources/${id}?created=1`);
+              }
+            }}
+          />
+        )}
     </div>
   );
 }

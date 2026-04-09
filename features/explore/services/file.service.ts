@@ -19,8 +19,22 @@ export interface IngestFile {
   completed_at?: string;
   triggered_by?: string;
   error_message?: string;
-  inferred_schema?: any[];
-  [key: string]: any;
+  inferred_schema?: IngestFilePreviewColumn[];
+  [key: string]: unknown;
+}
+
+export interface IngestFilePreviewColumn {
+  name: string;
+  data_type?: string;
+  nullable?: boolean;
+  ordinal_position?: number;
+  [key: string]: unknown;
+}
+
+export interface IngestFilePreview {
+  inferred_schema?: IngestFilePreviewColumn[];
+  preview_rows?: Record<string, unknown>[];
+  [key: string]: unknown;
 }
 
 export const fileService = {
@@ -57,10 +71,19 @@ export const fileService = {
   },
 
   /**
+   * Fetch preview data for an ingest job.
+   * GET /ingest/jobs/{job_id}/preview
+   */
+  async getFilePreview(job_id: string) {
+    const response = await api.get<IngestFilePreview>(`/ingest/jobs/${job_id}/preview`);
+    return response.data;
+  },
+
+  /**
    * Upload a new file (multipart/form-data).
    * POST /ingest/upload
    */
-  async uploadFile(file: File, additionalData?: Record<string, any>) {
+  async uploadFile(file: File, additionalData?: Record<string, unknown>) {
     const formData = new FormData();
     formData.append("file", file);
     

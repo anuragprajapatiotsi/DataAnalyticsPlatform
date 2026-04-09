@@ -179,7 +179,7 @@ export default function ExploreServiceTypePage() {
       },
     },
     {
-      title: "",
+      title: "Action",
       key: "actions",
       width: "10%",
       align: "right",

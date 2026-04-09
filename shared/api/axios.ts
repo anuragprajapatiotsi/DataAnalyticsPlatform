@@ -2,7 +2,7 @@ import axios from "axios";
 import { message } from "antd";
 import { parseError } from "../utils/error-handler";
 
-const API_BASE_URL =
+export const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL ||
   "https://opensourcepulse.pro";
 

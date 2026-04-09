@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import {
   message,
   Alert,
@@ -35,6 +36,9 @@ import {
 } from "lucide-react";
 import type { MenuProps } from "antd";
 import Editor from "@monaco-editor/react";
+import { NOTIFICATION_FEED_QUERY_KEY } from "@/features/notifications/constants";
+import { useNotificationFeed } from "@/features/notifications/hooks/useNotificationFeed";
+import type { NotificationSyncItem } from "@/features/notifications/types";
 import { serviceService } from "@/features/services/services/service.service";
 import { CatalogView, SyncConfig } from "@/features/services/types";
 import { PageHeader } from "@/shared/components/layout/PageHeader";
@@ -67,10 +71,102 @@ interface QueryTab {
   activeResultTabId: string | null;
 }
 
+type SyncAlertState = {
+  type: "success" | "error" | "info";
+  message: string;
+  description: string;
+} | null;
+
+type ColumnMetadataRow = {
+  key: string;
+} & Record<string, unknown>;
+
+const IN_PROGRESS_SYNC_STATUSES = new Set([
+  "syncing",
+  "running",
+  "pending",
+  "queued",
+  "in_progress",
+]);
+
+const SUCCESS_SYNC_STATUSES = new Set(["success", "completed"]);
+
+function getNotificationTimestamp(notification: NotificationSyncItem | null) {
+  if (!notification) return 0;
+  return new Date(notification.updated_at || notification.created_at).getTime();
+}
+
+function isInProgressSyncStatus(status?: string | null) {
+  return IN_PROGRESS_SYNC_STATUSES.has((status || "").toLowerCase());
+}
+
+function isSuccessfulSyncStatus(status?: string | null) {
+  return SUCCESS_SYNC_STATUSES.has((status || "").toLowerCase());
+}
+
+function normalizeColumnMetadata(columns: unknown): ColumnMetadataRow[] {
+  if (!Array.isArray(columns)) {
+    return [];
+  }
+
+  return columns
+    .filter((column): column is Record<string, unknown> => {
+      return !!column && typeof column === "object";
+    })
+    .map((column, index) => {
+      return {
+        ...column,
+        key:
+          typeof column.id === "string"
+            ? column.id
+            : typeof column.name === "string"
+              ? `${column.name}-${index}`
+              : typeof column.column_name === "string"
+                ? `${column.column_name}-${index}`
+                : `column-${index}`,
+      };
+    });
+}
+
+function extractColumnMetadata(viewDetail: CatalogView | null): ColumnMetadataRow[] {
+  if (!viewDetail) {
+    return [];
+  }
+
+  const candidateSources: unknown[] = [
+    (viewDetail as unknown as Record<string, unknown>).column_metadata,
+    viewDetail.sync_config?.column_metadata,
+    (viewDetail as unknown as Record<string, unknown>).columns,
+    viewDetail.sync_config?.columns,
+    viewDetail.sync_config?.source_columns,
+    viewDetail.sync_config?.table_columns,
+    viewDetail.sync_config?.last_export_columns,
+  ];
+
+  for (const source of candidateSources) {
+    const normalized = normalizeColumnMetadata(source);
+    if (normalized.length > 0) {
+      return normalized;
+    }
+
+      if (Array.isArray(source) && source.every((item) => typeof item === "string")) {
+        return source.map((name, index) => ({
+          key: `${name}-${index}`,
+          name,
+        }));
+      }
+  }
+
+  return [];
+}
+
 export default function ExploreObjectResourceDetailPage() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const params = useParams();
+  const searchParams = useSearchParams();
   const viewId = params.id as string;
+  const isCreatedFlow = searchParams.get("created") === "1";
 
   const [viewDetail, setViewDetail] = useState<CatalogView | null>(null);
   const [loading, setLoading] = useState(true);
@@ -81,10 +177,154 @@ export default function ExploreObjectResourceDetailPage() {
   const [activePageTab, setActivePageTab] = useState("overview");
   const [syncConfig, setSyncConfig] = useState<SyncConfig | null>(null);
   const [isSyncConfigLoading, setIsSyncConfigLoading] = useState(false);
+  const [sampleDataRows, setSampleDataRows] = useState<Record<string, unknown>[]>(
+    [],
+  );
+  const [sampleDataColumns, setSampleDataColumns] = useState<
+    {
+      title: string;
+      dataIndex: string;
+      key: string;
+      ellipsis: boolean;
+      render: (value: unknown) => React.ReactNode;
+    }[]
+  >([]);
+  const [isSampleDataLoading, setIsSampleDataLoading] = useState(false);
+  const [sampleDataError, setSampleDataError] = useState<string | null>(null);
+  const [syncRequestedAt, setSyncRequestedAt] = useState<number | null>(null);
+  const [syncAlert, setSyncAlert] = useState<SyncAlertState>(null);
   const editorRef = useRef<any>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const { data: notificationFeed } = useNotificationFeed(100);
 
   const activeQueryTab = queryTabs.find((t) => t.id === activeQueryTabId);
+  const latestViewSyncNotification = useMemo(() => {
+    const notifications = (notificationFeed?.sync ?? []).filter(
+      (item) => item.catalog_view_id === viewId,
+    );
+
+    if (notifications.length === 0) {
+      return null;
+    }
+
+    return notifications.reduce<NotificationSyncItem | null>((latest, item) => {
+      if (!latest) {
+        return item;
+      }
+
+      return getNotificationTimestamp(item) > getNotificationTimestamp(latest)
+        ? item
+        : latest;
+    }, null);
+  }, [notificationFeed?.sync, viewId]);
+  const sampleDataTarget = useMemo(() => {
+    if (!viewDetail) {
+      return null;
+    }
+
+    return (
+      viewDetail.sync_config?.iceberg_table ||
+      `${viewDetail.source_schema || "schema"}.${viewDetail.source_table || "table"}`
+    );
+  }, [viewDetail]);
+  const overviewColumns = useMemo(() => {
+    return extractColumnMetadata(viewDetail);
+  }, [viewDetail]);
+  const overviewColumnTableColumns = useMemo(() => {
+    if (overviewColumns.length === 0) {
+      return [];
+    }
+
+    const preferredOrder = [
+      "name",
+      "column_name",
+      "display_name",
+      "data_type",
+      "type",
+      "column_type",
+      "description",
+      "comment",
+      "display_description",
+      "is_nullable",
+      "nullable",
+    ];
+
+    const discoveredKeys = Array.from(
+      new Set(
+        overviewColumns.flatMap((column) =>
+          Object.keys(column).filter((key) => key !== "key"),
+        ),
+      ),
+    );
+
+    const orderedKeys = [
+      ...preferredOrder.filter((key) => discoveredKeys.includes(key)),
+      ...discoveredKeys.filter((key) => !preferredOrder.includes(key)),
+    ];
+
+      return orderedKeys.map((field) => ({
+        title: field
+          .split("_")
+          .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+          .join(" "),
+        dataIndex: field,
+        key: field,
+        render: (value: unknown) => {
+          if (value === null || value === undefined || value === "") {
+            return <span className="text-slate-400">-</span>;
+        }
+
+        if (typeof value === "boolean") {
+          return (
+            <span
+              className={cn(
+                "inline-flex rounded-full px-2 py-1 text-[11px] font-semibold",
+                value
+                  ? "bg-emerald-50 text-emerald-700"
+                  : "bg-amber-50 text-amber-700",
+              )}
+            >
+              {value ? "Yes" : "No"}
+            </span>
+          );
+        }
+
+        if (Array.isArray(value)) {
+          return (
+            <span className="block whitespace-pre-wrap break-words text-sm text-slate-600">
+              {value.join(", ")}
+            </span>
+          );
+        }
+
+        if (typeof value === "object") {
+          const formattedValue = JSON.stringify(value);
+          return (
+            <Tooltip title={formattedValue}>
+              <span className="block cursor-help whitespace-pre-wrap break-words text-sm text-slate-600">
+                {formattedValue}
+              </span>
+            </Tooltip>
+          );
+        }
+
+        const renderedValue = String(value);
+        const isDataTypeField = ["data_type", "type", "column_type"].includes(
+          field,
+        );
+
+        return isDataTypeField ? (
+          <span className="rounded border border-slate-200 bg-slate-50 px-2 py-1 font-mono text-[12px] text-slate-700">
+            {renderedValue}
+          </span>
+        ) : (
+          <span className="block whitespace-pre-wrap break-words text-sm text-slate-700">
+            {renderedValue}
+          </span>
+        );
+      },
+    }));
+  }, [overviewColumns]);
 
   const addQueryTab = (initialQuery: string = "") => {
     const newId = Date.now().toString();
@@ -147,6 +387,92 @@ export default function ExploreObjectResourceDetailPage() {
     }
   }, [viewId]);
 
+  const fetchSampleData = useCallback(
+    async (force: boolean = false) => {
+      if (!sampleDataTarget || viewDetail?.sync_status !== "success") {
+        return;
+      }
+
+      if (!force && (isSampleDataLoading || sampleDataColumns.length > 0)) {
+        return;
+      }
+
+      try {
+        setIsSampleDataLoading(true);
+        setSampleDataError(null);
+
+        const response = await serviceService.executeTrinoQuery({
+          sql: `SELECT * FROM ${sampleDataTarget} LIMIT 50`,
+          catalog: "iceberg",
+          schema: "catalog_views",
+          limit: 50,
+        });
+
+        const { columns = [], rows = [] } =
+          (response as { columns?: string[]; rows?: unknown[][] }) || {};
+
+        const mappedColumns = columns.map((column) => ({
+          title: column
+            .split("_")
+            .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+            .join(" "),
+          dataIndex: column,
+          key: column,
+          ellipsis: true,
+          render: (value: unknown) => {
+            if (value === null || value === undefined) {
+              return <span className="italic text-slate-400">null</span>;
+            }
+
+            if (typeof value === "object") {
+              const formattedValue = JSON.stringify(value);
+              return (
+                <Tooltip title={formattedValue}>
+                  <span className="block max-w-[220px] cursor-help truncate text-slate-500">
+                    {formattedValue}
+                  </span>
+                </Tooltip>
+              );
+            }
+
+            return <span className="text-slate-700">{String(value)}</span>;
+          },
+        }));
+
+        const mappedRows = rows.map((row, rowIndex) => {
+          const rowObject: Record<string, unknown> = {
+            __rowKey: `${viewId}-${rowIndex}`,
+          };
+
+          columns.forEach((column, columnIndex) => {
+            rowObject[column] = row[columnIndex];
+          });
+
+          return rowObject;
+        });
+
+        setSampleDataColumns(mappedColumns);
+        setSampleDataRows(mappedRows);
+      } catch (error: any) {
+        console.error("Failed to fetch sample data:", error);
+        setSampleDataError(
+          error?.response?.data?.message ||
+            error?.message ||
+            "Failed to load sample data.",
+        );
+      } finally {
+        setIsSampleDataLoading(false);
+      }
+    },
+    [
+      isSampleDataLoading,
+      sampleDataColumns.length,
+      sampleDataTarget,
+      viewDetail?.sync_status,
+      viewId,
+    ],
+  );
+
   useEffect(() => {
     if (
       activePageTab === "sync-config" &&
@@ -156,6 +482,21 @@ export default function ExploreObjectResourceDetailPage() {
       fetchSyncConfig();
     }
   }, [activePageTab, syncConfig, isSyncConfigLoading, fetchSyncConfig]);
+
+  useEffect(() => {
+    if (
+      activePageTab === "sample-data" &&
+      viewDetail?.sync_status === "success" &&
+      !isSampleDataLoading
+    ) {
+      void fetchSampleData();
+    }
+  }, [
+    activePageTab,
+    fetchSampleData,
+    isSampleDataLoading,
+    viewDetail?.sync_status,
+  ]);
 
   useEffect(() => {
     if (viewDetail && queryTabs.length === 0) {
@@ -382,18 +723,96 @@ export default function ExploreObjectResourceDetailPage() {
     }
   }, [queryTabs.length, activeQueryTabId]);
 
+  useEffect(() => {
+    if (!latestViewSyncNotification) {
+      return;
+    }
+
+    setViewDetail((prev) => {
+      if (!prev) {
+        return prev;
+      }
+
+      const nextStatus = latestViewSyncNotification.status || prev.sync_status;
+      const nextError = latestViewSyncNotification.error_message || null;
+
+      if (
+        prev.sync_status === nextStatus &&
+        (prev.sync_error || null) === nextError
+      ) {
+        return prev;
+      }
+
+      return {
+        ...prev,
+        sync_status: nextStatus,
+        sync_error: nextError || undefined,
+      };
+    });
+  }, [latestViewSyncNotification]);
+
+  useEffect(() => {
+    if (!syncRequestedAt || !latestViewSyncNotification) {
+      return;
+    }
+
+    const notificationTime = getNotificationTimestamp(latestViewSyncNotification);
+    if (!notificationTime || notificationTime < syncRequestedAt) {
+      return;
+    }
+
+    const latestStatus = latestViewSyncNotification.status || "syncing";
+    if (isInProgressSyncStatus(latestStatus)) {
+      return;
+    }
+
+    setSyncRequestedAt(null);
+
+    if (isSuccessfulSyncStatus(latestStatus)) {
+      void fetchSampleData(true);
+      setSyncAlert({
+        type: "success",
+        message: "Sync completed successfully",
+        description:
+          latestViewSyncNotification.catalog_view_name ||
+          "The catalog view sync has completed successfully.",
+      });
+      return;
+    }
+
+    setSyncAlert({
+      type: "error",
+      message: "Sync failed",
+      description:
+        latestViewSyncNotification.error_message ||
+        "The catalog view sync failed. Please review the latest sync details.",
+    });
+  }, [fetchSampleData, syncRequestedAt, latestViewSyncNotification]);
+
   const handleSync = async () => {
     if (!viewDetail?.id) return;
     try {
+      setSyncAlert(null);
+      setSyncRequestedAt(Date.now());
       setIsSyncing(true);
+      setViewDetail((prev) =>
+        prev
+          ? {
+              ...prev,
+              sync_status: "syncing",
+              sync_error: undefined,
+            }
+          : prev,
+      );
       const res = await serviceService.syncCatalogView(viewDetail.id, {
         sync_data: true,
         force: false,
       });
+      await queryClient.invalidateQueries({ queryKey: NOTIFICATION_FEED_QUERY_KEY });
       message.success(res.message || "Manual sync triggered successfully.");
-      setTimeout(fetchDetail, 1000);
     } catch (err: any) {
       console.error(err);
+      setSyncRequestedAt(null);
       message.error(err?.response?.data?.message || "Failed to trigger sync.");
     } finally {
       setIsSyncing(false);
@@ -444,6 +863,19 @@ export default function ExploreObjectResourceDetailPage() {
         border: "border-red-200",
         dot: "bg-red-500",
       };
+    if (
+      s === "syncing" ||
+      s === "running" ||
+      s === "pending" ||
+      s === "queued" ||
+      s === "in_progress"
+    )
+      return {
+        bg: "bg-blue-50",
+        text: "text-blue-700",
+        border: "border-blue-200",
+        dot: "bg-blue-500 shadow-[0_0_4px_rgba(59,130,246,0.4)]",
+      };
     if (s === "never" || !s)
       return {
         bg: "bg-amber-50",
@@ -460,6 +892,48 @@ export default function ExploreObjectResourceDetailPage() {
   };
 
   const statusConfig = getStatusConfig(viewDetail?.sync_status);
+  const isSyncSuccess = isSuccessfulSyncStatus(viewDetail?.sync_status);
+  const shouldLockCreatedFlowActions = isCreatedFlow && !isSyncSuccess;
+  const isSyncButtonDisabled =
+    shouldLockCreatedFlowActions ||
+    isSyncing ||
+    isInProgressSyncStatus(viewDetail?.sync_status);
+
+  useEffect(() => {
+    if (!isCreatedFlow || !viewDetail) {
+      return;
+    }
+
+    const currentStatus = viewDetail.sync_status || "syncing";
+
+    if (isInProgressSyncStatus(currentStatus)) {
+      setSyncAlert({
+        type: "info",
+        message: "Catalog view is syncing",
+        description:
+          "The catalog view is still being prepared. Sample Data and Sync Now will unlock after the first successful sync.",
+      });
+      return;
+    }
+
+    if (isSuccessfulSyncStatus(currentStatus)) {
+      setSyncAlert({
+        type: "success",
+        message: "Catalog view is ready",
+        description:
+          "Initial sync completed successfully. Sample Data and sync actions are now available.",
+      });
+      return;
+    }
+
+    setSyncAlert({
+      type: "error",
+      message: "Initial sync failed",
+      description:
+        viewDetail.sync_error ||
+        "The first sync did not complete successfully. This catalog view will remain locked until it reaches success.",
+    });
+  }, [isCreatedFlow, viewDetail]);
 
   if (loading) {
     return (
@@ -542,6 +1016,7 @@ export default function ExploreObjectResourceDetailPage() {
                     }
                     onClick={handleSync}
                     loading={isSyncing}
+                    disabled={isSyncButtonDisabled}
                     className="flex items-center h-9 px-4 rounded-md border-slate-200 bg-white text-slate-600 hover:text-indigo-600 hover:border-indigo-300 hover:bg-indigo-50 font-medium transition-all shadow-sm"
                   >
                     Sync Now
@@ -575,6 +1050,25 @@ export default function ExploreObjectResourceDetailPage() {
       {/* Main Content Area */}
       <div className="flex-1 overflow-y-auto p-6">
         <div className="max-w-[1400px] mx-auto w-full flex flex-col">
+          {syncAlert && (
+            <Alert
+              type={syncAlert.type}
+              showIcon
+              closable
+              onClose={() => setSyncAlert(null)}
+              title={<span className="font-semibold">{syncAlert.message}</span>}
+              description={syncAlert.description}
+                className={cn(
+                  "mb-4 rounded-xl border shadow-sm",
+                  syncAlert.type === "success"
+                    ? "border-emerald-200 bg-emerald-50"
+                    : syncAlert.type === "info"
+                      ? "border-blue-200 bg-blue-50"
+                      : "border-red-200 bg-red-50",
+                )}
+              />
+            )}
+
           <Tabs
             activeKey={activePageTab}
             onChange={(key) => setActivePageTab(key)}
@@ -826,328 +1320,159 @@ export default function ExploreObjectResourceDetailPage() {
                           </div>
                         </div>
                       </div>
+
                     </div>
                   </div>
                 ),
               },
               {
-                key: "sql-editor",
+                key: "column-info",
                 label: (
                   <div className="flex items-center gap-2">
-                    <Terminal size={14} />
-                    <span>SQL Editor</span>
+                    <TableIcon size={14} />
+                    <span>Column Info</span>
+                  </div>
+                ),
+                children: (
+                  <div className="mt-4 animate-in fade-in duration-500">
+                    <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+                      <div className="mb-4 flex items-center justify-between gap-3 border-b border-slate-100 pb-3">
+                        <div className="flex items-center gap-2">
+                          <TableIcon size={16} className="text-slate-400" />
+                          <h3 className="m-0 text-[12px] font-semibold uppercase tracking-wider text-slate-800">
+                            Column Information
+                          </h3>
+                        </div>
+                        <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-600">
+                          {overviewColumns.length} columns
+                        </span>
+                      </div>
+
+                      {overviewColumns.length > 0 ? (
+                        <Table<ColumnMetadataRow>
+                          dataSource={overviewColumns}
+                          rowKey="key"
+                          pagination={false}
+                          size="small"
+                          scroll={{ x: "max-content" }}
+                          columns={overviewColumnTableColumns}
+                          className="custom-column-info-table"
+                          locale={{
+                            emptyText: (
+                              <div className="py-8 text-center">
+                                <p className="text-sm font-medium text-slate-700">
+                                  No column metadata available
+                                </p>
+                                <p className="mt-1 text-xs text-slate-500">
+                                  Column information for this catalog view will
+                                  appear here when the API returns it.
+                                </p>
+                              </div>
+                            ),
+                          }}
+                        />
+                      ) : (
+                        <div className="rounded-lg border border-dashed border-slate-200 bg-slate-50/50 px-6 py-10 text-center">
+                          <p className="text-sm font-medium text-slate-700">
+                            No column metadata available
+                          </p>
+                          <p className="mt-1 text-xs text-slate-500">
+                            Name, data type, description, and other column
+                            attributes for this catalog view will appear here
+                            when provided by the API.
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ),
+              },
+              {
+                key: "sample-data",
+                label: (
+                  <div className="flex items-center gap-2">
+                    <TableIcon size={14} />
+                    <span>Sample Data</span>
                   </div>
                 ),
                 disabled: viewDetail?.sync_status !== "success",
                 children: (
-                  <div className="flex flex-col gap-4 animate-in fade-in duration-500">
-                    <Tabs
-                      type="editable-card"
-                      activeKey={activeQueryTabId || undefined}
-                      onChange={(key) => setActiveQueryTabId(key)}
-                      onEdit={(targetKey, action) => {
-                        if (action === "add") addQueryTab();
-                        else if (action === "remove")
-                          removeQueryTab(targetKey as string);
-                      }}
-                      className="sql-query-tabs"
-                      items={queryTabs.map((qTab) => ({
-                        key: qTab.id,
-                        label: (
-                          <span className="flex items-center gap-2">
-                            <FileCode size={14} />
-                            {qTab.name}
+                  <div className="mt-4 flex flex-col gap-4 animate-in fade-in duration-500">
+                    <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                      <div className="flex flex-col gap-1">
+                        <span className="text-[12px] font-semibold uppercase tracking-wider text-slate-500">
+                          Preview
+                        </span>
+                        <span className="text-[14px] font-medium text-slate-800">
+                          Top 50 rows from {sampleDataTarget || "the synced table"}
+                        </span>
+                      </div>
+                      <Button
+                        onClick={() => void fetchSampleData(true)}
+                        loading={isSampleDataLoading}
+                        disabled={viewDetail?.sync_status !== "success"}
+                        icon={
+                          <RefreshCw
+                            size={14}
+                            className={cn(isSampleDataLoading && "animate-spin")}
+                          />
+                        }
+                        className="h-9 rounded-md border-slate-200 bg-white px-4 text-slate-600 hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-600"
+                      >
+                        Refresh Sample
+                      </Button>
+                    </div>
+
+                    {sampleDataError ? (
+                      <Alert
+                        type="error"
+                        showIcon
+                        title={
+                          <span className="font-semibold">
+                            Unable to load sample data
                           </span>
-                        ),
-                        children: (
-                          <div className="flex flex-col gap-2">
-                            <div className="flex items-center justify-end">
-                              {isExecuting && (
-                                <Button
-                                  variant="outlined"
-                                  icon={
-                                    <Square size={14} fill="currentColor" />
-                                  }
-                                  onClick={handleCancelQuery}
-                                  className="h-9 border-slate-200 text-slate-600 font-bold hover:bg-slate-50"
-                                >
-                                  Cancel
-                                </Button>
-                              )}
-                              <Space.Compact className="sql-execute-dropdown">
-                                <Button
-                                  type="primary"
-                                  icon={
-                                    isExecuting ? (
-                                      <RefreshCw
-                                        size={14}
-                                        className="animate-spin"
-                                      />
-                                    ) : (
-                                      <Play size={14} fill="currentColor" />
-                                    )
-                                  }
-                                  onClick={() => handleExecuteQuery(false)}
-                                  disabled={isExecuting || !qTab.query}
-                                  className="bg-slate-900 hover:bg-slate-800 text-white border-none h-9 px-4 rounded-l-md rounded-r-none flex items-center gap-2"
-                                >
-                                  {isExecuting ? "Executing..." : "Run"}
-                                </Button>
-                                <Dropdown
-                                  menu={{
-                                    items: [
-                                      {
-                                        key: "run_new_result_tab",
-                                        label: "Run in New Tab",
-                                        icon: <FileCode size={14} />,
-                                        onClick: () => handleExecuteQuery(true),
-                                      },
-                                      // { type: "divider" },
-                                      // {
-                                      //   key: "run_new_tab",
-                                      //   label: "Run in New Browser Tab",
-                                      //   icon: <ExternalLink size={14} />,
-                                      //   onClick: () => {
-                                      //     const url = new URL(
-                                      //       window.location.href,
-                                      //     );
-                                      //     url.searchParams.set(
-                                      //       "sql",
-                                      //       encodeURIComponent(qTab.query),
-                                      //     );
-                                      //     window.open(url.toString(), "_blank");
-                                      //   },
-                                      // },
-                                    ],
-                                  }}
-                                  disabled={isExecuting || !qTab.query}
-                                  placement="bottomRight"
-                                >
-                                  <Button
-                                    type="primary"
-                                    icon={<ChevronDown size={14} />}
-                                    className="bg-slate-900/90 hover:bg-slate-800 text-white border-none h-9 px-2 rounded-r-md rounded-l-none border-l border-white/10"
-                                  />
-                                </Dropdown>
-                              </Space.Compact>
-                            </div>
-                            <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden h-[400px]">
-                              <Editor
-                                height="100%"
-                                defaultLanguage="sql"
-                                value={qTab.query}
-                                onMount={handleEditorDidMount}
-                                onChange={(value) =>
-                                  updateQueryTab(qTab.id, {
-                                    query: value || "",
-                                  })
-                                }
-                                options={{
-                                  minimap: { enabled: false },
-                                  fontSize: 14,
-                                  fontFamily:
-                                    "'JetBrains Mono', 'Fira Code', monospace",
-                                  wordWrap: "on",
-                                  automaticLayout: true,
-                                  scrollBeyondLastLine: false,
-                                  theme: "vs-light",
-                                  padding: { top: 16, bottom: 16 },
-                                }}
-                              />
-                            </div>
-
-                            {/* Query Results Section */}
-                            <div className="flex flex-col gap-4">
-                              <div className="flex items-center justify-between border-b border-slate-200 pb-2">
-                                <div className="flex items-center gap-2">
-                                  <TableIcon
-                                    size={16}
-                                    className="text-slate-400"
-                                  />
-                                  <h4 className="text-[14px] font-semibold text-slate-800 m-0">
-                                    Query Results
-                                  </h4>
-                                  {qTab.resultTabs.length > 0 && (
-                                    <span className="text-[11px] text-slate-400 font-medium bg-slate-100 px-1.5 py-0.5 rounded">
-                                      {qTab.resultTabs.length} sets
-                                    </span>
-                                  )}
-                                </div>
-                                {qTab.resultTabs.length > 0 && (
-                                  <Button
-                                    type="text"
-                                    danger
-                                    size="small"
-                                    className="text-[11px] h-7 font-bold uppercase tracking-wider hover:bg-red-50"
-                                    onClick={() => {
-                                      updateQueryTab(qTab.id, {
-                                        resultTabs: [],
-                                        activeResultTabId: null,
-                                      });
-                                    }}
-                                  >
-                                    Clear All
-                                  </Button>
-                                )}
-                              </div>
-
-                              {qTab.resultTabs.length > 0 ? (
-                                <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
-                                  <Tabs
-                                    activeKey={
-                                      qTab.activeResultTabId || undefined
-                                    }
-                                    onChange={(key) =>
-                                      updateQueryTab(qTab.id, {
-                                        activeResultTabId: key,
-                                      })
-                                    }
-                                    type="editable-card"
-                                    hideAdd
-                                    onEdit={(targetKey, action) => {
-                                      if (action === "remove") {
-                                        const newResTabs =
-                                          qTab.resultTabs.filter(
-                                            (t) => t.id !== targetKey,
-                                          );
-                                        updateQueryTab(qTab.id, {
-                                          resultTabs: newResTabs,
-                                          activeResultTabId:
-                                            qTab.activeResultTabId === targetKey
-                                              ? newResTabs[
-                                                  newResTabs.length - 1
-                                                ]?.id || null
-                                              : qTab.activeResultTabId,
-                                        });
-                                      }
-                                    }}
-                                    className="custom-result-tabs"
-                                    items={qTab.resultTabs.map((tab) => ({
-                                      key: tab.id,
-                                      label: (
-                                        <div className="flex items-center gap-2">
-                                          <Tooltip
-                                            title={`SQL: ${tab.query}`}
-                                            placement="topLeft"
-                                          >
-                                            <span className="flex items-center gap-1.5">
-                                              {tab.status === "loading" && (
-                                                <RefreshCw
-                                                  size={10}
-                                                  className="animate-spin text-blue-500"
-                                                />
-                                              )}
-                                              {tab.status === "error" && (
-                                                <AlertTriangle
-                                                  size={10}
-                                                  className="text-red-500"
-                                                />
-                                              )}
-                                              {tab.name}
-                                            </span>
-                                          </Tooltip>
-                                          <span className="text-[10px] opacity-40 font-mono">
-                                            {tab.timestamp}
-                                          </span>
-                                        </div>
-                                      ),
-                                      children: (
-                                        <div className="p-0">
-                                          {tab.status === "loading" ? (
-                                            <div className="py-20 flex flex-col items-center justify-center gap-4">
-                                              <Skeleton
-                                                active
-                                                paragraph={{ rows: 4 }}
-                                                className="max-w-[80%] mx-auto"
-                                              />
-                                              <span className="text-[13px] text-slate-400 animate-pulse">
-                                                Fetching query results...
-                                              </span>
-                                            </div>
-                                          ) : tab.status === "error" ? (
-                                            <div className="p-6 bg-red-50/50 flex flex-col gap-4">
-                                              <div className="flex items-start gap-3 p-4 bg-white border border-red-100 rounded-lg shadow-sm">
-                                                <ShieldAlert
-                                                  size={18}
-                                                  className="text-red-500 mt-0.5 shrink-0"
-                                                />
-                                                <div className="flex flex-col gap-1.5">
-                                                  <span className="text-[14px] font-bold text-red-800">
-                                                    Query Execution Failed
-                                                  </span>
-                                                  <span className="text-[12px] font-mono text-red-600/80 leading-relaxed whitespace-pre-wrap">
-                                                    {tab.error}
-                                                  </span>
-                                                </div>
-                                              </div>
-                                              <div className="flex flex-col gap-2">
-                                                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-widest px-1">
-                                                  Original Query
-                                                </span>
-                                                <div className="p-3 bg-slate-900 rounded-lg">
-                                                  <code className="text-[12px] text-slate-300 font-mono opacity-80">
-                                                    {tab.query}
-                                                  </code>
-                                                </div>
-                                              </div>
-                                            </div>
-                                          ) : (
-                                            <div className="flex flex-col">
-                                              <div className="px-4 py-2 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
-                                                <Tooltip title={tab.query}>
-                                                  <span className="text-[11px] text-slate-500 font-mono truncate max-w-[500px] opacity-70">
-                                                    SQL: {tab.query}
-                                                  </span>
-                                                </Tooltip>
-                                              </div>
-                                              <div className="overflow-auto max-h-[400px]">
-                                                <Table
-                                                  dataSource={tab.data}
-                                                  columns={tab.columns}
-                                                  pagination={false}
-                                                  size="small"
-                                                  rowKey="__uid"
-                                                  className="custom-result-table"
-                                                  scroll={{ x: "max-content" }}
-                                                  locale={{
-                                                    emptyText: (
-                                                      <div className="py-8 text-slate-400 italic text-[13px]">
-                                                        Query returned no
-                                                        results.
-                                                      </div>
-                                                    ),
-                                                  }}
-                                                />
-                                              </div>
-                                            </div>
-                                          )}
-                                        </div>
-                                      ),
-                                    }))}
-                                  />
+                        }
+                        description={sampleDataError}
+                        className="rounded-xl border border-red-200 bg-red-50"
+                      />
+                    ) : (
+                      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+                        <Table
+                          dataSource={sampleDataRows}
+                          columns={sampleDataColumns}
+                          rowKey="__rowKey"
+                          loading={isSampleDataLoading}
+                          pagination={{
+                            pageSize: 10,
+                            showSizeChanger: false,
+                            className:
+                              "px-4 py-3 border-t border-slate-100 !mb-0",
+                          }}
+                          scroll={{ x: "max-content" }}
+                          className="custom-sample-data-table"
+                          locale={{
+                            emptyText:
+                              viewDetail?.sync_status !== "success" ? (
+                                <div className="py-10 text-center">
+                                  <p className="text-sm font-medium text-slate-700">
+                                    Sample data is available after a successful
+                                    sync.
+                                  </p>
                                 </div>
                               ) : (
-                                <div className="p-12 border-2 border-dashed border-slate-200 rounded-xl bg-slate-50/50 flex flex-col items-center justify-center text-center">
-                                  <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center border border-slate-200 mb-4 shadow-sm">
-                                    <Play
-                                      size={20}
-                                      className="text-slate-300"
-                                    />
-                                  </div>
-                                  <span className="text-[14px] font-semibold text-slate-600">
-                                    No active results
-                                  </span>
-                                  <span className="text-[12px] text-slate-400 mt-1 max-w-[240px]">
-                                    Run a query to view data output here. You
-                                    can manage multiple result sets in tabs.
-                                  </span>
+                                <div className="py-10 text-center">
+                                  <p className="text-sm font-medium text-slate-700">
+                                    No sample rows found
+                                  </p>
+                                  <p className="mt-1 text-xs text-slate-500">
+                                    Try refreshing after the next sync completes.
+                                  </p>
                                 </div>
-                              )}
-                            </div>
-                          </div>
-                        ),
-                      }))}
-                    />
+                              ),
+                          }}
+                        />
+                      </div>
+                    )}
                   </div>
                 ),
               },

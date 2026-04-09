@@ -35,6 +35,12 @@ export const authApi = {
     const response = await api.get<Organization[]>("/auth/me/orgs?name=primary");
     return response.data;
   },
+  async switchOrg(org_id: string) {
+    const response = await api.post<LoginResponse>("/auth/switch-org", {
+      org_id,
+    });
+    return response.data;
+  },
   async logout() {
     const response = await api.post<AuthMessageResponse>(
       "/auth/logout?name=primary",

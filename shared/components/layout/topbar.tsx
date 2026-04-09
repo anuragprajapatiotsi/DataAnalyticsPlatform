@@ -1,11 +1,12 @@
 "use client";
 
 import Link from "next/link";
+import { Select } from "antd";
 import { ChevronDown, Menu, Search, MessageSquareMore, UserCircle, Settings, LogOut } from "lucide-react";
 
+import { NotificationMenu } from "@/features/notifications/components/notification-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/shared/components/ui/avatar";
 import { Button } from "@/shared/components/ui/button";
-import { CustomSelect } from "@/shared/components/ui/custom-select";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,15 +17,23 @@ import {
 import { Input } from "@/shared/components/ui/input";
 import { useAuth } from "@/shared/hooks/use-auth";
 
-const languages = [
-  { label: "English", value: "en" },
-  { label: "Spanish", value: "es" },
-  { label: "French", value: "fr" },
-  { label: "German", value: "de" },
-];
-
 export function Topbar() {
-  const { user, logout, isLoggingOut } = useAuth();
+  const {
+    user,
+    organizations,
+    currentOrgId,
+    switchOrg,
+    isSwitchingOrg,
+    logout,
+    isLoggingOut,
+  } = useAuth();
+
+  const orgOptions = organizations
+    .filter((organization) => organization.is_active)
+    .map((organization) => ({
+    label: organization.name,
+    value: organization.id,
+    }));
 
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-slate-200 bg-white/80 px-4 backdrop-blur-md sm:px-6">
@@ -46,9 +55,27 @@ export function Topbar() {
             </div>
           </div>
         </div>
+
+        <div className="hidden min-w-[220px] md:block">
+          <Select
+            value={currentOrgId ?? undefined}
+            options={orgOptions}
+            onChange={(value) => void switchOrg(value)}
+            loading={isSwitchingOrg}
+            disabled={isSwitchingOrg || orgOptions.length === 0}
+            placeholder="Select organization"
+            className="w-full org-switcher-select"
+            showSearch
+            optionFilterProp="label"
+            suffixIcon={<ChevronDown className="h-3.5 w-3.5 text-slate-400" />}
+            notFoundContent="No organizations found"
+          />
+        </div>
       </div>
 
       <div className="flex items-center gap-3">
+        <NotificationMenu />
+
         <Button
           variant="ghost"
           size="sm"
@@ -121,7 +148,27 @@ export function Topbar() {
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
+
+      <style jsx global>{`
+        .org-switcher-select .ant-select-selector {
+          height: 36px !important;
+          border-radius: 10px !important;
+          border-color: #e2e8f0 !important;
+          background: #f8fafc !important;
+          box-shadow: none !important;
+        }
+        .org-switcher-select .ant-select-selection-item {
+          line-height: 34px !important;
+          font-size: 14px !important;
+          font-weight: 500 !important;
+          color: #334155 !important;
+        }
+        .org-switcher-select.ant-select-focused .ant-select-selector,
+        .org-switcher-select .ant-select-selector:hover {
+          border-color: #93c5fd !important;
+          background: #ffffff !important;
+        }
+      `}</style>
     </header>
   );
 }
-
