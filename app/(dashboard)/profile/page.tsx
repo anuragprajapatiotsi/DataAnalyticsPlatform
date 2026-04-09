@@ -356,8 +356,8 @@ export default function CurrentUserProfilePage() {
                             You are a member of {orgs?.length || 0} organizations.
                           </p>
                         </div>
-                        <Tag color="blue" className="rounded-full px-3 py-0.5 font-semibold text-[11px] uppercase tracking-wider border-none bg-blue-50 text-blue-600">
-                          Active: {orgs?.find(o => o.id === user?.org_id)?.name || "N/A"}
+                        <Tag color="blue" className="rounded-full px-3 py-0.5 font-semibold text-[11px] tracking-wider border-none bg-blue-50 text-blue-600">
+                          Current Org: {orgs?.find(o => o.id === user?.org_id)?.name || "N/A"}
                         </Tag>
                       </div>
 

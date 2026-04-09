@@ -94,6 +94,20 @@ export function UserProfileForm() {
     return false; // Prevent auto-upload
   };
 
+  const handleReset = () => {
+    if (user) {
+      form.setFieldsValue({
+        name: user.name,
+        display_name: user.display_name,
+        description: user.description || "",
+        image: user.image || "",
+        default_org_id: user.org_id || "",
+      });
+      setPreviewImage(user.image || "");
+      setFileList([]);
+    }
+  };
+
   if (!user) return <Spin />;
 
   return (
@@ -240,7 +254,7 @@ export function UserProfileForm() {
           <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100 mt-6">
             <Button
               className="h-10 px-6 rounded-lg font-bold border-slate-200 hover:bg-slate-50"
-              onClick={() => form.resetFields()}
+              onClick={handleReset}
             >
               Reset
             </Button>
