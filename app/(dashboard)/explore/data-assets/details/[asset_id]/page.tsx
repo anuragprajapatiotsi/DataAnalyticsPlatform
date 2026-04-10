@@ -1035,7 +1035,11 @@ export default function DataAssetDetailPage() {
                       pageSize: data.limit,
                       total: data.total_matching,
                       size: "small",
-                      onChange: (page) => handleColumnClick(selectedColumnId!, (page - 1) * data.limit)
+                      showSizeChanger: false,
+                      showLessItems: true,
+                      className: "custom-explore-pagination",
+                      onChange: (page) =>
+                        handleColumnClick(selectedColumnId!, (page - 1) * data.limit),
                     }}
                     size="small"
                     className="custom-explore-table"
@@ -1107,6 +1111,13 @@ export default function DataAssetDetailPage() {
         }
         .custom-explore-table .ant-table-tbody > tr:last-child > td {
           border-bottom: none !important;
+        }
+
+        .custom-explore-table .ant-pagination.custom-explore-pagination {
+          margin: 0 !important;
+          padding: 12px 16px !important;
+          border-top: 1px solid #f1f5f9;
+          background: #fff;
         }
         
         /* Custom scrollbar */

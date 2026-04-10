@@ -153,8 +153,8 @@ export default function DataAssetCatalogPage() {
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-6">
-        <div className="max-w-[1400px] mx-auto flex flex-col gap-4 h-full">
+      <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden p-6">
+        <div className="mx-auto flex max-w-[1400px] flex-col gap-4">
           <div className="flex items-center justify-between gap-4 bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
             <div className="flex items-center gap-2 px-2">
               <Server size={16} className="text-slate-400" />
@@ -174,7 +174,7 @@ export default function DataAssetCatalogPage() {
             </div>
           </div>
 
-          <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex-1 flex flex-col min-h-0">
+          <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
             {isError ? (
               <div className="p-6">
                 <Alert
@@ -206,7 +206,7 @@ export default function DataAssetCatalogPage() {
                     ),
                   className: "cursor-pointer group transition-colors duration-200 hover:bg-slate-50/80",
                 })}
-                className="custom-explore-table flex-1 flex flex-col h-full"
+                className="custom-explore-table"
                 locale={{
                   emptyText: (
                     <Empty

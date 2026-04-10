@@ -8,5 +8,6 @@ export const useTrinoTableDetail = (catalog: string, schema: string, table: stri
     queryKey: ["trino-table-detail", catalog, schema, table],
     queryFn: () => serviceService.getTrinoTableDetail(catalog, schema, table),
     enabled: !!catalog && !!schema && !!table,
+    staleTime: 30 * 1000,
   });
 };

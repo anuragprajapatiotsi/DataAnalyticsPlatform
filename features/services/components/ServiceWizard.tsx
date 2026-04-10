@@ -209,7 +209,6 @@ export function ServiceWizard({
       setTestResult(result);
       if (result.success) {
         setIsTestSuccessful(true);
-        message.success(result.message);
       }
     } catch (error: any) {
       console.error("Test connection error:", error);

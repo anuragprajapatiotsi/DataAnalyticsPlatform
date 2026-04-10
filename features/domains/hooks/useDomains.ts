@@ -34,6 +34,7 @@ export function useDomains() {
   const domainsQuery = useQuery({
     queryKey: DOMAINS_QUERY_KEY,
     queryFn: domainService.getDomains,
+    staleTime: 5 * 60 * 1000,
   });
 
   const createMutation = useMutation({

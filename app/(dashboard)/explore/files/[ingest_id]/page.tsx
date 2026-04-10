@@ -42,7 +42,7 @@ export default function ExploreFileDetailPage() {
     queryKey: ["file-preview", ingestId],
     queryFn: () => fileService.getFilePreview(ingestId),
     enabled: !!ingestId && shouldFetchPreview,
-    staleTime: 5 * 60 * 1000,
+    staleTime: 0,
     gcTime: 15 * 60 * 1000,
     retry: 1,
   });

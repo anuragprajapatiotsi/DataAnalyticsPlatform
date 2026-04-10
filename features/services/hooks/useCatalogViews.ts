@@ -7,5 +7,6 @@ export const useCatalogViews = () => {
   return useQuery({
     queryKey: ["catalog-views"],
     queryFn: () => serviceService.getCatalogViews(),
+    staleTime: 0,
   });
 };

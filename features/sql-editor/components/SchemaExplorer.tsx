@@ -18,8 +18,8 @@ import {
 } from "lucide-react";
 import { cn } from "@/shared/utils/cn";
 import { useSqlEditorContext } from "../contexts/SqlEditorContext";
-import { useQueryClient } from "@tanstack/react-query";
 import { serviceService } from "@/features/services/services/service.service";
+import { CATALOG_VIEWS_UPDATED_EVENT } from "../constants";
 
 type ExplorerNodeType =
   | "catalog"
@@ -78,125 +78,111 @@ const getIcon = (type: ExplorerNodeType) => {
   }
 };
 
-const STORAGE_KEYS = {
-  TREE_DATA: "sql_explorer_tree_data_v11",
-  EXPANDED_KEYS: "sql_explorer_expanded_keys_v11",
-  SELECTED_ID: "sql_explorer_selected_id_v11",
-};
+function getInitialTreeData(): ExplorerNode[] {
+  return [
+    {
+      id: "root-catalog_views",
+      name: "Catalog Views",
+      type: "folder",
+      hasChildren: true,
+      children: [],
+      isLoaded: false,
+    },
+    {
+      id: "root-data-assets",
+      name: "Data Assets",
+      type: "folder",
+      catalog: "iceberg",
+      schema: "catalog_views",
+      hasChildren: true,
+      children: [],
+      isLoaded: false,
+    },
+    {
+      id: "root-sources",
+      name: "Sources",
+      type: "folder",
+      hasChildren: true,
+      children: [
+        {
+          id: "source-databases",
+          name: "Database Sources",
+          type: "database",
+          hasChildren: true,
+          children: [],
+          isLoaded: false,
+        },
+      ],
+      isLoaded: true,
+    },
+  ];
+}
+
+function findExpandedUnloadedNode(
+  nodes: ExplorerNode[],
+  expandedKeys: Set<string>,
+): ExplorerNode | null {
+  for (const node of nodes) {
+    if (expandedKeys.has(node.id) && node.hasChildren && !node.isLoaded) {
+      return node;
+    }
+
+    if (node.children.length > 0) {
+      const nested = findExpandedUnloadedNode(node.children, expandedKeys);
+      if (nested) {
+        return nested;
+      }
+    }
+  }
+
+  return null;
+}
+
+function shouldRefetchCatalogViewNode(node: ExplorerNode) {
+  return (
+    node.id === "root-catalog_views" ||
+    (node.type === "catalog" && node.catalog === "iceberg") ||
+    (node.type === "schema" && !!node.catalog && !node.connection_id) ||
+    (node.type === "table" && !!node.catalog && !node.connection_id && !node.asset_id)
+  );
+}
 
 export function SchemaExplorer() {
   const router = useRouter();
-  const queryClient = useQueryClient();
   const { activeTabId, updateTabQuery, updateTabContext } =
     useSqlEditorContext();
 
   // Core State with dual-discovery roots
-  const [treeData, setTreeData] = useState<ExplorerNode[]>(() => {
-    if (typeof window !== "undefined") {
-      const saved = localStorage.getItem(STORAGE_KEYS.TREE_DATA);
-      if (saved) {
-        try {
-          return JSON.parse(saved);
-        } catch (e) {
-          console.error("Failed to parse saved tree data", e);
-        }
-      }
-    }
-    return [
-      {
-        id: "root-catalog_views",
-        name: "Catalog Views",
-        type: "folder",
-        hasChildren: true,
-        children: [],
-        isLoaded: false,
-      },
-      {
-        id: "root-data-assets",
-        name: "Data Assets",
-        type: "folder",
-        catalog: "iceberg",
-        schema: "catalog_views",
-        hasChildren: true,
-        children: [],
-        isLoaded: false,
-      },
-      {
-        id: "root-sources",
-        name: "Sources",
-        type: "folder",
-        hasChildren: true,
-        children: [
-          {
-            id: "source-databases",
-            name: "Database Sources",
-            type: "database",
-            hasChildren: true,
-            children: [],
-            isLoaded: false,
-          },
-        ],
-        isLoaded: true,
-      },
-    ];
-  });
-
-  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(() => {
-    if (typeof window !== "undefined") {
-      return localStorage.getItem(STORAGE_KEYS.SELECTED_ID);
-    }
-    return "root-catalog_views";
-  });
-
-  const [expandedKeys, setExpandedKeys] = useState<Set<string>>(() => {
-    if (typeof window !== "undefined") {
-      const saved = localStorage.getItem(STORAGE_KEYS.EXPANDED_KEYS);
-      if (saved) {
-        try {
-          return new Set(JSON.parse(saved));
-        } catch (e) {
-          console.error("Failed to parse saved expanded keys", e);
-        }
-      }
-    }
-    return new Set(["root-catalog_views"]);
-  });
+  const [treeData, setTreeData] = useState<ExplorerNode[]>(getInitialTreeData);
+  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(
+    "root-catalog_views",
+  );
+  const [expandedKeys, setExpandedKeys] = useState<Set<string>>(
+    () => new Set(["root-catalog_views"]),
+  );
 
   const [loadingNodes, setLoadingNodes] = useState<Set<string>>(new Set());
-  const [isInitialLoading, setIsInitialLoading] = useState(false);
-  const [discoveryError, setDiscoveryError] = useState<string | null>(null);
 
-  // Persistence Auto-Sync
-  // ... (Persistence effects remain same)
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.TREE_DATA, JSON.stringify(treeData));
-  }, [treeData]);
-
-  useEffect(() => {
-    localStorage.setItem(
-      STORAGE_KEYS.EXPANDED_KEYS,
-      JSON.stringify(Array.from(expandedKeys)),
-    );
-  }, [expandedKeys]);
-
-  useEffect(() => {
-    if (selectedNodeId) {
-      localStorage.setItem(STORAGE_KEYS.SELECTED_ID, selectedNodeId);
-    } else {
-      localStorage.removeItem(STORAGE_KEYS.SELECTED_ID);
-    }
-  }, [selectedNodeId]);
-
-  // Trigger Discovery for default expanded roots on mount
-  useEffect(() => {
-    const rootCV = treeData.find((n) => n.id === "root-catalog_views");
-    if (rootCV && expandedKeys.has(rootCV.id) && !rootCV.isLoaded) {
-      toggleNode(rootCV);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  const updateTreeNodes = useCallback((
+    nodeList: ExplorerNode[],
+    id: string,
+    updates: Partial<ExplorerNode>,
+  ): ExplorerNode[] => {
+    return nodeList.map((node) => {
+      if (node.id === id) {
+        return { ...node, ...updates };
+      }
+      if (node.children && node.children.length > 0) {
+        return {
+          ...node,
+          children: updateTreeNodes(node.children, id, updates),
+        };
+      }
+      return node;
+    });
   }, []);
 
-  const toggleNode = async (targetNode: ExplorerNode) => {
+  const toggleNode = useCallback(async (targetNode: ExplorerNode) => {
     // Handle Load More
     if (targetNode.type === "load-more") {
       const parentId = targetNode.id.replace("load-more-", "");
@@ -264,7 +250,11 @@ export function SchemaExplorer() {
     }
 
     // Handle Discovery/Loading for Dynamic Folders
-    if (shouldOpen && targetNode.hasChildren && !targetNode.isLoaded) {
+    if (
+      shouldOpen &&
+      targetNode.hasChildren &&
+      (!targetNode.isLoaded || shouldRefetchCatalogViewNode(targetNode))
+    ) {
       setLoadingNodes((prev) => new Set(prev).add(targetNode.id));
 
       try {
@@ -570,8 +560,9 @@ export function SchemaExplorer() {
 
         setTreeData((prev) =>
           updateTreeNodes(prev, targetNode.id, {
-            children: children,
+            children,
             isLoaded: true,
+            error: null,
           }),
         );
       } catch (error: any) {
@@ -591,26 +582,45 @@ export function SchemaExplorer() {
         });
       }
     }
-  };
+  }, [activeTabId, expandedKeys, loadingNodes, updateTabContext, updateTabQuery, updateTreeNodes]);
 
-  const updateTreeNodes = (
-    nodeList: ExplorerNode[],
-    id: string,
-    updates: Partial<ExplorerNode>,
-  ): ExplorerNode[] => {
-    return nodeList.map((node) => {
-      if (node.id === id) {
-        return { ...node, ...updates };
-      }
-      if (node.children && node.children.length > 0) {
-        return {
-          ...node,
-          children: updateTreeNodes(node.children, id, updates),
-        };
-      }
-      return node;
-    });
-  };
+  useEffect(() => {
+    const staleExpandedNode = findExpandedUnloadedNode(treeData, expandedKeys);
+    if (!staleExpandedNode || loadingNodes.has(staleExpandedNode.id)) {
+      return;
+    }
+
+    void toggleNode(staleExpandedNode);
+  }, [expandedKeys, loadingNodes, toggleNode, treeData]);
+
+  useEffect(() => {
+    const handleCatalogViewsUpdated = () => {
+      setTreeData((prev) =>
+        updateTreeNodes(prev, "root-catalog_views", {
+          children: [],
+          isLoaded: false,
+          error: null,
+        }),
+      );
+      setExpandedKeys((prev) => {
+        const next = new Set(prev);
+        next.add("root-catalog_views");
+        return next;
+      });
+    };
+
+    window.addEventListener(
+      CATALOG_VIEWS_UPDATED_EVENT,
+      handleCatalogViewsUpdated as EventListener,
+    );
+
+    return () => {
+      window.removeEventListener(
+        CATALOG_VIEWS_UPDATED_EVENT,
+        handleCatalogViewsUpdated as EventListener,
+      );
+    };
+  }, [updateTreeNodes]);
 
   const renderNode = (node: ExplorerNode, depth: number = 0) => {
     const Icon = getIcon(node.type);

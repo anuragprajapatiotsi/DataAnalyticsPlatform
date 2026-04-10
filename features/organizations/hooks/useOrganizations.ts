@@ -3,6 +3,22 @@ import { message } from "antd";
 import { orgService } from "../services/org.service";
 import type { CreateOrgRequest, UpdateOrgRequest } from "@/shared/types";
 
+function getApiErrorMessage(error: unknown, fallback: string) {
+  if (typeof error !== "object" || error === null) {
+    return fallback;
+  }
+
+  const response = (error as {
+    response?: {
+      data?: {
+        message?: string;
+      };
+    };
+  }).response;
+
+  return response?.data?.message || fallback;
+}
+
 export const useOrganizations = () => {
   const queryClient = useQueryClient();
 
@@ -13,6 +29,7 @@ export const useOrganizations = () => {
   } = useQuery({
     queryKey: ["organizations"],
     queryFn: orgService.getOrgs,
+    staleTime: 5 * 60 * 1000,
   });
 
   const createMutation = useMutation({
@@ -21,10 +38,8 @@ export const useOrganizations = () => {
       message.success("Organization created successfully");
       queryClient.invalidateQueries({ queryKey: ["organizations"] });
     },
-    onError: (error: any) => {
-      message.error(
-        error.response?.data?.message || "Failed to create organization",
-      );
+    onError: (error: unknown) => {
+      message.error(getApiErrorMessage(error, "Failed to create organization"));
     },
   });
 
@@ -35,10 +50,8 @@ export const useOrganizations = () => {
       message.success("Organization updated successfully");
       queryClient.invalidateQueries({ queryKey: ["organizations"] });
     },
-    onError: (error: any) => {
-      message.error(
-        error.response?.data?.message || "Failed to update organization",
-      );
+    onError: (error: unknown) => {
+      message.error(getApiErrorMessage(error, "Failed to update organization"));
     },
   });
 
@@ -48,10 +61,8 @@ export const useOrganizations = () => {
       message.success("Organization deleted successfully");
       queryClient.invalidateQueries({ queryKey: ["organizations"] });
     },
-    onError: (error: any) => {
-      message.error(
-        error.response?.data?.message || "Failed to delete organization",
-      );
+    onError: (error: unknown) => {
+      message.error(getApiErrorMessage(error, "Failed to delete organization"));
     },
   });
 
