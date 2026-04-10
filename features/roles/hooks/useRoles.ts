@@ -3,12 +3,29 @@ import { roleService } from "../services/role.service";
 import { GetRolesParams, CreateRolePayload } from "../types";
 import { message } from "antd";
 
+function getApiErrorMessage(error: unknown, fallback: string) {
+  if (typeof error !== "object" || error === null) {
+    return fallback;
+  }
+
+  const response = (error as {
+    response?: {
+      data?: {
+        message?: string;
+      };
+    };
+  }).response;
+
+  return response?.data?.message || fallback;
+}
+
 export const useRoles = (params: GetRolesParams = { skip: 0, limit: 50 }) => {
   const queryClient = useQueryClient();
 
   const rolesQuery = useQuery({
     queryKey: ["roles", params],
     queryFn: () => roleService.getRoles(params),
+    staleTime: 5 * 60 * 1000,
   });
 
   const createRoleMutation = useMutation({
@@ -17,8 +34,8 @@ export const useRoles = (params: GetRolesParams = { skip: 0, limit: 50 }) => {
       message.success("Role created successfully");
       queryClient.invalidateQueries({ queryKey: ["roles"] });
     },
-    onError: (error: any) => {
-      message.error(error.response?.data?.message || "Failed to create role");
+    onError: (error: unknown) => {
+      message.error(getApiErrorMessage(error, "Failed to create role"));
     },
   });
 
@@ -29,8 +46,8 @@ export const useRoles = (params: GetRolesParams = { skip: 0, limit: 50 }) => {
       message.success("Role updated successfully");
       queryClient.invalidateQueries({ queryKey: ["roles"] });
     },
-    onError: (error: any) => {
-      message.error(error.response?.data?.message || "Failed to update role");
+    onError: (error: unknown) => {
+      message.error(getApiErrorMessage(error, "Failed to update role"));
     },
   });
 
@@ -40,8 +57,8 @@ export const useRoles = (params: GetRolesParams = { skip: 0, limit: 50 }) => {
       message.success("Role deleted successfully");
       queryClient.invalidateQueries({ queryKey: ["roles"] });
     },
-    onError: (error: any) => {
-      message.error(error.response?.data?.message || "Failed to delete role");
+    onError: (error: unknown) => {
+      message.error(getApiErrorMessage(error, "Failed to delete role"));
     },
   });
 

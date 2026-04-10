@@ -19,31 +19,33 @@ export function Providers({ children }: { children: ReactNode }) {
     () =>
       new QueryClient({
         queryCache: new QueryCache({
-          onError: (error: any, query) => {
+          onError: (error: unknown, query) => {
             // Only show toast for queries that don't have their own error handling
             // and are not 401s (already handled by axios interceptor)
-            const parsed = parseError(error);
-            if (error?.status !== 401 && !query.meta?.errorMessage) {
+            const parsedError = parseError(error);
+            if (parsedError.status !== 401 && !query.meta?.errorMessage) {
               // We could show a toast here, but usually page-level errors are better
               // for queries. Mutations ALWAYS get a toast.
             }
           },
         }),
         mutationCache: new MutationCache({
-          onError: (error: any, _variables, _context, mutation) => {
+          onError: (error: unknown, _variables, _context, mutation) => {
             // error is already parsed by axios interceptor
-            const status = error.status || (error as any).response?.status;
+            const parsedError = parseError(error);
+            const status = parsedError.status;
 
             // Skip if 401 (handled by axios refresh logic) or if mutation meta suppresses global message
             if (status !== 401 && mutation.meta?.showGlobalError !== false) {
-              message.error(error.message || "An unexpected error occurred");
+              message.error(parsedError.message || "An unexpected error occurred");
             }
           },
         }),
         defaultOptions: {
           queries: {
             refetchOnWindowFocus: false,
-            staleTime: 60 * 1000, // 1 minute
+            refetchOnReconnect: true,
+            staleTime: 0,
             gcTime: 10 * 60 * 1000, // 10 minutes
             retry: 1,
           },

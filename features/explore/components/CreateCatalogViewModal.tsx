@@ -11,6 +11,7 @@ import {
   Tabs,
   Typography,
 } from "antd";
+import { useQueryClient } from "@tanstack/react-query";
 import { Database, Link, CalendarClock, Settings2 } from "lucide-react";
 import { serviceService } from "@/features/services/services/service.service";
 import { CATALOG_VIEWS_UPDATED_EVENT } from "@/features/sql-editor/constants";
@@ -48,6 +49,7 @@ export function CreateCatalogViewModal({
   initialEndpointContext,
 }: CreateCatalogViewModalProps) {
   const [form] = Form.useForm();
+  const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<"asset" | "endpoint">("asset");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -226,6 +228,14 @@ export function CreateCatalogViewModal({
       }
 
       const newView = await serviceService.createCatalogView(payload);
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["catalog-views"] }),
+        queryClient.invalidateQueries({ queryKey: ["catalog-view"] }),
+        queryClient.invalidateQueries({ queryKey: ["sync-config"] }),
+        queryClient.invalidateQueries({ queryKey: ["trino-schemas"] }),
+        queryClient.invalidateQueries({ queryKey: ["trino-tables"] }),
+        queryClient.invalidateQueries({ queryKey: ["trino-table-detail"] }),
+      ]);
       if (typeof window !== "undefined") {
         window.dispatchEvent(
           new CustomEvent(CATALOG_VIEWS_UPDATED_EVENT, {

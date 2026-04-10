@@ -8,5 +8,6 @@ export const useCatalogViewById = (id: string) => {
     queryKey: ["catalog-view", id],
     queryFn: () => serviceService.getCatalogViewById(id),
     enabled: !!id,
+    staleTime: 0,
   });
 };

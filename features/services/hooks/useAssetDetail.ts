@@ -8,5 +8,6 @@ export const useAssetDetail = (id: string) => {
     queryKey: ["asset-detail", id],
     queryFn: () => serviceService.getAssetDetail(id),
     enabled: !!id,
+    staleTime: 30 * 1000,
   });
 };

@@ -8,5 +8,6 @@ export const useTrinoTables = (catalog: string, schema: string) => {
     queryKey: ["trino-tables", catalog, schema],
     queryFn: () => serviceService.getTrinoTables(catalog, schema),
     enabled: !!catalog && !!schema,
+    staleTime: 30 * 1000,
   });
 };

@@ -8,5 +8,6 @@ export const useTrinoSchemas = (catalog: string) => {
     queryKey: ["trino-schemas", catalog],
     queryFn: () => serviceService.getTrinoSchemas(catalog),
     enabled: !!catalog,
+    staleTime: 30 * 1000,
   });
 };

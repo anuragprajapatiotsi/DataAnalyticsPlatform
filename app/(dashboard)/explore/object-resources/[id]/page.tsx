@@ -160,6 +160,48 @@ function extractColumnMetadata(viewDetail: CatalogView | null): ColumnMetadataRo
   return [];
 }
 
+function resolveSampleDataContext(target: string | null) {
+  if (!target) {
+    return null;
+  }
+
+  const segments = target
+    .split(".")
+    .map((segment) => segment.trim())
+    .filter(Boolean);
+
+  if (segments.length >= 3) {
+    const [catalog, schema, ...tableParts] = segments;
+    return {
+      catalog,
+      schema,
+      table: tableParts.join("."),
+      qualifiedTarget: target,
+    };
+  }
+
+  if (segments.length === 2) {
+    const [schema, table] = segments;
+    return {
+      catalog: "iceberg",
+      schema,
+      table,
+      qualifiedTarget: `iceberg.${schema}.${table}`,
+    };
+  }
+
+  if (segments.length === 1) {
+    return {
+      catalog: "iceberg",
+      schema: "catalog_views",
+      table: segments[0],
+      qualifiedTarget: `iceberg.catalog_views.${segments[0]}`,
+    };
+  }
+
+  return null;
+}
+
 export default function ExploreObjectResourceDetailPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -230,6 +272,10 @@ export default function ExploreObjectResourceDetailPage() {
       `${viewDetail.source_schema || "schema"}.${viewDetail.source_table || "table"}`
     );
   }, [viewDetail]);
+  const sampleDataContext = useMemo(
+    () => resolveSampleDataContext(sampleDataTarget),
+    [sampleDataTarget],
+  );
   const overviewColumns = useMemo(() => {
     return extractColumnMetadata(viewDetail);
   }, [viewDetail]);
@@ -392,7 +438,7 @@ export default function ExploreObjectResourceDetailPage() {
 
   const fetchSampleData = useCallback(
     async (force: boolean = false) => {
-      if (!sampleDataTarget || viewDetail?.sync_status !== "success") {
+      if (!sampleDataContext || viewDetail?.sync_status !== "success") {
         return;
       }
 
@@ -408,9 +454,9 @@ export default function ExploreObjectResourceDetailPage() {
         setSampleDataError(null);
 
         const response = await serviceService.executeTrinoQuery({
-          sql: `SELECT * FROM ${sampleDataTarget} LIMIT 50`,
-          catalog: "iceberg",
-          schema: "catalog_views",
+          sql: `SELECT * FROM ${sampleDataContext.qualifiedTarget} LIMIT 50`,
+          catalog: sampleDataContext.catalog,
+          schema: sampleDataContext.schema,
           limit: 50,
         });
 
@@ -459,7 +505,7 @@ export default function ExploreObjectResourceDetailPage() {
 
         setSampleDataColumns(mappedColumns);
         setSampleDataRows(mappedRows);
-        setSampleDataFetchedFor(sampleDataTarget);
+        setSampleDataFetchedFor(sampleDataContext.qualifiedTarget);
       } catch (error: any) {
         console.error("Failed to fetch sample data:", error);
         setSampleDataError(
@@ -467,7 +513,7 @@ export default function ExploreObjectResourceDetailPage() {
             error?.message ||
             "Failed to load sample data.",
         );
-        setSampleDataFetchedFor(sampleDataTarget);
+        setSampleDataFetchedFor(sampleDataContext.qualifiedTarget);
       } finally {
         setIsSampleDataLoading(false);
       }
@@ -475,9 +521,8 @@ export default function ExploreObjectResourceDetailPage() {
     [
       sampleDataFetchedFor,
       isSampleDataLoading,
-      sampleDataTarget,
+      sampleDataContext,
       viewDetail?.sync_status,
-      viewId,
     ],
   );
 
@@ -486,7 +531,7 @@ export default function ExploreObjectResourceDetailPage() {
     setSampleDataColumns([]);
     setSampleDataError(null);
     setSampleDataFetchedFor(null);
-  }, [sampleDataTarget, viewId]);
+  }, [sampleDataContext?.qualifiedTarget, viewId]);
 
   useEffect(() => {
     if (

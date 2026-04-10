@@ -8,5 +8,6 @@ export const useSyncConfig = (id: string) => {
     queryKey: ["sync-config", id],
     queryFn: () => serviceService.getSyncConfig(id),
     enabled: !!id,
+    staleTime: 0,
   });
 };
