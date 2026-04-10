@@ -804,12 +804,12 @@ export default function ExploreObjectResourceDetailPage() {
             }
           : prev,
       );
-      const res = await serviceService.syncCatalogView(viewDetail.id, {
+      await serviceService.syncCatalogView(viewDetail.id, {
         sync_data: true,
         force: false,
       });
       await queryClient.invalidateQueries({ queryKey: NOTIFICATION_FEED_QUERY_KEY });
-      message.success(res.message || "Manual sync triggered successfully.");
+      message.info("Sync started. Status will update automatically.");
     } catch (err: any) {
       console.error(err);
       setSyncRequestedAt(null);
@@ -979,7 +979,7 @@ export default function ExploreObjectResourceDetailPage() {
       {/* Header Area */}
       <div className="px-6 pt-5 bg-white border-b border-slate-200 shadow-sm z-10 shrink-0">
         <div className="max-w-[1400px] mx-auto pb-4">
-          <div className="flex justify-between items-start gap-4">
+          <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-start">
             <div className="flex items-center gap-4 flex-1">
               <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-indigo-50 border border-indigo-100 text-indigo-600 shrink-0">
                 <Layers size={20} />
@@ -1004,43 +1004,65 @@ export default function ExploreObjectResourceDetailPage() {
               </div>
             </div>
 
-            <div className="flex items-center gap-3">
-              {viewDetail.sync_mode === "on_demand" && (
-                <Tooltip title="Trigger Manual Sync">
-                  <Button
-                    icon={
-                      <RefreshCw
-                        size={14}
-                        className={cn(isSyncing && "animate-spin")}
-                      />
-                    }
-                    onClick={handleSync}
-                    loading={isSyncing}
-                    disabled={isSyncButtonDisabled}
-                    className="flex items-center h-9 px-4 rounded-md border-slate-200 bg-white text-slate-600 hover:text-indigo-600 hover:border-indigo-300 hover:bg-indigo-50 font-medium transition-all shadow-sm"
-                  >
-                    Sync Now
-                  </Button>
-                </Tooltip>
-              )}
+            <div className="flex w-full justify-start lg:w-auto lg:justify-end">
+              <div className="flex w-full flex-col gap-3 lg:flex-row lg:items-center lg:justify-end lg:gap-6">
+                {/* {viewDetail.sync_mode === "on_demand" && (
+                  <Tooltip title="Trigger Manual Sync">
+                    <Button
+                      icon={
+                        <RefreshCw
+                          size={14}
+                          className={cn(isSyncing && "animate-spin")}
+                        />
+                      }
+                      onClick={handleSync}
+                      loading={isSyncing}
+                      disabled={isSyncButtonDisabled}
+                      className="flex h-9 items-center justify-center rounded-md border-slate-200 bg-white px-4 font-medium text-slate-600 shadow-sm transition-all hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-600"
+                    >
+                      Sync Now
+                    </Button>
+                  </Tooltip>
+                )} */}
 
-              <div className="flex flex-col items-end border-l border-slate-200 pl-4 ml-1">
-                <span className="text-[10px] uppercase font-semibold text-slate-400 tracking-widest mb-1">
-                  Status
-                </span>
-                <div
-                  className={cn(
-                    "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium border capitalize",
-                    statusConfig.bg,
-                    statusConfig.text,
-                    statusConfig.border,
-                  )}
-                >
-                  <span
-                    className={cn("w-1.5 h-1.5 rounded-full", statusConfig.dot)}
-                  />
-                  {viewDetail.sync_status || "Never"}
+                <div className="flex items-center gap-2 text-sm">
+                  <span className="text-[10px] font-semibold uppercase tracking-widest text-slate-400">
+                    Status:
+                  </span>
+                  <div
+                    className={cn(
+                      "inline-flex w-fit items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-medium capitalize",
+                      statusConfig.bg,
+                      statusConfig.text,
+                      statusConfig.border,
+                    )}
+                  >
+                    <span
+                      className={cn("h-1.5 w-1.5 rounded-full", statusConfig.dot)}
+                    />
+                    {viewDetail.sync_status || "Never"}
+                  </div>
                 </div>
+
+                {viewDetail.sync_mode === "on_demand" && (
+                  <Tooltip title="Trigger Manual Sync">
+                    <Button
+                      icon={
+                        <RefreshCw
+                          size={14}
+                          className={cn(isSyncing && "animate-spin")}
+                        />
+                      }
+                      onClick={handleSync}
+                      loading={isSyncing}
+                      disabled={isSyncButtonDisabled}
+                      className="flex h-9 items-center justify-center rounded-md border-slate-200 bg-white px-4 font-medium text-slate-600 shadow-sm transition-all hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-600"
+                    >
+                      Sync Now
+                    </Button>
+                  </Tooltip>
+                )}
+
               </div>
             </div>
           </div>

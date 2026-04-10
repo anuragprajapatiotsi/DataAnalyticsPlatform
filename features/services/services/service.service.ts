@@ -1,5 +1,5 @@
 import { api } from "@/shared/api/axios";
-import { Service, GetServicesParams, CreateServiceRequest, UpdateServiceRequest, ServiceEndpoint, ServiceEndpointRequest, DatabaseInfo, GroupedServiceCategory, SchemaInfo, DBObjectInfo, DBTableDetail, DBTablePreviewResponse, Bot, GetBotsParams, BotRun, GetBotRunsParams, ConnectorMetadata, AggregatedDatabase, CatalogResponse, CatalogAsset, DataAssetDetail, DataAssetProfile, DataColumnDetail, ColumnProfilingResponse, UpdateColumnRequest, BulkUpdateColumnItem, CatalogView, SyncConfig, TrinoCatalog, TrinoSchema, TrinoTable, TrinoColumn, TrinoTableDetail, TrinoQueryRequest, TrinoQueryResponse, ExplorerServiceEndpoint, ExplorerDatabaseAsset, ExplorerSchemaAsset, ExplorerObjectAsset, ExplorerAssetDetail, ExplorerAssetDetailResponse } from "../types";
+import { Service, GetServicesParams, CreateServiceRequest, UpdateServiceRequest, ServiceEndpoint, ServiceEndpointRequest, DatabaseInfo, GroupedServiceCategory, SchemaInfo, DBObjectInfo, DBTableDetail, DBTablePreviewResponse, Bot, GetBotsParams, BotRun, GetBotRunsParams, ConnectorMetadata, AggregatedDatabase, CatalogResponse, CatalogAsset, DataAssetDetail, DataAssetProfile, DataColumnDetail, ColumnProfilingResponse, UpdateColumnRequest, BulkUpdateColumnItem, CatalogView, SyncConfig, TrinoCatalog, TrinoSchema, TrinoTable, TrinoColumn, TrinoTableDetail, TrinoQueryRequest, TrinoQueryResponse, ExplorerServiceEndpoint, ExplorerDatabaseAsset, ExplorerSchemaAsset, ExplorerObjectAsset, ExplorerAssetDetail, ExplorerAssetDetailResponse, CatalogKpi } from "../types";
 
 function normalizeExplorerList<T>(payload: unknown): T[] {
   if (Array.isArray(payload)) {
@@ -461,6 +461,16 @@ export const serviceService = {
     const response = await api.get<ExplorerAssetDetail | ExplorerAssetDetailResponse>(
       `/data-assets/explorer/assets/${assetId}/detail`,
     );
+    return response.data;
+  },
+
+  async getKpis() {
+    const response = await api.get<CatalogKpi[]>("/catalog/kpis");
+    return response.data;
+  },
+
+  async getKpiById(kpiId: string) {
+    const response = await api.get<CatalogKpi>(`/catalog/kpis/${kpiId}`);
     return response.data;
   }
 };

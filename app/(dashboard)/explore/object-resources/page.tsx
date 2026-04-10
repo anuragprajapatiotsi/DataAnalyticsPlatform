@@ -41,9 +41,9 @@ export default function ExploreObjectResourcesPage() {
     e.stopPropagation();
     try {
       setSyncingViews((prev) => new Set(prev).add(id));
-      const res = await serviceService.syncCatalogView(id, { sync_data: true, force: false });
+      await serviceService.syncCatalogView(id, { sync_data: true, force: false });
       await queryClient.invalidateQueries({ queryKey: NOTIFICATION_FEED_QUERY_KEY });
-      message.success(res.message || "Manual sync triggered successfully.");
+      message.info("Sync started. Status will update automatically.");
       setTimeout(fetchCatalogViews, 1000);
     } catch (err: any) {
       console.error(err);

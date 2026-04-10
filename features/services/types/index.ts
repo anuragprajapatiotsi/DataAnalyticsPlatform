@@ -166,6 +166,24 @@ export interface DBTablePreviewResponse {
   limit?: number;
 }
 
+export interface CatalogKpi {
+  id: string;
+  kpi_name: string;
+  description?: string;
+  column_name?: string;
+  kpi_type?: string;
+  current_value?: number | string;
+  previous_value?: number | string;
+  unit?: string;
+  trend?: "up" | "down" | "stable" | string;
+  confidence_score?: number;
+  last_computed_at?: string;
+  created_at?: string;
+  updated_at?: string;
+  asset_id?: string;
+  [key: string]: unknown;
+}
+
 export interface Bot {
   id?: string;
   bot_id: string;

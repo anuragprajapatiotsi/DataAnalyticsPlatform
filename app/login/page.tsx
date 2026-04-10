@@ -1,26 +1,18 @@
 "use client";
 
-import { useMemo } from "react";
-import { useRouter } from "next/navigation";
+import { useSyncExternalStore } from "react";
 
 import { AuthForm } from "@/shared/components/forms/auth-form";
 import { useAuth } from "@/shared/hooks/use-auth";
 import { loginSchema } from "@/shared/utils/validation";
 
 export default function LoginPage() {
-  const router = useRouter();
-  const next =
-    typeof window !== "undefined"
-      ? new URLSearchParams(window.location.search).get("next")
-      : null;
   const { login, errorMessage, isLoading } = useAuth();
-
-  const safeRedirect = useMemo(() => {
-    if (!next || !next.startsWith("/") || next.startsWith("//")) {
-      return "/dashboard";
-    }
-    return next;
-  }, [next]);
+  const isHydrated = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
+  );
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 px-4 py-8">
@@ -48,7 +40,7 @@ export default function LoginPage() {
           password: "",
         }}
         errorMessage={errorMessage}
-        isSubmitting={isLoading}
+        isSubmitting={isHydrated ? isLoading : false}
         onSubmit={async (values) => {
           await login({
             email: values.login,

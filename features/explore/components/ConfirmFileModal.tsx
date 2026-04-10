@@ -96,8 +96,6 @@ export function ConfirmFileModal({
 
   React.useEffect(() => {
     if (!open) {
-      form.resetFields();
-      setColumnOverrides([]);
       return;
     }
 
@@ -188,7 +186,8 @@ export function ConfirmFileModal({
       confirmLoading={isSubmitting}
       okButtonProps={{ disabled: isSubmitDisabled }}
       width={980}
-      destroyOnClose
+      destroyOnHidden
+      forceRender
       centered
     >
       <Form<ConfirmFileModalValues>

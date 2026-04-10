@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { Form, Input, Modal, Select } from "antd";
+import { Form, Input, Modal } from "antd";
 
 import type { CatalogDomain } from "@/features/domains/types";
 import type { AdminUser } from "@/features/users/types";
@@ -29,8 +29,6 @@ export function FileGroupModal({
   open,
   onClose,
   onSubmit,
-  domains,
-  users,
   isSubmitting = false,
 }: FileGroupModalProps) {
   const [form] = Form.useForm<FileGroupModalValues>();
@@ -46,8 +44,6 @@ export function FileGroupModal({
         owner_ids: [],
         expert_ids: [],
       });
-    } else {
-      form.resetFields();
     }
   }, [form, open]);
 
@@ -59,7 +55,8 @@ export function FileGroupModal({
       onOk={() => form.submit()}
       confirmLoading={isSubmitting}
       okText="Create"
-      destroyOnClose
+      destroyOnHidden
+      forceRender
       centered
     >
       <Form<FileGroupModalValues>
