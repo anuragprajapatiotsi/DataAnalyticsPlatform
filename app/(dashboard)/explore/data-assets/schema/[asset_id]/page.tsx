@@ -257,8 +257,8 @@ export default function SchemaAssetsPage() {
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-6">
-        <div className="max-w-[1400px] mx-auto flex flex-col gap-4 h-full">
+      <div className="min-h-0 flex-1 overflow-hidden p-6">
+        <div className="mx-auto flex h-full max-w-[1400px] flex-col gap-4 overflow-hidden">
           <div className="flex items-center justify-between gap-4 bg-white p-2 rounded-xl border border-slate-200 shadow-sm">
             <div className="flex-1 flex items-center gap-2 px-2">
               <Search size={16} className="text-slate-400" />
@@ -272,7 +272,7 @@ export default function SchemaAssetsPage() {
             </div>
           </div>
 
-          <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex-1 flex flex-col min-h-0">
+          <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
             {isError ? (
               <div className="p-6">
                 <Alert
@@ -288,6 +288,7 @@ export default function SchemaAssetsPage() {
                 dataSource={filteredRows}
                 columns={level === "database" ? schemaColumns : objectColumns}
                 rowKey="id"
+                scroll={{ x: "max-content" }}
                 loading={{
                   spinning: loading,
                   indicator: <Spin indicator={<RefreshCw className="animate-spin text-blue-600" size={24} />} />
@@ -298,7 +299,7 @@ export default function SchemaAssetsPage() {
                   pageSizeOptions: ["20", "50", "100"],
                   className: "px-6 py-4 border-t border-slate-100 mt-auto !mb-0 shrink-0 bg-white",
                 }}
-                className="custom-explore-table flex-1 flex flex-col h-full"
+                className="custom-explore-table"
                 onRow={(record) => ({
                   onClick: () => {
                     if (level === "database") {

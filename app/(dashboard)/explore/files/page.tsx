@@ -17,6 +17,7 @@ import { cn } from "@/shared/utils/cn";
 import { domainService } from "@/features/domains/services/domain.service";
 import { userService } from "@/features/users/services/user.service";
 import { useAuth } from "@/shared/hooks/use-auth";
+import { useDatasetFiles } from "@/features/explore/hooks/useDatasetFiles";
 
 export default function ExploreFilesPage() {
   const router = useRouter();
@@ -26,6 +27,8 @@ export default function ExploreFilesPage() {
   const [isFileGroupModalOpen, setIsFileGroupModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("not-yet-confirm");
   const [fileGroupSearch, setFileGroupSearch] = useState("");
+  const [selectedDataset, setSelectedDataset] = useState<DatasetGroup | null>(null);
+  const [datasetFileSearch, setDatasetFileSearch] = useState("");
 
   const breadcrumbItems = [
     { label: "Explore", href: "/explore" },
@@ -92,6 +95,28 @@ export default function ExploreFilesPage() {
           new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime(),
       );
   }, [currentOrgId, datasetGroups]);
+
+  const {
+    data: datasetFiles = [],
+    isLoading: isDatasetFilesLoading,
+    isError: isDatasetFilesError,
+    refetch: refetchDatasetFiles,
+  } = useDatasetFiles(selectedDataset?.id);
+
+  const filteredDatasetFiles = React.useMemo(() => {
+    const normalizedSearch = datasetFileSearch.toLowerCase().trim();
+    return datasetFiles.filter((file) => {
+      const fileName = String(file.file_name || "").toLowerCase();
+      const datasetName = String(file.dataset_name || "").toLowerCase();
+      const status = String(file.status || "").toLowerCase();
+
+      return (
+        fileName.includes(normalizedSearch) ||
+        datasetName.includes(normalizedSearch) ||
+        status.includes(normalizedSearch)
+      );
+    });
+  }, [datasetFileSearch, datasetFiles]);
 
   const createFileGroupMutation = useMutation({
     mutationFn: datasetService.createDataset,
@@ -235,32 +260,32 @@ export default function ExploreFilesPage() {
         const isProcessing = normalizedStatus === "processing";
 
         const items: MenuProps["items"] = [
-          {
-            key: "create_catalog",
-            label: "Create Catalog View",
-            icon: <Layers size={14} className={cn("text-indigo-500", (isSuccess || isProcessing) && "opacity-50 grayscale")} />,
-            disabled: isSuccess || isProcessing,
-            onClick: (e) => {
-              e.domEvent.stopPropagation();
-              Modal.confirm({
-                title: "Create Catalog View",
-                content: "Do you want to create a catalog view from this file?",
-                okText: "Create View",
-                okType: "primary",
-                cancelText: "Cancel",
-                centered: true,
-                onOk: async () => {
-                  try {
-                    await fileService.confirmJob(record.job_id);
-                    message.success(`Job confirmed successfully: ${record.file_name || record.job_id}`);
-                    refetch();
-                  } catch {
-                    message.error("Failed to generate catalog view. Please try again.");
-                  }
-                },
-              });
-            },
-          },
+          // {
+          //   key: "create_catalog",
+          //   label: "Create Catalog View",
+          //   icon: <Layers size={14} className={cn("text-indigo-500", (isSuccess || isProcessing) && "opacity-50 grayscale")} />,
+          //   disabled: isSuccess || isProcessing,
+          //   onClick: (e) => {
+          //     e.domEvent.stopPropagation();
+          //     Modal.confirm({
+          //       title: "Create Catalog View",
+          //       content: "Do you want to create a catalog view from this file?",
+          //       okText: "Create View",
+          //       okType: "primary",
+          //       cancelText: "Cancel",
+          //       centered: true,
+          //       onOk: async () => {
+          //         try {
+          //           await fileService.confirmJob(record.job_id);
+          //           message.success(`Job confirmed successfully: ${record.file_name || record.job_id}`);
+          //           refetch();
+          //         } catch {
+          //           message.error("Failed to generate catalog view. Please try again.");
+          //         }
+          //       },
+          //     });
+          //   },
+          // },
           {
             key: "delete",
             label: <span className={cn("font-medium", isProcessing ? "text-slate-400" : "text-red-500")}>Delete File</span>,
@@ -369,6 +394,126 @@ export default function ExploreFilesPage() {
     },
   ];
 
+  const datasetFileColumns: ColumnsType<IngestFile> = [
+    {
+      title: "File Name",
+      dataIndex: "file_name",
+      key: "file_name",
+      width: "28%",
+      render: (value, record) => (
+        <div className="flex min-w-0 items-center gap-3">
+          <div className="flex h-8 w-8 items-center justify-center rounded-md border border-indigo-100 bg-indigo-50 text-indigo-600">
+            {getFileIcon(value, record.file_type)}
+          </div>
+          <div className="min-w-0">
+            <div className="truncate font-semibold text-slate-900">{value || "-"}</div>
+            <div className="mt-1 truncate text-xs text-slate-500">
+              {record.dataset_name || selectedDataset?.display_name || selectedDataset?.name || "Dataset file"}
+            </div>
+          </div>
+        </div>
+      ),
+    },
+    {
+      title: "File Type",
+      dataIndex: "file_type",
+      key: "file_type",
+      width: "10%",
+      render: (value, record) => {
+        const fallback = record.file_name?.split(".").pop()?.toUpperCase() || "UNKNOWN";
+        return (
+          <Tag className="m-0 rounded-full border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px] font-semibold uppercase text-slate-600">
+            {value || fallback}
+          </Tag>
+        );
+      },
+    },
+    {
+      title: "File Size",
+      dataIndex: "file_size",
+      key: "file_size",
+      width: "11%",
+      render: (value) => (
+        <span className="text-sm text-slate-600">
+          {typeof value === "number" ? formatBytes(value) : "-"}
+        </span>
+      ),
+    },
+    {
+      title: "Status",
+      dataIndex: "status",
+      key: "status",
+      width: "12%",
+      render: (status = "") => {
+        const normalizedStatus = String(status).toLowerCase();
+        const isSuccess = normalizedStatus === "success" || normalizedStatus === "completed" || normalizedStatus === "preview_ready";
+        const isFailed = normalizedStatus === "failed" || normalizedStatus === "error";
+        const isProcessing =
+          normalizedStatus === "processing" ||
+          normalizedStatus === "pending" ||
+          normalizedStatus === "running";
+
+        return (
+          <span
+            className={cn(
+              "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-medium capitalize",
+              isSuccess
+                ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                : isFailed
+                  ? "border-red-200 bg-red-50 text-red-700"
+                  : isProcessing
+                    ? "border-amber-200 bg-amber-50 text-amber-700"
+                    : "border-slate-200 bg-slate-50 text-slate-600",
+            )}
+          >
+            <span
+              className={cn(
+                "inline-block h-1.5 w-1.5 rounded-full",
+                isSuccess
+                  ? "bg-emerald-500"
+                  : isFailed
+                    ? "bg-red-500"
+                    : isProcessing
+                      ? "bg-amber-500 animate-pulse"
+                      : "bg-slate-400",
+              )}
+            />
+            {normalizedStatus.replaceAll("_", " ") || "unknown"}
+          </span>
+        );
+      },
+    },
+    {
+      title: "Columns",
+      dataIndex: "column_count",
+      key: "column_count",
+      width: "9%",
+      render: (value) => <span className="text-sm text-slate-600">{value ?? "-"}</span>,
+    },
+    {
+      title: "Created At",
+      dataIndex: "created_at",
+      key: "created_at",
+      width: "15%",
+      render: (value) => (
+        <span className="text-sm text-slate-500">
+          {value ? dayjs(value).format("MMM D, YYYY h:mm A") : "-"}
+        </span>
+      ),
+    },
+    {
+      title: "Completed At",
+      dataIndex: "completed_at",
+      key: "completed_at",
+      width: "15%",
+      render: (value) => (
+        <span className="text-sm text-slate-500">
+          {value ? dayjs(value).format("MMM D, YYYY h:mm A") : "-"}
+        </span>
+      ),
+    },
+  ];
+
   return (
     <div className="flex flex-col h-full w-full bg-[#FAFAFA] animate-in fade-in duration-500 overflow-hidden relative">
       {/* Header Area */}
@@ -416,77 +561,182 @@ export default function ExploreFilesPage() {
                   label: "File Group",
                   children: (
                     <div className="flex flex-col">
-                      <div className="flex flex-col gap-4 border-b border-slate-100 px-6 py-4 md:flex-row md:items-center md:justify-between">
-                        <div>
-                          <div className="text-sm font-medium text-slate-900">File-based dataset groups</div>
-                          <div className="mt-1 text-sm text-slate-500">
-                            Organize related ingested files into reusable groups for cataloging and governance.
-                          </div>
-                        </div>
-                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-                          <Input
-                            allowClear
-                            value={fileGroupSearch}
-                            onChange={(event) => setFileGroupSearch(event.target.value)}
-                            placeholder="Search by name or description"
-                            prefix={<Search size={14} className="text-slate-400" />}
-                            className="w-full sm:w-[280px]"
-                          />
-                          <Button
-                            type="primary"
-                            onClick={() => setIsFileGroupModalOpen(true)}
-                            icon={<FolderOpen size={16} />}
-                            className="bg-slate-900 hover:bg-slate-800 text-white rounded-md font-medium h-9 px-4 shadow-sm border-none"
-                          >
-                            Create File Group
-                          </Button>
-                        </div>
-                      </div>
-
-                      {isFileGroupsError ? (
-                        <div className="p-6">
-                          <Alert
-                            title="Failed to load file groups"
-                            description="We encountered an error while fetching file-based datasets. Please try again."
-                            type="error"
-                            showIcon
-                            action={<Button size="small" onClick={() => refetchFileGroups()}>Retry</Button>}
-                          />
-                        </div>
-                      ) : (
-                        <Table
-                          dataSource={filteredFileGroups}
-                          columns={fileGroupColumns}
-                          rowKey={(record) => record.id}
-                          loading={{
-                            spinning: isLoadingFileGroups,
-                            indicator: <Spin indicator={<RefreshCw className="animate-spin text-indigo-600" size={24} />} />,
-                          }}
-                          pagination={{
-                            pageSize: 10,
-                            hideOnSinglePage: true,
-                            className: "px-6 py-4 border-t border-slate-100 !mb-0 bg-white",
-                          }}
-                          className="custom-explore-table"
-                          scroll={{ x: 980 }}
-                          locale={{
-                            emptyText: (
-                              <Empty
-                                image={
-                                  <div className="w-16 h-16 rounded-full bg-slate-50 flex items-center justify-center mx-auto mb-4 border border-slate-100">
-                                    <FolderOpen className="text-slate-300" size={28} />
-                                  </div>
-                                }
-                                description={
-                                  <div className="flex flex-col gap-1">
-                                    <span className="text-slate-700 font-medium text-sm">No File Groups available</span>
-                                    <span className="text-slate-400 text-[13px]">Create a file group to organize ingested files into reusable datasets.</span>
-                                  </div>
-                                }
+                      {!selectedDataset ? (
+                        <>
+                          <div className="flex flex-col gap-4 border-b border-slate-100 px-6 py-4 md:flex-row md:items-center md:justify-between">
+                            <div>
+                              <div className="text-sm font-medium text-slate-900">File-based dataset groups</div>
+                              <div className="mt-1 text-sm text-slate-500">
+                                Organize related ingested files into reusable groups for cataloging and governance.
+                              </div>
+                            </div>
+                            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                              <Input
+                                allowClear
+                                value={fileGroupSearch}
+                                onChange={(event) => setFileGroupSearch(event.target.value)}
+                                placeholder="Search by name or description"
+                                prefix={<Search size={14} className="text-slate-400" />}
+                                className="w-full sm:w-[280px]"
                               />
-                            ),
-                          }}
-                        />
+                              <Button
+                                type="primary"
+                                onClick={() => setIsFileGroupModalOpen(true)}
+                                icon={<FolderOpen size={16} />}
+                                className="bg-slate-900 hover:bg-slate-800 text-white rounded-md font-medium h-9 px-4 shadow-sm border-none"
+                              >
+                                Create File Group
+                              </Button>
+                            </div>
+                          </div>
+
+                          {isFileGroupsError ? (
+                            <div className="p-6">
+                              <Alert
+                                title="Failed to load file groups"
+                                description="We encountered an error while fetching file-based datasets. Please try again."
+                                type="error"
+                                showIcon
+                                action={<Button size="small" onClick={() => refetchFileGroups()}>Retry</Button>}
+                              />
+                            </div>
+                          ) : (
+                            <Table
+                              dataSource={filteredFileGroups}
+                              columns={fileGroupColumns}
+                              rowKey={(record) => record.id}
+                              loading={{
+                                spinning: isLoadingFileGroups,
+                                indicator: <Spin indicator={<RefreshCw className="animate-spin text-indigo-600" size={24} />} />,
+                              }}
+                              pagination={{
+                                pageSize: 10,
+                                hideOnSinglePage: true,
+                                className: "px-6 py-4 border-t border-slate-100 !mb-0 bg-white",
+                              }}
+                              className="custom-explore-table"
+                              scroll={{ x: 980 }}
+                              onRow={(record) => ({
+                                onClick: () => {
+                                  setSelectedDataset(record);
+                                  setDatasetFileSearch("");
+                                },
+                                className: "cursor-pointer group hover:bg-slate-50/50 transition-colors",
+                              })}
+                              locale={{
+                                emptyText: (
+                                  <Empty
+                                    image={
+                                      <div className="w-16 h-16 rounded-full bg-slate-50 flex items-center justify-center mx-auto mb-4 border border-slate-100">
+                                        <FolderOpen className="text-slate-300" size={28} />
+                                      </div>
+                                    }
+                                    description={
+                                      <div className="flex flex-col gap-1">
+                                        <span className="text-slate-700 font-medium text-sm">No File Groups available</span>
+                                        <span className="text-slate-400 text-[13px]">Create a file group to organize ingested files into reusable datasets.</span>
+                                      </div>
+                                    }
+                                  />
+                                ),
+                              }}
+                            />
+                          )}
+                        </>
+                      ) : (
+                        <>
+                          <div className="flex flex-col gap-4 border-b border-slate-100 px-6 py-4">
+                            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                              <div>
+                                <div className="flex items-center gap-3">
+                                  <Button
+                                    onClick={() => setSelectedDataset(null)}
+                                    className="h-8 rounded-md border-slate-200 px-3 text-slate-600 hover:border-indigo-300 hover:text-indigo-600"
+                                  >
+                                    Back
+                                  </Button>
+                                  <div>
+                                    <div className="text-sm font-medium text-slate-900">
+                                      {selectedDataset.display_name || selectedDataset.name}
+                                    </div>
+                                    <div className="mt-1 text-sm text-slate-500">
+                                      Files mapped to this dataset group.
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                                <Input
+                                  allowClear
+                                  value={datasetFileSearch}
+                                  onChange={(event) => setDatasetFileSearch(event.target.value)}
+                                  placeholder="Search files by name or status"
+                                  prefix={<Search size={14} className="text-slate-400" />}
+                                  className="w-full sm:w-[280px]"
+                                />
+                                <Tooltip title="Refresh Dataset Files">
+                                  <Button
+                                    onClick={() => refetchDatasetFiles()}
+                                    icon={<RefreshCw size={14} className={isDatasetFilesLoading ? "animate-spin" : ""} />}
+                                    className="h-9 w-9 p-0 flex items-center justify-center rounded-md border-slate-200 text-slate-500 hover:text-indigo-600 hover:border-indigo-200 hover:bg-indigo-50"
+                                  />
+                                </Tooltip>
+                              </div>
+                            </div>
+                          </div>
+
+                          {isDatasetFilesError ? (
+                            <div className="p-6">
+                              <Alert
+                                title="Failed to load dataset files"
+                                description="We couldn't load the files for this dataset. Please try again."
+                                type="error"
+                                showIcon
+                                action={<Button size="small" onClick={() => refetchDatasetFiles()}>Retry</Button>}
+                              />
+                            </div>
+                          ) : (
+                            <div className="overflow-y-auto max-h-[calc(100vh-280px)]">
+                              <Table
+                                dataSource={filteredDatasetFiles}
+                                columns={datasetFileColumns}
+                                rowKey={(record) => record.job_id}
+                                loading={{
+                                  spinning: isDatasetFilesLoading,
+                                  indicator: <Spin indicator={<RefreshCw className="animate-spin text-indigo-600" size={24} />} />,
+                                }}
+                                pagination={{
+                                  pageSize: 10,
+                                  hideOnSinglePage: true,
+                                  className: "px-6 py-4 border-t border-slate-100 !mb-0 bg-white",
+                                }}
+                                className="custom-explore-table"
+                                scroll={{ x: 1100 }}
+                                onRow={(record) => ({
+                                  onClick: () => router.push(`/explore/files/${record.job_id}`),
+                                  className: "cursor-pointer group hover:bg-slate-50/50 transition-colors",
+                                })}
+                                locale={{
+                                  emptyText: (
+                                    <Empty
+                                      image={
+                                        <div className="w-16 h-16 rounded-full bg-slate-50 flex items-center justify-center mx-auto mb-4 border border-slate-100">
+                                          <FileText className="text-slate-300" size={28} />
+                                        </div>
+                                      }
+                                      description={
+                                        <div className="flex flex-col gap-1">
+                                          <span className="text-slate-700 font-medium text-sm">No files found for this dataset</span>
+                                          <span className="text-slate-400 text-[13px]">Files linked to this file group will appear here.</span>
+                                        </div>
+                                      }
+                                    />
+                                  ),
+                                }}
+                              />
+                            </div>
+                          )}
+                        </>
                       )}
                     </div>
                   ),
@@ -495,7 +745,7 @@ export default function ExploreFilesPage() {
                   key: "not-yet-confirm",
                   label: (
                     <div className="flex items-center gap-2">
-                      <span>Not Yet Confirm</span>
+                      <span>Preview Ready</span>
                       <Tag className="m-0 rounded-full border-amber-200 bg-amber-50 px-2 text-[11px] font-semibold text-amber-700">
                         {previewReadyFiles.length}
                       </Tag>

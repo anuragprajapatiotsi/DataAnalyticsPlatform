@@ -84,6 +84,11 @@ export const fileService = {
     return response.data;
   },
 
+  async getDatasetFiles(dataset_id: string) {
+    const response = await api.get<IngestFile[]>(`/ingest/datasets/${dataset_id}/files`);
+    return response.data;
+  },
+
   /**
    * Fetch a specific file by its ingest_id.
    * GET /ingest/upload/{ingest_id}

@@ -191,6 +191,9 @@ export default function ExploreObjectResourceDetailPage() {
   >([]);
   const [isSampleDataLoading, setIsSampleDataLoading] = useState(false);
   const [sampleDataError, setSampleDataError] = useState<string | null>(null);
+  const [sampleDataFetchedFor, setSampleDataFetchedFor] = useState<string | null>(
+    null,
+  );
   const [syncRequestedAt, setSyncRequestedAt] = useState<number | null>(null);
   const [syncAlert, setSyncAlert] = useState<SyncAlertState>(null);
   const editorRef = useRef<any>(null);
@@ -393,7 +396,10 @@ export default function ExploreObjectResourceDetailPage() {
         return;
       }
 
-      if (!force && (isSampleDataLoading || sampleDataColumns.length > 0)) {
+      if (
+        !force &&
+        (isSampleDataLoading || sampleDataFetchedFor === sampleDataTarget)
+      ) {
         return;
       }
 
@@ -453,6 +459,7 @@ export default function ExploreObjectResourceDetailPage() {
 
         setSampleDataColumns(mappedColumns);
         setSampleDataRows(mappedRows);
+        setSampleDataFetchedFor(sampleDataTarget);
       } catch (error: any) {
         console.error("Failed to fetch sample data:", error);
         setSampleDataError(
@@ -460,18 +467,26 @@ export default function ExploreObjectResourceDetailPage() {
             error?.message ||
             "Failed to load sample data.",
         );
+        setSampleDataFetchedFor(sampleDataTarget);
       } finally {
         setIsSampleDataLoading(false);
       }
     },
     [
+      sampleDataFetchedFor,
       isSampleDataLoading,
-      sampleDataColumns.length,
       sampleDataTarget,
       viewDetail?.sync_status,
       viewId,
     ],
   );
+
+  useEffect(() => {
+    setSampleDataRows([]);
+    setSampleDataColumns([]);
+    setSampleDataError(null);
+    setSampleDataFetchedFor(null);
+  }, [sampleDataTarget, viewId]);
 
   useEffect(() => {
     if (

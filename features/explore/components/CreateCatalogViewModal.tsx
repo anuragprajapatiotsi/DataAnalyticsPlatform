@@ -13,6 +13,7 @@ import {
 } from "antd";
 import { Database, Link, CalendarClock, Settings2 } from "lucide-react";
 import { serviceService } from "@/features/services/services/service.service";
+import { CATALOG_VIEWS_UPDATED_EVENT } from "@/features/sql-editor/constants";
 
 function debounce<T extends (...args: any[]) => any>(
   func: T,
@@ -225,6 +226,13 @@ export function CreateCatalogViewModal({
       }
 
       const newView = await serviceService.createCatalogView(payload);
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(
+          new CustomEvent(CATALOG_VIEWS_UPDATED_EVENT, {
+            detail: { id: newView?.id },
+          }),
+        );
+      }
       message.success("Catalog view created successfully");
       if (onSuccess) onSuccess(newView?.id);
       onCancel();
