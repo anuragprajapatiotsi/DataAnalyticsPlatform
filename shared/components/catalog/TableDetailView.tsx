@@ -1,8 +1,9 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Table, Input, Tooltip, Spin, message, Empty, Button, Dropdown } from "antd";
+import { Table, Input, Tooltip, Spin, message, Button, Dropdown, Select } from "antd";
 import type { MenuProps } from "antd";
+import { useQuery } from "@tanstack/react-query";
 import { 
   Database, 
   Search, 
@@ -10,20 +11,21 @@ import {
   Info, 
   Key, 
   Columns, 
-  Plus, 
   History, 
   FileText, 
   Settings2,
   MoreVertical,
   Layers,
-  ArrowRight
+  ArrowRight,
+  Filter,
+  ArrowUpDown
 } from "lucide-react";
 import { PageHeader } from "@/shared/components/layout/PageHeader";
 import { serviceService } from "@/features/services/services/service.service";
 import { 
   ServiceEndpoint, 
   DBTableDetail, 
-  ColumnInfo 
+  ColumnInfo,
 } from "@/features/services/types";
 import { ColumnDetailDrawer } from "./ColumnDetailDrawer";
 import { cn } from "@/shared/utils/cn";
@@ -37,6 +39,7 @@ interface TableDetailViewProps {
   breadcrumbItems: { label: string; href?: string }[];
   onTitleClick?: () => void;
   onCreateCatalogView?: () => void;
+  enableDataPreview?: boolean;
 }
 
 export function TableDetailView({
@@ -46,6 +49,7 @@ export function TableDetailView({
   table,
   breadcrumbItems,
   onCreateCatalogView,
+  enableDataPreview = false,
 }: TableDetailViewProps) {
   const [connection, setConnection] = useState<ServiceEndpoint | null>(null);
   const [tableDetail, setTableDetail] = useState<DBTableDetail | null>(null);
@@ -54,6 +58,13 @@ export function TableDetailView({
   const [activeTab, setActiveTab] = useState("columns");
   const [selectedColumn, setSelectedColumn] = useState<ColumnInfo | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [previewOffset, setPreviewOffset] = useState(0);
+  const [previewLimit] = useState(50);
+  const [previewOrderBy, setPreviewOrderBy] = useState<string | undefined>(undefined);
+  const [previewOrderDir, setPreviewOrderDir] = useState<"asc" | "desc">("asc");
+  const [filterColumn, setFilterColumn] = useState<string | undefined>(undefined);
+  const [filterOperator, setFilterOperator] = useState<"eq" | "gte" | "lte">("eq");
+  const [filterValue, setFilterValue] = useState("");
 
   useEffect(() => {
     async function fetchData() {
@@ -78,6 +89,74 @@ export function TableDetailView({
   const filteredColumns = tableDetail?.columns?.filter((col) =>
     col.name.toLowerCase().includes(searchQuery.toLowerCase()),
   ) || [];
+
+  const previewFilters = React.useMemo(() => {
+    if (!filterColumn || !filterValue.trim()) {
+      return {};
+    }
+
+    const key =
+      filterOperator === "eq"
+        ? filterColumn
+        : `${filterColumn}__${filterOperator}`;
+
+    return { [key]: filterValue.trim() };
+  }, [filterColumn, filterOperator, filterValue]);
+
+  const {
+    data: previewData,
+    isLoading: isPreviewLoading,
+    isError: isPreviewError,
+    refetch: refetchPreview,
+  } = useQuery({
+    queryKey: [
+      "data-preview",
+      id,
+      database,
+      schema,
+      table,
+      {
+        offset: previewOffset,
+        limit: previewLimit,
+        order_by: previewOrderBy,
+        order_dir: previewOrderDir,
+        filters: previewFilters,
+      },
+    ],
+    queryFn: () =>
+      serviceService.getTableDataPreview(id, database, schema, table, {
+        offset: previewOffset,
+        limit: previewLimit,
+        order_by: previewOrderBy,
+        order_dir: previewOrderDir,
+        filters: previewFilters,
+      }),
+    enabled: enableDataPreview && activeTab === "data-preview",
+    staleTime: 60 * 1000,
+  });
+
+  const previewColumns = React.useMemo<ColumnsType<Record<string, unknown>>>(() => {
+    return (previewData?.columns || []).map((column) => ({
+      title: column,
+      dataIndex: column,
+      key: column,
+      width: 220,
+      render: (value: unknown) => {
+        const display =
+          value === null || value === undefined || value === ""
+            ? "-"
+            : typeof value === "object"
+              ? JSON.stringify(value)
+              : String(value);
+
+        return (
+          <Tooltip title={display}>
+            <div className="max-w-[260px] truncate text-[13px] text-slate-700">{display}</div>
+          </Tooltip>
+        );
+      },
+    }));
+  }, [previewData?.columns]);
 
   const columns: ColumnsType<ColumnInfo> = [
     {
@@ -205,6 +284,7 @@ export function TableDetailView({
           <div className="flex gap-8 mt-2">
             {[
               { id: "columns", label: "Columns", icon: Info, count: tableDetail?.columns?.length },
+              ...(enableDataPreview ? [{ id: "data-preview", label: "Data Preview", icon: Database }] : []),
               { id: "activity", label: "Activity Feeds", icon: History },
               { id: "contract", label: "Contract", icon: FileText },
               { id: "custom", label: "Settings", icon: Settings2 },
@@ -284,9 +364,140 @@ export function TableDetailView({
                 />
               </div>
             </>
+          ) : activeTab === "data-preview" && enableDataPreview ? (
+            <>
+              <div className="flex flex-wrap items-center justify-between gap-4 bg-white p-3 rounded-xl border border-slate-200 shadow-sm shrink-0">
+                <div className="flex flex-wrap items-center gap-3">
+                  <div className="flex items-center gap-2 text-[12px] font-semibold uppercase tracking-wider text-slate-500">
+                    <Filter size={14} className="text-slate-400" />
+                    Data Preview
+                  </div>
+                  <Select
+                    allowClear
+                    placeholder="Filter column"
+                    value={filterColumn}
+                    onChange={(value) => {
+                      setFilterColumn(value);
+                      setPreviewOffset(0);
+                    }}
+                    options={(tableDetail?.columns || []).map((column) => ({
+                      label: column.name,
+                      value: column.name,
+                    }))}
+                    className="min-w-[180px]"
+                  />
+                  <Select
+                    value={filterOperator}
+                    onChange={(value) => {
+                      setFilterOperator(value);
+                      setPreviewOffset(0);
+                    }}
+                    options={[
+                      { label: "Equals", value: "eq" },
+                      { label: "Greater Than", value: "gte" },
+                      { label: "Less Than", value: "lte" },
+                    ]}
+                    className="min-w-[150px]"
+                  />
+                  <Input
+                    placeholder="Filter value"
+                    value={filterValue}
+                    onChange={(event) => {
+                      setFilterValue(event.target.value);
+                      setPreviewOffset(0);
+                    }}
+                    className="w-full sm:w-[220px]"
+                  />
+                </div>
+                <div className="flex flex-wrap items-center gap-3">
+                  <Select
+                    allowClear
+                    placeholder="Sort by"
+                    value={previewOrderBy}
+                    onChange={(value) => {
+                      setPreviewOrderBy(value);
+                      setPreviewOffset(0);
+                    }}
+                    options={(tableDetail?.columns || []).map((column) => ({
+                      label: column.name,
+                      value: column.name,
+                    }))}
+                    className="min-w-[180px]"
+                  />
+                  <Button
+                    icon={<ArrowUpDown size={14} />}
+                    onClick={() => {
+                      setPreviewOrderDir((current) => (current === "asc" ? "desc" : "asc"));
+                      setPreviewOffset(0);
+                    }}
+                    className="h-9 rounded-md"
+                  >
+                    {previewOrderDir === "asc" ? "Ascending" : "Descending"}
+                  </Button>
+                  <Button onClick={() => refetchPreview()} className="h-9 rounded-md">
+                    Refresh
+                  </Button>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden min-h-[400px]">
+                {isPreviewError ? (
+                  <div className="py-12 flex flex-col items-center justify-center text-center">
+                    <Database size={32} className="text-red-300 mb-3" />
+                    <span className="text-[14px] font-medium text-slate-700">Failed to load data preview</span>
+                    <span className="text-[13px] text-slate-500">Try refreshing or adjusting filters.</span>
+                  </div>
+                ) : (
+                  <Table<Record<string, unknown>>
+                    dataSource={previewData?.rows || []}
+                    columns={previewColumns}
+                    rowKey={(record) => `preview-${previewOffset}-${JSON.stringify(record)}`}
+                    loading={isPreviewLoading}
+                    pagination={false}
+                    scroll={{ x: "max-content" }}
+                    className="custom-discovery-table"
+                    locale={{
+                      emptyText: isPreviewLoading ? (
+                        <Spin className="my-8" />
+                      ) : (
+                        <div className="py-12 flex flex-col items-center justify-center text-slate-500">
+                          <Database size={32} className="text-slate-300 mb-3" />
+                          <span className="text-[14px] font-medium text-slate-700">No data available</span>
+                          <span className="text-[13px]">This table or view returned no preview rows.</span>
+                        </div>
+                      ),
+                    }}
+                  />
+                )}
+                <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 px-6 py-4">
+                  <div className="text-[13px] text-slate-500">
+                    Showing {previewData?.returned ?? previewData?.rows?.length ?? 0} of {previewData?.total_count ?? 0} rows
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      onClick={() => setPreviewOffset((current) => Math.max(0, current - previewLimit))}
+                      disabled={previewOffset === 0}
+                    >
+                      Previous
+                    </Button>
+                    <Button
+                      onClick={() => setPreviewOffset((current) => current + previewLimit)}
+                      disabled={
+                        !previewData ||
+                        (previewData.total_count !== undefined
+                          ? previewOffset + previewLimit >= previewData.total_count
+                          : (previewData.rows?.length ?? 0) < previewLimit)
+                      }
+                    >
+                      Next
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </>
           ) : (
             <div className="py-12 flex flex-col items-center justify-center text-slate-400 italic text-[13px] bg-white rounded-xl border border-slate-200 border-dashed">
-              This tab's content is managed within the data quality context.
+              This tab&apos;s content is managed within the data quality context.
             </div>
           )}
         </div>

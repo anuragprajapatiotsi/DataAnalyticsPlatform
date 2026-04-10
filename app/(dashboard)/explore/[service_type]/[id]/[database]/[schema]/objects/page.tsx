@@ -385,15 +385,17 @@ export default function SchemaObjectsPage() {
         <CreateCatalogViewModal
           open={isModalOpen}
           initialEndpointContext={selectedEndpointContext}
-          onCancel={() => {
-            setIsModalOpen(false);
-            setTimeout(() => setSelectedEndpointContext(null), 300);
-          }}
-          onSuccess={(viewId) => {
-            if (viewId) router.push(`/explore/object-resources/${viewId}`);
-          }}
-        />
-      )}
+            onCancel={() => {
+              setIsModalOpen(false);
+              setTimeout(() => setSelectedEndpointContext(null), 300);
+            }}
+            onSuccess={(viewId) => {
+              if (viewId) {
+                router.push(`/explore/object-resources/${viewId}?created=1`);
+              }
+            }}
+          />
+        )}
     </div>
   );
 }

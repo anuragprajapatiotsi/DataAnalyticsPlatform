@@ -107,8 +107,6 @@ export function SchemaExplorer() {
         id: "root-catalog_views",
         name: "Catalog Views",
         type: "folder",
-        catalog: "iceberg",
-        schema: "catalog_views",
         hasChildren: true,
         children: [],
         isLoaded: false,
@@ -273,28 +271,42 @@ export function SchemaExplorer() {
         let children: ExplorerNode[] = [];
 
         if (targetNode.id === "root-catalog_views") {
-          // Direct Service Call for Discovery Reliability
-          const tables = await serviceService.getTrinoCatalogViewTables();
-          const rawTables = Array.isArray(tables) ? tables : [];
+          children = [
+            {
+              id: "catalog-iceberg",
+              name: "iceberg",
+              type: "catalog",
+              catalog: "iceberg",
+              hasChildren: true,
+              children: [],
+              isLoaded: false,
+            },
+          ];
+        } else if (targetNode.type === "catalog" && targetNode.catalog) {
+          const schemas = await serviceService.getTrinoSchemas(targetNode.catalog);
+          const validSchemas = (Array.isArray(schemas) ? schemas : []).filter(
+            (schema) =>
+              schema.name !== "catalog_views" &&
+              schema.name !== "information_schema",
+          );
 
-          if (rawTables.length === 0) {
+          if (validSchemas.length === 0) {
             children = [
               {
-                id: `empty-cv-${targetNode.id}`,
-                name: "No curated views found",
+                id: `empty-catalog-${targetNode.id}`,
+                name: "No schemas found",
                 type: "placeholder",
                 hasChildren: false,
                 children: [],
               },
             ];
           } else {
-            children = rawTables.map((item: any) => ({
-              id: `cv-${item.name}`,
-              name: item.name,
-              type: "table",
-              catalog: "iceberg",
-              schema: "catalog_views",
-              table: item.name,
+            children = validSchemas.map((schema) => ({
+              id: `trino-schema-${targetNode.catalog}-${schema.name}`,
+              name: schema.name,
+              type: "schema",
+              catalog: targetNode.catalog,
+              schema: schema.name,
               hasChildren: true,
               children: [],
               isLoaded: false,
@@ -442,6 +454,33 @@ export function SchemaExplorer() {
               isLoaded: false,
             }));
           }
+        } else if (targetNode.type === "schema" && targetNode.catalog) {
+          const tables = await serviceService.getTrinoTables(
+            targetNode.catalog,
+            targetNode.schema!,
+          );
+
+          if (!tables || tables.length === 0) {
+            children = [{
+              id: `empty-trino-table-${targetNode.id}`,
+              name: "No tables found",
+              type: "placeholder",
+              hasChildren: false,
+              children: []
+            }];
+          } else {
+            children = tables.map((table) => ({
+              id: `trino-table-${targetNode.catalog}-${targetNode.schema}-${table.name}`,
+              name: table.name,
+              type: "table",
+              catalog: targetNode.catalog,
+              schema: targetNode.schema,
+              table: table.name,
+              hasChildren: true,
+              children: [],
+              isLoaded: false,
+            }));
+          }
         } else if (targetNode.type === "table") {
           if (targetNode.asset_id) {
             // New Requirement: Data Asset Native API Pathway
@@ -494,7 +533,7 @@ export function SchemaExplorer() {
               }];
             }
           } else {
-            // Existing Trino Tables / Catalog Views Pathway
+            // Trino-backed catalog views pathway
             const catalog = targetNode.catalog || "iceberg";
             const schema = targetNode.schema || "catalog_views";
   
@@ -516,6 +555,16 @@ export function SchemaExplorer() {
               children: [],
               isLoaded: true,
             }));
+
+            if (children.length === 0) {
+              children = [{
+                id: `empty-trino-col-${targetNode.id}`,
+                name: "No columns available",
+                type: "placeholder",
+                hasChildren: false,
+                children: []
+              }];
+            }
           }
         }
 
@@ -644,7 +693,7 @@ export function SchemaExplorer() {
                     renderNode(
                       {
                         id: `load-more-${node.id}`,
-                        name: `More... (${node.children.length - visibleLimit} left)`,
+                        name: `Show more (${node.children.length - visibleLimit} left)`,
                         type: "load-more",
                         hasChildren: false,
                         children: [],

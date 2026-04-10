@@ -1,5 +1,76 @@
 import { api } from "@/shared/api/axios";
-import { Service, GetServicesParams, CreateServiceRequest, UpdateServiceRequest, ServiceEndpoint, ServiceEndpointRequest, DatabaseInfo, GroupedServiceCategory, SchemaInfo, DBObjectInfo, DBTableDetail, Bot, GetBotsParams, BotRun, GetBotRunsParams, ConnectorMetadata, AggregatedDatabase, CatalogResponse, CatalogAsset, DataAssetDetail, DataAssetProfile, DataColumnDetail, ColumnProfilingResponse, UpdateColumnRequest, BulkUpdateColumnItem, CatalogView, SyncConfig, TrinoCatalog, TrinoSchema, TrinoTable, TrinoColumn, TrinoTableDetail, TrinoQueryRequest, TrinoQueryResponse } from "../types";
+import { Service, GetServicesParams, CreateServiceRequest, UpdateServiceRequest, ServiceEndpoint, ServiceEndpointRequest, DatabaseInfo, GroupedServiceCategory, SchemaInfo, DBObjectInfo, DBTableDetail, DBTablePreviewResponse, Bot, GetBotsParams, BotRun, GetBotRunsParams, ConnectorMetadata, AggregatedDatabase, CatalogResponse, CatalogAsset, DataAssetDetail, DataAssetProfile, DataColumnDetail, ColumnProfilingResponse, UpdateColumnRequest, BulkUpdateColumnItem, CatalogView, SyncConfig, TrinoCatalog, TrinoSchema, TrinoTable, TrinoColumn, TrinoTableDetail, TrinoQueryRequest, TrinoQueryResponse, ExplorerServiceEndpoint, ExplorerDatabaseAsset, ExplorerSchemaAsset, ExplorerObjectAsset, ExplorerAssetDetail, ExplorerAssetDetailResponse, CatalogKpi } from "../types";
+
+function normalizeExplorerList<T>(payload: unknown): T[] {
+  if (Array.isArray(payload)) {
+    return payload as T[];
+  }
+
+  if (payload && typeof payload === "object") {
+    const maybeWrapped = payload as { data?: unknown; items?: unknown; results?: unknown };
+    if (Array.isArray(maybeWrapped.data)) {
+      return maybeWrapped.data as T[];
+    }
+    if (Array.isArray(maybeWrapped.items)) {
+      return maybeWrapped.items as T[];
+    }
+    if (Array.isArray(maybeWrapped.results)) {
+      return maybeWrapped.results as T[];
+    }
+  }
+
+  return [];
+}
+
+function normalizeExplorerObjectList(payload: unknown): ExplorerObjectAsset[] {
+  if (Array.isArray(payload)) {
+    return payload as ExplorerObjectAsset[];
+  }
+
+  if (!payload || typeof payload !== "object") {
+    return [];
+  }
+
+  const record = payload as Record<string, unknown>;
+  const groupedKeys = [
+    "tables",
+    "views",
+    "functions_procedures",
+    "foreign_tables",
+    "sequences",
+    "user_defined_types",
+    "other_objects",
+  ] as const;
+
+  const flattened = groupedKeys.flatMap((key) => {
+    const value = record[key];
+    if (!Array.isArray(value)) {
+      return [];
+    }
+
+    return value.map((item) => {
+      if (!item || typeof item !== "object") {
+        return null;
+      }
+
+      const objectItem = item as ExplorerObjectAsset;
+      return {
+        ...objectItem,
+        object_type:
+          objectItem.object_type ||
+          objectItem.asset_type ||
+          key.replace("_", " ").replace("functions procedures", "function"),
+        asset_type: objectItem.asset_type || objectItem.object_type || key,
+      } satisfies ExplorerObjectAsset;
+    }).filter(Boolean) as ExplorerObjectAsset[];
+  });
+
+  if (flattened.length > 0) {
+    return flattened;
+  }
+
+  return normalizeExplorerList<ExplorerObjectAsset>(payload);
+}
 
 export const serviceService = {
   async getLatestAssetProfile(assetId: string) {
@@ -109,6 +180,34 @@ export const serviceService = {
 
   async getTableDetail(id: string, database: string, schema: string, table: string) {
     const response = await api.get<DBTableDetail>(`/service-endpoints/${id}/explore/${database}/${schema}/${table}`);
+    return response.data;
+  },
+
+  async getTableDataPreview(
+    id: string,
+    database: string,
+    schema: string,
+    table: string,
+    params?: {
+      limit?: number;
+      offset?: number;
+      order_by?: string;
+      order_dir?: "asc" | "desc";
+      filters?: Record<string, string>;
+    },
+  ) {
+    const response = await api.get<DBTablePreviewResponse>(
+      `/service-endpoints/${id}/explore/${database}/${schema}/${table}/data`,
+      {
+        params: {
+          limit: params?.limit ?? 50,
+          offset: params?.offset ?? 0,
+          order_by: params?.order_by,
+          order_dir: params?.order_dir,
+          ...(params?.filters ?? {}),
+        },
+      },
+    );
     return response.data;
   },
 
@@ -323,6 +422,55 @@ export const serviceService = {
   
   async getTrinoCatalogViewTables() {
     const response = await api.get<TrinoTable[]>("/integrations/trino/catalogs/iceberg/catalog_views/tables");
+    return response.data;
+  },
+
+  async getExplorerConnections() {
+    const response = await api.get<ExplorerServiceEndpoint[] | { data?: ExplorerServiceEndpoint[] }>(
+      "/data-assets/explorer/service-endpoints",
+    );
+    return normalizeExplorerList<ExplorerServiceEndpoint>(response.data);
+  },
+
+  async getExplorerDatabases(serviceEndpointId: string) {
+    const response = await api.get<ExplorerDatabaseAsset[] | { data?: ExplorerDatabaseAsset[] }>(
+      `/data-assets/explorer/service-endpoints/${serviceEndpointId}/databases`,
+    );
+    return normalizeExplorerList<ExplorerDatabaseAsset>(response.data);
+  },
+
+  async getExplorerSchemas(databaseAssetId: string) {
+    const response = await api.get<ExplorerSchemaAsset[] | { data?: ExplorerSchemaAsset[] }>(
+      `/data-assets/explorer/databases/${databaseAssetId}/schemas`,
+    );
+    return normalizeExplorerList<ExplorerSchemaAsset>(response.data);
+  },
+
+  async getExplorerObjects(schemaAssetId: string) {
+    const response = await api.get<
+      | ExplorerObjectAsset[]
+      | { data?: ExplorerObjectAsset[] }
+      | Record<string, unknown>
+    >(
+      `/data-assets/explorer/schemas/${schemaAssetId}/objects`,
+    );
+    return normalizeExplorerObjectList(response.data);
+  },
+
+  async getExplorerAssetDetail(assetId: string) {
+    const response = await api.get<ExplorerAssetDetail | ExplorerAssetDetailResponse>(
+      `/data-assets/explorer/assets/${assetId}/detail`,
+    );
+    return response.data;
+  },
+
+  async getKpis() {
+    const response = await api.get<CatalogKpi[]>("/catalog/kpis");
+    return response.data;
+  },
+
+  async getKpiById(kpiId: string) {
+    const response = await api.get<CatalogKpi>(`/catalog/kpis/${kpiId}`);
     return response.data;
   }
 };

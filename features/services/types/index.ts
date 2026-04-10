@@ -27,6 +27,54 @@ export interface ServiceEndpoint {
   updated_at: string;
 }
 
+export interface ExplorerServiceEndpoint {
+  id: string;
+  service_endpoint_id?: string;
+  org_id?: string;
+  service_name: string;
+  description?: string;
+  asset_count?: number;
+  database_count?: number;
+  schema_count?: number;
+  created_at?: string;
+  updated_at?: string;
+  [key: string]: unknown;
+}
+
+export interface ExplorerDatabaseAsset {
+  id: string;
+  name: string;
+  display_name?: string;
+  description?: string;
+  sensitivity?: string;
+  created_at?: string;
+  updated_at?: string;
+  [key: string]: unknown;
+}
+
+export interface ExplorerSchemaAsset {
+  id: string;
+  name: string;
+  display_name?: string;
+  description?: string;
+  sensitivity?: string;
+  created_at?: string;
+  updated_at?: string;
+  [key: string]: unknown;
+}
+
+export interface ExplorerObjectAsset {
+  id: string;
+  name: string;
+  display_name?: string;
+  object_type?: string;
+  asset_type?: string;
+  description?: string;
+  created_at?: string;
+  updated_at?: string;
+  [key: string]: unknown;
+}
+
 export interface GetServicesParams {
   search?: string;
   type?: string;
@@ -107,6 +155,33 @@ export interface DBTableDetail {
   tier?: string;
   retention_period?: string;
   certification?: string;
+}
+
+export interface DBTablePreviewResponse {
+  columns: string[];
+  rows: Record<string, unknown>[];
+  total_count?: number;
+  returned?: number;
+  offset?: number;
+  limit?: number;
+}
+
+export interface CatalogKpi {
+  id: string;
+  kpi_name: string;
+  description?: string;
+  column_name?: string;
+  kpi_type?: string;
+  current_value?: number | string;
+  previous_value?: number | string;
+  unit?: string;
+  trend?: "up" | "down" | "stable" | string;
+  confidence_score?: number;
+  last_computed_at?: string;
+  created_at?: string;
+  updated_at?: string;
+  asset_id?: string;
+  [key: string]: unknown;
 }
 
 export interface Bot {
@@ -255,6 +330,74 @@ export interface DataAssetDetail extends CatalogAsset {
   columns: DataAssetColumn[];
   created_at?: string;
   updated_at?: string;
+}
+
+export interface ExplorerAssetColumn {
+  id?: string;
+  name: string;
+  data_type?: string;
+  type?: string;
+  nullable?: boolean;
+  ordinal_position?: number;
+  description?: string;
+  [key: string]: unknown;
+}
+
+export interface ExplorerAssetDetail {
+  id: string;
+  name: string;
+  display_name?: string;
+  description?: string;
+  row_count?: number;
+  size?: number;
+  size_bytes?: number;
+  sensitivity?: string;
+  created_at?: string;
+  updated_at?: string;
+  object_type?: string;
+  asset_type?: string;
+  columns?: ExplorerAssetColumn[];
+  [key: string]: unknown;
+}
+
+export interface ExplorerAssetLatestProfile {
+  id: string;
+  status?: string;
+  row_count?: number;
+  row_count_previous?: number;
+  row_count_changed_at?: string;
+  max_updated_at_value?: string;
+  profile_data?: Record<string, unknown>;
+  started_at?: string;
+  completed_at?: string;
+  created_at?: string;
+}
+
+export interface ExplorerAssetColumnStat {
+  column_name?: string;
+  name?: string;
+  null_count?: number;
+  null_percentage?: number;
+  distinct_count?: number;
+  distinct_percentage?: number;
+  min?: unknown;
+  max?: unknown;
+  avg?: number;
+  median?: number;
+  std_dev?: number;
+  histogram?: Array<{ value: unknown; count: number }>;
+  [key: string]: unknown;
+}
+
+export interface ExplorerAssetDetailResponse {
+  asset: ExplorerAssetDetail;
+  columns?: ExplorerAssetColumn[];
+  latest_profile?: ExplorerAssetLatestProfile | null;
+  column_stats?: ExplorerAssetColumnStat[];
+  quality_summary?: Record<string, unknown>;
+  upstream_lineage?: unknown[];
+  downstream_lineage?: unknown[];
+  object_metadata?: Record<string, unknown>;
 }
 
 export interface ColumnProfile {

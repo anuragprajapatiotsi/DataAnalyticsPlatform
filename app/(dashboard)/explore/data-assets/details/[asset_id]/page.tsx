@@ -47,6 +47,10 @@ import {
   DataAssetProfile,
   ColumnProfile,
   ColumnProfilingResponse,
+  ExplorerAssetDetail,
+  ExplorerAssetDetailResponse,
+  ExplorerAssetColumn,
+  ExplorerAssetColumnStat,
 } from "@/features/services/types";
 import { PageHeader } from "@/shared/components/layout/PageHeader";
 import { CreateCatalogViewModal } from "@/features/explore/components/CreateCatalogViewModal";
@@ -57,6 +61,121 @@ import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 
 dayjs.extend(relativeTime);
+
+function isExplorerAssetDetailResponse(
+  response: ExplorerAssetDetail | ExplorerAssetDetailResponse,
+): response is ExplorerAssetDetailResponse {
+  return "asset" in response;
+}
+
+function mapExplorerColumnsToDataAssetColumns(
+  columns: ExplorerAssetColumn[],
+  fallbackSensitivity?: string,
+): DataAssetColumn[] {
+  return columns.map((column, index) => ({
+    id: column.id || `column-${column.name}-${index}`,
+    name: column.name,
+    data_type: String(column.data_type || column.type || "unknown"),
+    display_name: column.name,
+    description: column.description,
+    is_nullable: Boolean(column.nullable),
+    is_primary_key: false,
+    is_foreign_key: false,
+    is_pii: false,
+    sensitivity: fallbackSensitivity,
+    tags: [],
+  }));
+}
+
+function mapExplorerDetailToDataAsset(
+  detail: ExplorerAssetDetail,
+  columns: ExplorerAssetColumn[] = [],
+): DataAssetDetail {
+  return {
+    id: detail.id,
+    name: detail.name,
+    display_name: detail.display_name || detail.name,
+    description: detail.description || "",
+    asset_type: (detail.asset_type || detail.object_type || "table") as "table" | "view" | "function",
+    row_count: detail.row_count,
+    size_bytes: detail.size_bytes ?? detail.size,
+    observability_score:
+      typeof detail.observability_score === "number" ? detail.observability_score : undefined,
+    classification_tags: Array.isArray(detail.classification_tags)
+      ? (detail.classification_tags as DataAssetDetail["classification_tags"])
+      : [],
+    fully_qualified_name:
+      typeof detail.fully_qualified_name === "string"
+        ? detail.fully_qualified_name
+        : detail.display_name || detail.name,
+    sensitivity: detail.sensitivity as DataAssetDetail["sensitivity"],
+    tier: detail.tier as DataAssetDetail["tier"],
+    owners: Array.isArray(detail.owners) ? (detail.owners as DataAssetDetail["owners"]) : [],
+    experts: Array.isArray(detail.experts) ? (detail.experts as DataAssetDetail["experts"]) : [],
+    created_at: detail.created_at,
+    updated_at: detail.updated_at,
+    columns: mapExplorerColumnsToDataAssetColumns(
+      columns.length > 0 ? columns : ((detail.columns as ExplorerAssetColumn[] | undefined) ?? []),
+      detail.sensitivity,
+    ),
+  };
+}
+
+function mapColumnStatsToProfile(
+  latestProfile: ExplorerAssetDetailResponse["latest_profile"],
+  columnStats: ExplorerAssetColumnStat[] = [],
+): DataAssetProfile | null {
+  if (!latestProfile) {
+    return null;
+  }
+
+  const column_profiles = columnStats.reduce<Record<string, ColumnProfile>>((acc, stat) => {
+    const name = stat.column_name || stat.name;
+    if (!name) {
+      return acc;
+    }
+
+    acc[name] = {
+      null_count: stat.null_count ?? 0,
+      null_percentage: stat.null_percentage ?? 0,
+      distinct_count: stat.distinct_count ?? 0,
+      distinct_percentage: stat.distinct_percentage ?? 0,
+      min: stat.min,
+      max: stat.max,
+      avg: stat.avg,
+      median: stat.median,
+      std_dev: stat.std_dev,
+      histogram: Array.isArray(stat.histogram) ? stat.histogram : [],
+    };
+    return acc;
+  }, {});
+
+  return {
+    id: latestProfile.id,
+    asset_id: "",
+    row_count: latestProfile.row_count ?? 0,
+    profile_data: (latestProfile.profile_data as Record<string, unknown>) ?? {},
+    column_profiles,
+    started_at: latestProfile.started_at || latestProfile.created_at || "",
+    completed_at: latestProfile.completed_at || latestProfile.created_at || "",
+  };
+}
+
+function normalizeExplorerAssetResponse(
+  response: ExplorerAssetDetail | ExplorerAssetDetailResponse,
+): { asset: DataAssetDetail; latestProfile: DataAssetProfile | null } {
+  if (isExplorerAssetDetailResponse(response)) {
+    return {
+      asset: mapExplorerDetailToDataAsset(response.asset, response.columns ?? []),
+      latestProfile: mapColumnStatsToProfile(response.latest_profile, response.column_stats ?? []),
+    };
+  }
+
+  return {
+    asset: mapExplorerDetailToDataAsset(response),
+    latestProfile: null,
+  };
+}
 
 export default function DataAssetDetailPage() {
   const { asset_id } = useParams();
@@ -163,12 +282,14 @@ export default function DataAssetDetailPage() {
     if (!asset_id) return;
     try {
       setLoading(true);
-      const [assetData, profileData] = await Promise.allSettled([
-        serviceService.getAssetDetail(asset_id as string),
-        serviceService.getLatestAssetProfile(asset_id as string),
-      ]);
-      if (assetData.status === "fulfilled") setAsset(assetData.value);
-      if (profileData.status === "fulfilled") setLatestProfile(profileData.value);
+      const assetData = await serviceService.getExplorerAssetDetail(asset_id as string);
+      const normalized = normalizeExplorerAssetResponse(assetData);
+      setAsset(normalized.asset);
+      setLatestProfile(
+        normalized.latestProfile
+          ? { ...normalized.latestProfile, asset_id: asset_id as string }
+          : null,
+      );
     } catch (err) {
       message.error("Failed to load asset metadata.");
     } finally {
@@ -184,16 +305,46 @@ export default function DataAssetDetailPage() {
   const eid = searchParams.get("eid");
   const en = searchParams.get("en");
   const db = searchParams.get("db");
+  const dbid = searchParams.get("dbid");
   const sn = searchParams.get("sn");
   const an = searchParams.get("an");
   const sid = searchParams.get("sid");
+
+  const buildDatabaseHref = () => {
+    if (!eid || !dbid) {
+      return eid ? `/explore/data-assets/${eid}` : undefined;
+    }
+
+    const params = new URLSearchParams();
+    params.set("level", "database");
+    params.set("eid", eid);
+    if (en) params.set("en", en);
+    if (db) params.set("db", db);
+    return `/explore/data-assets/schema/${dbid}?${params.toString()}`;
+  };
+
+  const buildSchemaHref = () => {
+    if (!sid) {
+      return buildDatabaseHref();
+    }
+
+    const params = new URLSearchParams();
+    params.set("level", "schema");
+    if (eid) params.set("eid", eid);
+    if (en) params.set("en", en);
+    if (db) params.set("db", db);
+    if (dbid) params.set("dbid", dbid);
+    params.set("sid", sid);
+    if (sn) params.set("sn", sn);
+    return `/explore/data-assets/schema/${sid}?${params.toString()}`;
+  };
 
   const breadcrumbItems = [
     { label: "Catalog", href: "/explore" },
     { label: "Data Assets", href: "/explore/data-assets" },
     ...(eid && en ? [{ label: en, href: `/explore/data-assets/${eid}` }] : []),
-    ...(db ? [{ label: db, href: `/explore/data-assets/${eid}` }] : []),
-    ...(sid && sn ? [{ label: sn, href: `/explore/data-assets/schema/${sid}?eid=${eid}&en=${en}&db=${db}&sn=${sn}` }] : []),
+    ...(db ? [{ label: db, href: buildDatabaseHref() }] : []),
+    ...(sid && sn ? [{ label: sn, href: buildSchemaHref() }] : []),
     { label: an || asset?.display_name || asset?.name || "Asset Details" },
   ];
 

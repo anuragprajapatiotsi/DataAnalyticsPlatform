@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Table, Input, message, Tooltip, Empty, Button, Spin } from "antd";
 import {
   Search,
@@ -18,6 +19,7 @@ import { serviceService } from "@/features/services/services/service.service";
 import { CatalogView } from "@/features/services/types";
 import { PageHeader } from "@/shared/components/layout/PageHeader";
 import { CreateCatalogViewModal } from "@/features/explore/components/CreateCatalogViewModal";
+import { NOTIFICATION_FEED_QUERY_KEY } from "@/features/notifications/constants";
 import { cn } from "@/shared/utils/cn";
 import type { ColumnsType } from "antd/es/table";
 import dayjs from "dayjs";
@@ -27,6 +29,7 @@ dayjs.extend(relativeTime);
 
 export default function ExploreObjectResourcesPage() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [catalogViews, setCatalogViews] = useState<CatalogView[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -38,8 +41,9 @@ export default function ExploreObjectResourcesPage() {
     e.stopPropagation();
     try {
       setSyncingViews((prev) => new Set(prev).add(id));
-      const res = await serviceService.syncCatalogView(id, { sync_data: true, force: false });
-      message.success(res.message || "Manual sync triggered successfully.");
+      await serviceService.syncCatalogView(id, { sync_data: true, force: false });
+      await queryClient.invalidateQueries({ queryKey: NOTIFICATION_FEED_QUERY_KEY });
+      message.info("Sync started. Status will update automatically.");
       setTimeout(fetchCatalogViews, 1000);
     } catch (err: any) {
       console.error(err);

@@ -224,7 +224,7 @@ export function UserProfileForm() {
             </div>
           </Form.Item>
 
-          <Form.Item
+          {/* <Form.Item
             label={
               <span className="text-sm font-medium text-slate-700">
                 Default Organization
@@ -249,7 +249,7 @@ export function UserProfileForm() {
                 value: org.id,
               }))}
             />
-          </Form.Item>
+          </Form.Item> */}
 
           <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100 mt-6">
             <Button
