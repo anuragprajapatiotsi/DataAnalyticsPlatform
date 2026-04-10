@@ -75,6 +75,21 @@ export interface ExplorerObjectAsset {
   [key: string]: unknown;
 }
 
+export interface ExplorerFileAsset {
+  id: string;
+  org_id?: string;
+  dataset_id?: string;
+  name: string;
+  display_name?: string;
+  description?: string;
+  asset_type?: string;
+  source_type?: string;
+  fully_qualified_name?: string;
+  created_at?: string;
+  updated_at?: string;
+  [key: string]: unknown;
+}
+
 export interface GetServicesParams {
   search?: string;
   type?: string;

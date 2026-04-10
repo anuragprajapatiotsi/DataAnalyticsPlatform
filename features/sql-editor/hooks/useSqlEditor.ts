@@ -6,6 +6,13 @@ import { queryApi } from "@/shared/api/query";
 import { serviceService } from "@/features/services/services/service.service";
 import { qualifyColumns } from "../utils/query-parser";
 
+function extractSchemaFromSql(query: string): string | undefined {
+  const schemaPattern =
+    /\b(?:FROM|JOIN|UPDATE|INTO)\s+([a-zA-Z0-9_]+)\.([a-zA-Z0-9_]+)\b/i;
+  const match = query.match(schemaPattern);
+  return match?.[1];
+}
+
 export interface SqlTab {
   id: string;
   name: string;
@@ -20,7 +27,7 @@ export interface SqlTab {
 export interface QueryResultState {
   id: string;
   query: string;
-  data: any[][];
+  data: unknown[][];
   columns: string[];
   totalRows: number;
   executionTime: number;
@@ -40,7 +47,7 @@ export function useSqlEditor() {
     {
       id: "tab-1",
       name: "Query 1",
-      query: "SELECT * FROM public.users LIMIT 10",
+      query: "",
       results: [],
       activeResultTabId: null,
     },
@@ -80,7 +87,15 @@ export function useSqlEditor() {
   const updateTabContext = useCallback(
     (id: string, context: { catalog?: string; schema?: string; table?: string }) => {
       setTabs((prev) =>
-        prev.map((t) => (t.id === id ? { ...t, ...context } : t)),
+        prev.map((t) =>
+          t.id === id
+            ? {
+                ...t,
+                ...context,
+                catalog: "iceberg",
+              }
+            : t,
+        ),
       );
     },
     [],
@@ -178,13 +193,15 @@ export function useSqlEditor() {
 
       try {
         const startTime = Date.now();
+        const executionSchema =
+          extractSchemaFromSql(queryToRun) || tab.schema || "catalog_views";
         
         // Step 4: Execute using Trino API with context
         const hasLimit = /\bLIMIT\s+\d+/i.test(queryToRun);
         const response = await serviceService.executeTrinoQuery({
           sql: queryToRun,
-          catalog: tab.catalog || "default",
-          schema: tab.schema || "default",
+          catalog: "iceberg",
+          schema: executionSchema,
           ...(hasLimit ? {} : { 
             limit: currentPageSize,
             offset: currentPage * currentPageSize
@@ -221,7 +238,7 @@ export function useSqlEditor() {
               : t,
           ),
         );
-      } catch (error: any) {
+      } catch (error: unknown) {
         setTabs((prev) =>
           prev.map((t) =>
             t.id === tabId
@@ -232,10 +249,7 @@ export function useSqlEditor() {
                       ? {
                           ...r,
                           loading: false,
-                          error:
-                            error.response?.data?.message ||
-                            error.message ||
-                            "Failed to execute Trino query",
+                          error: getExecutionErrorMessage(error),
                           status: "error",
                         }
                       : r,
@@ -319,3 +333,18 @@ export function useSqlEditor() {
     cancelQuery,
   };
 }
+  const getExecutionErrorMessage = (error: unknown) => {
+    if (typeof error === "object" && error !== null) {
+      const apiError = error as {
+        response?: { data?: { message?: string } };
+        message?: string;
+      };
+      return (
+        apiError.response?.data?.message ||
+        apiError.message ||
+        "Failed to execute Trino query"
+      );
+    }
+
+    return "Failed to execute Trino query";
+  };

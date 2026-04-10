@@ -11,6 +11,10 @@ import { serviceService } from "@/features/services/services/service.service";
 let isRegistered = false;
 let currentContext = { catalog: "iceberg", schema: "catalog_views" };
 
+function hasValidContext() {
+  return Boolean(currentContext.catalog && currentContext.schema);
+}
+
 /**
  * Update the global context for autocomplete (e.g., active catalog/schema).
  */
@@ -32,6 +36,10 @@ const cache = {
  * Fetch and cache the list of available tables for current context.
  */
 async function getTables(): Promise<string[]> {
+  if (!hasValidContext()) {
+    return [];
+  }
+
   const cacheKey = `${currentContext.catalog}.${currentContext.schema}`;
   if (cache.tables.has(cacheKey)) return cache.tables.get(cacheKey) || [];
 
@@ -46,8 +54,8 @@ async function getTables(): Promise<string[]> {
     }
     cache.tables.set(cacheKey, tables);
     return tables;
-  } catch (err) {
-    console.error("Autocomplete Metadata Fetch Error (Tables):", err);
+  } catch {
+    cache.tables.set(cacheKey, []);
     return [];
   }
 }
@@ -56,6 +64,10 @@ async function getTables(): Promise<string[]> {
  * Fetch and cache column names for a specific table.
  */
 async function getColumns(tableName: string): Promise<string[]> {
+  if (!hasValidContext() || !tableName) {
+    return [];
+  }
+
   const cacheKey = `${currentContext.catalog}.${currentContext.schema}.${tableName}`;
   if (cache.columns.has(cacheKey)) return cache.columns.get(cacheKey) || [];
 
@@ -68,8 +80,8 @@ async function getColumns(tableName: string): Promise<string[]> {
     const columns = detail.columns?.map((c) => c.name) || [];
     cache.columns.set(cacheKey, columns);
     return columns;
-  } catch (err) {
-    console.error(`Autocomplete Metadata Fetch Error (Columns for ${tableName}):`, err);
+  } catch {
+    cache.columns.set(cacheKey, []);
     return [];
   }
 }

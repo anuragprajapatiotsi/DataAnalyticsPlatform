@@ -302,6 +302,9 @@ export default function DataAssetDetailPage() {
   }, [fetchData]);
 
   const searchParams = useSearchParams();
+  const source = searchParams.get("source");
+  const fileDatasetId = searchParams.get("datasetId");
+  const fileDatasetName = searchParams.get("datasetName");
   const eid = searchParams.get("eid");
   const en = searchParams.get("en");
   const db = searchParams.get("db");
@@ -339,14 +342,32 @@ export default function DataAssetDetailPage() {
     return `/explore/data-assets/schema/${sid}?${params.toString()}`;
   };
 
-  const breadcrumbItems = [
-    { label: "Catalog", href: "/explore" },
-    { label: "Data Assets", href: "/explore/data-assets" },
-    ...(eid && en ? [{ label: en, href: `/explore/data-assets/${eid}` }] : []),
-    ...(db ? [{ label: db, href: buildDatabaseHref() }] : []),
-    ...(sid && sn ? [{ label: sn, href: buildSchemaHref() }] : []),
-    { label: an || asset?.display_name || asset?.name || "Asset Details" },
-  ];
+  const breadcrumbItems =
+    source === "file"
+      ? [
+          { label: "Catalog", href: "/explore" },
+          { label: "Data Assets", href: "/explore/data-assets" },
+          { label: "Files", href: "/explore/data-assets?section=files" },
+          ...(fileDatasetId
+            ? [
+                {
+                  label: fileDatasetName || "File Group",
+                  href: `/explore/data-assets/files/${fileDatasetId}${
+                    fileDatasetName ? `?dn=${encodeURIComponent(fileDatasetName)}` : ""
+                  }`,
+                },
+              ]
+            : []),
+          { label: an || asset?.display_name || asset?.name || "File Asset" },
+        ]
+      : [
+          { label: "Catalog", href: "/explore" },
+          { label: "Data Assets", href: "/explore/data-assets" },
+          ...(eid && en ? [{ label: en, href: `/explore/data-assets/${eid}` }] : []),
+          ...(db ? [{ label: db, href: buildDatabaseHref() }] : []),
+          ...(sid && sn ? [{ label: sn, href: buildSchemaHref() }] : []),
+          { label: an || asset?.display_name || asset?.name || "Asset Details" },
+        ];
 
   const formatBytes = (bytes?: number) => {
     if (bytes === undefined || bytes === null) return "N/A";

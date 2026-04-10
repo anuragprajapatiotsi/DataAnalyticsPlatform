@@ -147,9 +147,13 @@ function shouldRefetchCatalogViewNode(node: ExplorerNode) {
   );
 }
 
+function buildDefaultQuery(schema: string, table: string) {
+  return `SELECT * FROM ${schema}.${table} LIMIT 10;`;
+}
+
 export function SchemaExplorer() {
   const router = useRouter();
-  const { activeTabId, updateTabQuery, updateTabContext } =
+  const { activeTab, activeTabId, updateTabContext, updateTabQuery } =
     useSqlEditorContext();
 
   // Core State with dual-discovery roots
@@ -235,15 +239,23 @@ export function SchemaExplorer() {
     if (targetNode.type === "table" || targetNode.type === "database") {
       setSelectedNodeId(targetNode.id);
       if (activeTabId) {
+        const selectedSchema = targetNode.schema || activeTab?.schema || "catalog_views";
         updateTabContext(activeTabId, {
-          catalog: targetNode.catalog || "iceberg",
-          schema: targetNode.schema || "catalog_views",
+          catalog: "iceberg",
+          schema: selectedSchema,
           table: targetNode.name,
         });
-        updateTabQuery(
-          activeTabId,
-          `SELECT * FROM ${targetNode.name} LIMIT 10`,
-        );
+
+        if (
+          targetNode.type === "table" &&
+          activeTab &&
+          !activeTab.query.trim()
+        ) {
+          updateTabQuery(
+            activeTabId,
+            buildDefaultQuery(selectedSchema, targetNode.name),
+          );
+        }
       }
     } else if (targetNode.type === "column") {
       setSelectedNodeId(targetNode.id);
@@ -582,7 +594,7 @@ export function SchemaExplorer() {
         });
       }
     }
-  }, [activeTabId, expandedKeys, loadingNodes, updateTabContext, updateTabQuery, updateTreeNodes]);
+  }, [activeTab, activeTabId, expandedKeys, loadingNodes, updateTabContext, updateTabQuery, updateTreeNodes]);
 
   useEffect(() => {
     const staleExpandedNode = findExpandedUnloadedNode(treeData, expandedKeys);

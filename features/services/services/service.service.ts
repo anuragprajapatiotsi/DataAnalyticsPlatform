@@ -1,5 +1,5 @@
 import { api } from "@/shared/api/axios";
-import { Service, GetServicesParams, CreateServiceRequest, UpdateServiceRequest, ServiceEndpoint, ServiceEndpointRequest, DatabaseInfo, GroupedServiceCategory, SchemaInfo, DBObjectInfo, DBTableDetail, DBTablePreviewResponse, Bot, GetBotsParams, BotRun, GetBotRunsParams, ConnectorMetadata, AggregatedDatabase, CatalogResponse, CatalogAsset, DataAssetDetail, DataAssetProfile, DataColumnDetail, ColumnProfilingResponse, UpdateColumnRequest, BulkUpdateColumnItem, CatalogView, SyncConfig, TrinoCatalog, TrinoSchema, TrinoTable, TrinoColumn, TrinoTableDetail, TrinoQueryRequest, TrinoQueryResponse, ExplorerServiceEndpoint, ExplorerDatabaseAsset, ExplorerSchemaAsset, ExplorerObjectAsset, ExplorerAssetDetail, ExplorerAssetDetailResponse, CatalogKpi } from "../types";
+import { Service, GetServicesParams, CreateServiceRequest, UpdateServiceRequest, ServiceEndpoint, ServiceEndpointRequest, DatabaseInfo, GroupedServiceCategory, SchemaInfo, DBObjectInfo, DBTableDetail, DBTablePreviewResponse, Bot, GetBotsParams, BotRun, GetBotRunsParams, ConnectorMetadata, AggregatedDatabase, CatalogResponse, CatalogAsset, DataAssetDetail, DataAssetProfile, DataColumnDetail, ColumnProfilingResponse, UpdateColumnRequest, BulkUpdateColumnItem, CatalogView, SyncConfig, TrinoCatalog, TrinoSchema, TrinoTable, TrinoColumn, TrinoTableDetail, TrinoQueryRequest, TrinoQueryResponse, ExplorerServiceEndpoint, ExplorerDatabaseAsset, ExplorerSchemaAsset, ExplorerObjectAsset, ExplorerAssetDetail, ExplorerAssetDetailResponse, CatalogKpi, ExplorerFileAsset } from "../types";
 
 function normalizeExplorerList<T>(payload: unknown): T[] {
   if (Array.isArray(payload)) {
@@ -369,11 +369,34 @@ export const serviceService = {
     return response.data;
   },
 
-  async getDataAssets(params?: { skip?: number; limit?: number; name?: string; sn?: string }) {
-    const response = await api.get<any[]>("/data-assets", { params });
+  async createCatalogViewFromFileAsset(data: {
+    data_asset_id: string;
+    name: string;
+    display_name: string;
+    description?: string;
+    tags?: string[];
+    glossary_term_ids?: string[];
+    synonyms?: string[];
+    sync_mode?: string;
+    cron_expr?: string;
+    sync_config?: Record<string, unknown>;
+  }) {
+    const response = await api.post<CatalogView>("/catalog-view/from-file-asset", data);
+    return response.data;
+  },
+
+  async getDataAssets(params?: {
+    skip?: number;
+    limit?: number;
+    name?: string;
+    sn?: string;
+    dataset_id?: string;
+    asset_type?: string;
+  }) {
+    const response = await api.get<ExplorerFileAsset[] | { data?: ExplorerFileAsset[] }>("/data-assets", { params });
     // Handle both array returns and paginated object returns
     if (response.data && typeof response.data === 'object' && 'data' in response.data) {
-      return response.data.data;
+      return Array.isArray(response.data.data) ? response.data.data : [];
     }
     return Array.isArray(response.data) ? response.data : [];
   },
