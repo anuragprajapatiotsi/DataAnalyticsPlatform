@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Editor, { type OnMount } from "@monaco-editor/react";
 import {
   Plus,
@@ -21,13 +21,20 @@ import { cn } from "@/shared/utils/cn";
 import { Button } from "@/shared/components/ui/button";
 import { loader } from "@monaco-editor/react";
 import { registerSqlAutocomplete, setAutocompleteContext } from "../services/autocomplete";
-import { useEffect } from "react";
 import { SaveQueryModal, type SaveQueryFormValues } from "./SaveQueryModal";
 import { datasetService } from "@/features/explore/services/dataset.service";
 import { domainService } from "@/features/domains/services/domain.service";
 import { userService } from "@/features/users/services/user.service";
 import { savedQueryService } from "../services/saved-query.service";
 import type { editor as MonacoEditorType } from "monaco-editor";
+
+const SQL_EDITOR_DRAG_DATA_TYPE = "application/x-sql-editor-table-reference";
+
+type DragTableReferencePayload = {
+  schema?: string;
+  table?: string;
+  reference?: string;
+};
 
 // Ensure Monaco is available window-wide for the plugin if needed,
 // but @monaco-editor/react handles loader.
@@ -49,21 +56,83 @@ export function QueryEditor() {
   } = useSqlEditorContext();
 
   const editorRef = useRef<MonacoEditorType.IStandaloneCodeEditor | null>(null);
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pendingQueryUpdateRef = useRef<{ tabId: string; value: string } | null>(null);
+  const previousTabIdRef = useRef<string | null>(null);
   const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
   const [lastSavedQueryId, setLastSavedQueryId] = useState<string | null>(null);
-  
-  // Step 4: Reactive Autocomplete Context Sync
+  const [isDropZoneActive, setIsDropZoneActive] = useState(false);
+  const [currentEditorText, setCurrentEditorText] = useState(activeTab?.query || "");
+  const activeCatalog = activeTab?.catalog;
+  const activeSchema = activeTab?.schema;
+  const activeQuery = activeTab?.query;
+
+  const flushPendingQueryUpdate = useCallback(() => {
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+      debounceTimerRef.current = null;
+    }
+
+    const pendingUpdate = pendingQueryUpdateRef.current;
+    if (pendingUpdate) {
+      updateTabQuery(pendingUpdate.tabId, pendingUpdate.value);
+      pendingQueryUpdateRef.current = null;
+    }
+  }, [updateTabQuery]);
+
+  const scheduleQueryUpdate = useCallback(
+    (tabId: string, value: string) => {
+      pendingQueryUpdateRef.current = { tabId, value };
+
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+
+      debounceTimerRef.current = setTimeout(() => {
+        const pendingUpdate = pendingQueryUpdateRef.current;
+        if (pendingUpdate) {
+          updateTabQuery(pendingUpdate.tabId, pendingUpdate.value);
+          pendingQueryUpdateRef.current = null;
+        }
+        debounceTimerRef.current = null;
+      }, 300);
+    },
+    [updateTabQuery],
+  );
+
   useEffect(() => {
-    if (activeTab) {
+    if (previousTabIdRef.current && previousTabIdRef.current !== activeTabId) {
+      flushPendingQueryUpdate();
+    }
+
+    previousTabIdRef.current = activeTabId;
+
+    if (activeSchema || activeCatalog) {
       setAutocompleteContext({
-        catalog: activeTab.catalog,
-        schema: activeTab.schema,
+        catalog: activeCatalog,
+        schema: activeSchema,
       });
     }
-  }, [activeTab]);
+
+    const frameId = window.requestAnimationFrame(() => {
+      setCurrentEditorText(editorRef.current?.getValue() ?? activeQuery ?? "");
+    });
+
+    return () => {
+      window.cancelAnimationFrame(frameId);
+    };
+  }, [activeTabId, activeCatalog, activeQuery, activeSchema, flushPendingQueryUpdate]);
+
+  useEffect(
+    () => () => {
+      flushPendingQueryUpdate();
+    },
+    [flushPendingQueryUpdate],
+  );
 
   const handleEditorDidMount: OnMount = (editor, monaco) => {
     editorRef.current = editor;
+    setCurrentEditorText(editor.getValue());
     
     // Step 4: Core Keyboard Shortcut Integration
     editor.addAction({
@@ -78,6 +147,95 @@ export function QueryEditor() {
     });
   };
 
+  const insertTableReference = useCallback(
+    (reference: string, clientX?: number, clientY?: number) => {
+      if (!activeTab || !editorRef.current || !reference.trim()) {
+        return;
+      }
+
+      const editor = editorRef.current;
+      const targetPosition =
+        typeof clientX === "number" && typeof clientY === "number"
+          ? editor.getTargetAtClientPoint(clientX, clientY)?.position
+          : undefined;
+      const position = targetPosition || editor.getPosition();
+
+      if (!position) {
+        return;
+      }
+
+      const selection = editor.getSelection();
+      const range =
+        selection && !selection.isEmpty()
+          ? selection
+          : {
+              startLineNumber: position.lineNumber,
+              startColumn: position.column,
+              endLineNumber: position.lineNumber,
+              endColumn: position.column,
+            };
+
+      editor.focus();
+      editor.pushUndoStop();
+      editor.executeEdits("schema-explorer-drag-drop", [
+        {
+          range,
+          text: reference,
+          forceMoveMarkers: true,
+        },
+      ]);
+      editor.pushUndoStop();
+
+      const nextValue = editor.getValue();
+      setCurrentEditorText(nextValue);
+      scheduleQueryUpdate(activeTab.id, nextValue);
+    },
+    [activeTab, scheduleQueryUpdate],
+  );
+
+  const handleEditorDrop = useCallback(
+    (event: React.DragEvent<HTMLDivElement>) => {
+      event.preventDefault();
+      setIsDropZoneActive(false);
+
+      const rawPayload =
+        event.dataTransfer.getData(SQL_EDITOR_DRAG_DATA_TYPE) ||
+        event.dataTransfer.getData("text/plain");
+
+      if (!rawPayload) {
+        return;
+      }
+
+      let reference = rawPayload;
+
+      try {
+        const parsed = JSON.parse(rawPayload) as DragTableReferencePayload;
+        reference =
+          parsed.reference ||
+          (parsed.schema && parsed.table
+            ? `${parsed.schema}.${parsed.table}`
+            : rawPayload);
+      } catch {
+        reference = rawPayload;
+      }
+
+      insertTableReference(reference, event.clientX, event.clientY);
+    },
+    [insertTableReference],
+  );
+
+  const handleEditorChange = useCallback(
+    (value?: string) => {
+      const nextValue = value || "";
+      setCurrentEditorText(nextValue);
+
+      if (activeTab) {
+        scheduleQueryUpdate(activeTab.id, nextValue);
+      }
+    },
+    [activeTab, scheduleQueryUpdate],
+  );
+
   const handleExecute = (openNewTab: boolean = false) => {
     if (!activeTabId || !editorRef.current) return;
     
@@ -90,13 +248,18 @@ export function QueryEditor() {
       selectedText = model.getValueInRange(selection);
     }
     
-    const queryToRun = selectedText || activeTab?.query || "";
+    const editorValue = editorRef.current.getValue();
+    const queryToRun = selectedText || editorValue || activeTab?.query || "";
     if (queryToRun.trim().length === 0) {
       message.warning("Please type or select a valid SQL query to execute.");
       return;
     }
-    
-    executeQuery(activeTabId, selectedText || undefined, { openNewTab });
+
+    flushPendingQueryUpdate();
+    executeQuery(activeTabId, selectedText || undefined, {
+      openNewTab,
+      queryText: editorValue,
+    });
   };
 
   const handleCancel = () => {
@@ -168,12 +331,19 @@ export function QueryEditor() {
   const saveInitialValues = useMemo(
     () => ({
       name: activeTab?.name || "Saved Query",
-      sql: activeTab?.query || "",
+      sql: currentEditorText || activeTab?.query || "",
       catalog: activeTab?.catalog || "",
       schema: activeTab?.schema || "",
       trino_endpoint_id: lastSavedQueryId ? undefined : "",
     }),
-    [activeTab?.catalog, activeTab?.name, activeTab?.query, activeTab?.schema, lastSavedQueryId],
+    [
+      activeTab?.catalog,
+      activeTab?.name,
+      activeTab?.query,
+      activeTab?.schema,
+      currentEditorText,
+      lastSavedQueryId,
+    ],
   );
 
   return (
@@ -234,7 +404,7 @@ export function QueryEditor() {
               size="sm"
               variant="default"
               onClick={() => handleExecute(false)}
-              disabled={isRunning || !activeTab?.query}
+              disabled={isRunning || !currentEditorText.trim()}
               className="h-8 bg-blue-600 hover:bg-blue-700 font-bold gap-2 rounded-r-none border-r border-blue-700"
             >
               {isRunning ? (
@@ -245,7 +415,7 @@ export function QueryEditor() {
               Run
             </Button>
             <Dropdown
-              disabled={isRunning || !activeTab?.query}
+              disabled={isRunning || !currentEditorText.trim()}
               trigger={["click"]}
               placement="bottomRight"
               menu={{
@@ -269,7 +439,7 @@ export function QueryEditor() {
                 size="sm"
                 variant="default"
                 className="h-8 bg-blue-600 hover:bg-blue-700 rounded-l-none px-2"
-                disabled={isRunning || !activeTab?.query}
+                disabled={isRunning || !currentEditorText.trim()}
               >
                 <ChevronDown size={14} />
               </Button>
@@ -279,7 +449,7 @@ export function QueryEditor() {
             size="sm"
             variant="outline"
             onClick={() => setIsSaveModalOpen(true)}
-            disabled={!activeTab?.query?.trim()}
+            disabled={!currentEditorText.trim()}
             className="h-8 border-slate-200 text-slate-600 font-bold hover:bg-slate-50 shadow-sm"
           >
             <Save size={13} className="mr-2" />
@@ -299,27 +469,51 @@ export function QueryEditor() {
       </div>
 
       {/* Editor Content */}
-      <div className="flex-1 min-h-0 relative">
+      <div
+        className={cn(
+          "flex-1 min-h-0 relative transition-colors",
+          isDropZoneActive && "bg-blue-50/40",
+        )}
+        onDragOver={(event) => {
+          if (event.dataTransfer.types.includes(SQL_EDITOR_DRAG_DATA_TYPE)) {
+            event.preventDefault();
+            event.dataTransfer.dropEffect = "copy";
+            setIsDropZoneActive(true);
+          }
+        }}
+        onDragLeave={() => setIsDropZoneActive(false)}
+        onDrop={handleEditorDrop}
+      >
         {activeTab ? (
-          <Editor
-            height="100%"
-            defaultLanguage="sql"
-            value={activeTab.query}
-            onMount={handleEditorDidMount}
-            onChange={(value) => updateTabQuery(activeTab.id, value || "")}
-            options={{
-              minimap: { enabled: false },
-              fontSize: 14,
-              fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
-              wordWrap: "on",
-              automaticLayout: true,
-              scrollBeyondLastLine: false,
-              lineNumbers: "on",
-              renderLineHighlight: "all",
-              padding: { top: 16, bottom: 16 },
-              theme: "vs-light",
-            }}
-          />
+          <>
+            <Editor
+              height="100%"
+              defaultLanguage="sql"
+              path={activeTab.id}
+              defaultValue={activeTab.query}
+              onMount={handleEditorDidMount}
+              onChange={handleEditorChange}
+              options={{
+                minimap: { enabled: false },
+                fontSize: 14,
+                fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
+                wordWrap: "on",
+                automaticLayout: true,
+                scrollBeyondLastLine: false,
+                lineNumbers: "on",
+                renderLineHighlight: "all",
+                padding: { top: 16, bottom: 16 },
+                theme: "vs-light",
+              }}
+            />
+            {isDropZoneActive && (
+              <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center border-2 border-dashed border-blue-300 bg-blue-50/30">
+                <div className="rounded-full border border-blue-200 bg-white px-4 py-2 text-sm font-medium text-blue-600 shadow-sm">
+                  Drop to insert table reference
+                </div>
+              </div>
+            )}
+          </>
         ) : (
           <div className="h-full flex flex-col items-center justify-center text-slate-400 gap-4">
             <PlusCircle size={48} className="text-slate-100" />

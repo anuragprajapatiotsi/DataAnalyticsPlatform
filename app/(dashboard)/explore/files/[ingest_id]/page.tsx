@@ -73,14 +73,17 @@ export default function ExploreFileDetailPage() {
 
   const confirmMutation = useMutation({
     mutationFn: (payload: ConfirmIngestJobRequest) => fileService.confirmJob(ingestId, payload),
-    onSuccess: async () => {
-      message.success("Data Asset created successfully");
-      setIsConfirmModalOpen(false);
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["files"] }),
-        queryClient.invalidateQueries({ queryKey: ["file", ingestId] }),
-      ]);
-    },
+      onSuccess: async () => {
+        message.success("Data Asset created successfully");
+        setIsConfirmModalOpen(false);
+        await Promise.all([
+          queryClient.invalidateQueries({ queryKey: ["files"] }),
+          queryClient.invalidateQueries({ queryKey: ["file", ingestId] }),
+          queryClient.invalidateQueries({ queryKey: ["datasets", "file"] }),
+          queryClient.invalidateQueries({ queryKey: ["file-assets"] }),
+          queryClient.invalidateQueries({ queryKey: ["file-asset-detail"] }),
+        ]);
+      },
     onError: () => {
       message.error("Failed to confirm file ingestion.");
     },

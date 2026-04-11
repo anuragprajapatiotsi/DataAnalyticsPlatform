@@ -29,6 +29,14 @@ function debounce<T extends (...args: any[]) => any>(
 
 const { Text } = Typography;
 
+function toInternalName(value?: string) {
+  return (value || "")
+    .trim()
+    .replace(/[^a-zA-Z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "")
+    .toLowerCase();
+}
+
 interface CreateCatalogViewModalProps {
   open: boolean;
   onCancel: () => void;
@@ -73,19 +81,25 @@ export function CreateCatalogViewModal({
   const selectedConnectionId = Form.useWatch("source_connection_id", form);
   const selectedDatabase = Form.useWatch("-database-", form);
   const selectedSchema = Form.useWatch("source_schema", form);
+  const selectedSourceTable = Form.useWatch("source_table", form);
   const syncMode = Form.useWatch("sync_mode", form);
 
   // --- Reset forms when opening/closing ---
   useEffect(() => {
     if (open) {
       form.resetFields();
-      if (initialAssetId) {
+      if (initialEndpointContext) {
+        setActiveTab("endpoint");
+        form.setFieldsValue({
+          ...initialEndpointContext,
+          name: toInternalName(initialEndpointContext.source_table),
+          display_name: initialEndpointContext.source_table,
+          data_asset_id: initialAssetId,
+        });
+      } else if (initialAssetId) {
         setActiveTab("asset");
         form.setFieldsValue({ data_asset_id: initialAssetId });
         // Fetch specific asset to display name if necessary (optional improvement)
-      } else if (initialEndpointContext) {
-        setActiveTab("endpoint");
-        form.setFieldsValue(initialEndpointContext);
       } else {
         // Fetch initial list of assets, and connections
         fetchAssets("");
@@ -198,6 +212,21 @@ export function CreateCatalogViewModal({
     loadTables();
   }, [selectedSchema, selectedDatabase, selectedConnectionId, activeTab]);
 
+  useEffect(() => {
+    if (activeTab !== "endpoint" || !selectedSourceTable) {
+      return;
+    }
+
+    const currentName = form.getFieldValue("name");
+    const currentDisplayName = form.getFieldValue("display_name");
+    const normalizedTableName = toInternalName(selectedSourceTable);
+
+    form.setFieldsValue({
+      name: currentName || normalizedTableName,
+      display_name: currentDisplayName || selectedSourceTable,
+    });
+  }, [activeTab, form, selectedSourceTable]);
+
   const handleSubmit = async () => {
     try {
       const values = await form.validateFields();
@@ -220,6 +249,9 @@ export function CreateCatalogViewModal({
       if (activeTab === "asset") {
         payload.data_asset_id = values.data_asset_id;
       } else {
+        if (initialAssetId) {
+          payload.data_asset_id = initialAssetId;
+        }
         payload.source_connection_id = initialEndpointContext?.source_connection_id || values.source_connection_id;
         payload.source_schema = initialEndpointContext?.source_schema || values.source_schema;
         payload.source_table = initialEndpointContext?.source_table || values.source_table;

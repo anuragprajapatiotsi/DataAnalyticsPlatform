@@ -6,6 +6,7 @@ export interface IngestFile {
   file_size: number;
   file_type: string;
   status: string;
+  description?: string;
   bucket?: string;
   object_key?: string;
   storage_config_id?: string;
@@ -16,6 +17,7 @@ export interface IngestFile {
   dataset_name?: string;
   column_count?: number;
   created_at: string;
+  updated_at?: string;
   completed_at?: string;
   triggered_by?: string;
   error_message?: string;
@@ -32,8 +34,12 @@ export interface IngestFilePreviewColumn {
 }
 
 export interface IngestFilePreview {
+  job_id?: string;
+  file_name?: string;
+  file_type?: string;
   inferred_schema?: IngestFilePreviewColumn[];
   preview_rows?: Record<string, unknown>[];
+  row_count_estimate?: number;
   [key: string]: unknown;
 }
 

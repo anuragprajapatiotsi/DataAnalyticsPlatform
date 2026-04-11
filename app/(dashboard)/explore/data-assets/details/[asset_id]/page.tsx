@@ -54,6 +54,11 @@ import {
 } from "@/features/services/types";
 import { PageHeader } from "@/shared/components/layout/PageHeader";
 import { CreateCatalogViewModal } from "@/features/explore/components/CreateCatalogViewModal";
+import { FileAssetCatalogViewModal } from "@/features/explore/components/FileAssetCatalogViewModal";
+import {
+  useCreateCatalogView,
+  type CreateCatalogViewFromFileAssetRequest,
+} from "@/features/explore/hooks/useCreateCatalogView";
 import { cn } from "@/shared/utils/cn";
 import { useAuthContext } from "@/shared/contexts/auth-context";
 import type { ColumnsType } from "antd/es/table";
@@ -177,6 +182,24 @@ function normalizeExplorerAssetResponse(
   };
 }
 
+function inferSchemaName(asset: DataAssetDetail | null, fallback?: string | null) {
+  if (fallback) {
+    return fallback;
+  }
+
+  const fqn = asset?.fully_qualified_name;
+  if (!fqn) {
+    return undefined;
+  }
+
+  const parts = fqn.split(".").filter(Boolean);
+  if (parts.length >= 2) {
+    return parts[parts.length - 2];
+  }
+
+  return undefined;
+}
+
 export default function DataAssetDetailPage() {
   const { asset_id } = useParams();
   const router = useRouter();
@@ -185,6 +208,7 @@ export default function DataAssetDetailPage() {
   const [latestProfile, setLatestProfile] = useState<DataAssetProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const createCatalogViewMutation = useCreateCatalogView();
 
   // Column Profiling Drawer State
   const [selectedColumnId, setSelectedColumnId] = useState<string | null>(null);
@@ -302,6 +326,9 @@ export default function DataAssetDetailPage() {
   }, [fetchData]);
 
   const searchParams = useSearchParams();
+  const source = searchParams.get("source");
+  const fileDatasetId = searchParams.get("datasetId");
+  const fileDatasetName = searchParams.get("datasetName");
   const eid = searchParams.get("eid");
   const en = searchParams.get("en");
   const db = searchParams.get("db");
@@ -309,6 +336,21 @@ export default function DataAssetDetailPage() {
   const sn = searchParams.get("sn");
   const an = searchParams.get("an");
   const sid = searchParams.get("sid");
+  const isFileAsset = String(asset?.asset_type || "").toLowerCase() === "file";
+  const isServiceTable = !isFileAsset && String(asset?.asset_type || "").toLowerCase() === "table";
+  const canCreateCatalogView = isFileAsset || isServiceTable;
+  const defaultCatalogViewName = (asset?.display_name || asset?.name || "file_asset")
+    .replace(/[^a-zA-Z0-9]+/g, "_")
+    .toLowerCase();
+  const sourceSchemaName = inferSchemaName(asset, sn);
+  const initialEndpointContext =
+    isServiceTable && eid && asset?.name && sourceSchemaName
+      ? {
+          source_connection_id: eid,
+          source_schema: sourceSchemaName,
+          source_table: asset.name,
+        }
+      : undefined;
 
   const buildDatabaseHref = () => {
     if (!eid || !dbid) {
@@ -339,14 +381,32 @@ export default function DataAssetDetailPage() {
     return `/explore/data-assets/schema/${sid}?${params.toString()}`;
   };
 
-  const breadcrumbItems = [
-    { label: "Catalog", href: "/explore" },
-    { label: "Data Assets", href: "/explore/data-assets" },
-    ...(eid && en ? [{ label: en, href: `/explore/data-assets/${eid}` }] : []),
-    ...(db ? [{ label: db, href: buildDatabaseHref() }] : []),
-    ...(sid && sn ? [{ label: sn, href: buildSchemaHref() }] : []),
-    { label: an || asset?.display_name || asset?.name || "Asset Details" },
-  ];
+  const breadcrumbItems =
+    source === "file"
+      ? [
+          { label: "Catalog", href: "/explore" },
+          { label: "Data Assets", href: "/explore/data-assets" },
+          { label: "Files", href: "/explore/data-assets?section=files" },
+          ...(fileDatasetId
+            ? [
+                {
+                  label: fileDatasetName || "File Group",
+                  href: `/explore/data-assets/files/${fileDatasetId}${
+                    fileDatasetName ? `?dn=${encodeURIComponent(fileDatasetName)}` : ""
+                  }`,
+                },
+              ]
+            : []),
+          { label: an || asset?.display_name || asset?.name || "File Asset" },
+        ]
+      : [
+          { label: "Catalog", href: "/explore" },
+          { label: "Data Assets", href: "/explore/data-assets" },
+          ...(eid && en ? [{ label: en, href: `/explore/data-assets/${eid}` }] : []),
+          ...(db ? [{ label: db, href: buildDatabaseHref() }] : []),
+          ...(sid && sn ? [{ label: sn, href: buildSchemaHref() }] : []),
+          { label: an || asset?.display_name || asset?.name || "Asset Details" },
+        ];
 
   const formatBytes = (bytes?: number) => {
     if (bytes === undefined || bytes === null) return "N/A";
@@ -662,9 +722,25 @@ export default function DataAssetDetailPage() {
                 <span className="text-[10px] uppercase tracking-widest font-semibold text-slate-400">Asset Type</span>
                 <span className="text-[13px] font-bold text-slate-900 uppercase tracking-wider">{asset?.asset_type}</span>
               </div>
-              <Button onClick={() => setIsModalOpen(true)} className="h-9 px-4 font-medium rounded-md">
-                Create Catalog View
-              </Button>
+              <Tooltip
+                title={
+                  isFileAsset
+                    ? "Create a catalog view from this file asset."
+                    : isServiceTable
+                      ? initialEndpointContext
+                        ? "Create a catalog view from this source table."
+                        : "Source connection details are missing for this table."
+                      : "Catalog Views can only be created from file assets or service tables."
+                }
+              >
+                <Button
+                  onClick={() => setIsModalOpen(true)}
+                  disabled={!canCreateCatalogView || (isServiceTable && !initialEndpointContext)}
+                  className="h-9 px-4 font-medium rounded-md"
+                >
+                  Create Catalog View
+                </Button>
+              </Tooltip>
               <Tooltip title="Refresh Metadata">
                 <Button onClick={fetchData} icon={<Activity size={14} className={loading ? "animate-spin" : ""} />} className="h-9 w-9 p-0 flex items-center justify-center rounded-md text-slate-500 hover:text-blue-600" />
               </Tooltip>
@@ -1137,14 +1213,52 @@ export default function DataAssetDetailPage() {
         }
       `}</style>
       
-      <CreateCatalogViewModal
-        open={isModalOpen}
-        onCancel={() => setIsModalOpen(false)}
-        initialAssetId={asset_id as string}
-        onSuccess={(id) => {
-          if (id) router.push(`/explore/object-resources/${id}`);
-        }}
-      />
+      {isFileAsset ? (
+        <FileAssetCatalogViewModal
+          open={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          dataAssetId={asset_id as string}
+          defaultName={defaultCatalogViewName}
+          defaultDisplayName={asset?.display_name || asset?.name || defaultCatalogViewName}
+          isSubmitting={createCatalogViewMutation.isPending}
+          onSubmit={async (values) => {
+            let parsedSyncConfig: Record<string, unknown> | undefined;
+            if (values.sync_config?.trim()) {
+              parsedSyncConfig = JSON.parse(values.sync_config);
+            }
+
+            const payload: CreateCatalogViewFromFileAssetRequest = {
+              data_asset_id: values.data_asset_id,
+              name: values.name.trim(),
+              display_name: values.display_name.trim(),
+              description: values.description?.trim() || undefined,
+              tags: values.tags ?? [],
+              glossary_term_ids: values.glossary_term_ids ?? [],
+              synonyms: values.synonyms ?? [],
+              sync_mode: values.sync_mode || "on_demand",
+              cron_expr:
+                values.sync_mode === "scheduled"
+                  ? values.cron_expr?.trim() || undefined
+                  : undefined,
+              sync_config: parsedSyncConfig,
+            };
+
+            await createCatalogViewMutation.mutateAsync(payload);
+            setIsModalOpen(false);
+            router.push("/explore/object-resources");
+          }}
+        />
+      ) : (
+        <CreateCatalogViewModal
+          open={isModalOpen}
+          onCancel={() => setIsModalOpen(false)}
+          initialAssetId={asset_id as string}
+          initialEndpointContext={initialEndpointContext}
+          onSuccess={() => {
+            router.push("/explore/object-resources");
+          }}
+        />
+      )}
     </div>
   );
 }

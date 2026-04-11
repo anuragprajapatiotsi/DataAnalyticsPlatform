@@ -123,7 +123,10 @@ export default function ExploreFilesPage() {
     onSuccess: async () => {
       message.success("File group created successfully.");
       setIsFileGroupModalOpen(false);
-      await queryClient.invalidateQueries({ queryKey: ["file-groups"] });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["file-groups"] }),
+        queryClient.invalidateQueries({ queryKey: ["datasets", "file"] }),
+      ]);
     },
     onError: () => {
       message.error("Failed to create file group. Please try again.");
@@ -713,7 +716,7 @@ export default function ExploreFilesPage() {
                                 className="custom-explore-table"
                                 scroll={{ x: 1100 }}
                                 onRow={(record) => ({
-                                  onClick: () => router.push(`/explore/files/${record.job_id}`),
+                                  onClick: () => router.push(`/explore/files/assets/${record.job_id}`),
                                   className: "cursor-pointer group hover:bg-slate-50/50 transition-colors",
                                 })}
                                 locale={{
