@@ -192,9 +192,14 @@ export function useSqlEditor() {
   );
 
   const executeQuery = useCallback(
-    async (tabId: string, selectedQuery?: string, options?: { page?: number; pageSize?: number; openNewTab?: boolean }) => {
+    async (
+      tabId: string,
+      selectedQuery?: string,
+      options?: { page?: number; pageSize?: number; openNewTab?: boolean; queryText?: string },
+    ) => {
       const tab = tabs.find((t) => t.id === tabId);
-      if (!tab || (!tab.query && !selectedQuery)) return;
+      const querySource = options?.queryText ?? tab?.query ?? "";
+      if (!tab || (!querySource && !selectedQuery)) return;
 
       const activeResult = tab.results.find(r => r.id === tab.activeResultTabId);
       const isAlreadyRunning = activeResult?.status === "loading";
@@ -204,7 +209,7 @@ export function useSqlEditor() {
       const currentPageSize = options?.pageSize ?? activeResult?.pagination.pageSize ?? 50;
       
       const isPaging = options?.page !== undefined || options?.pageSize !== undefined;
-      const sourceQuery = selectedQuery || tab.query;
+      const sourceQuery = selectedQuery || querySource;
 
       if (isPaging) {
         const queryToRun = cleanSqlStatement(sourceQuery);

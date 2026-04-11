@@ -18,6 +18,7 @@ import { cn } from "@/shared/utils/cn";
 import { useSqlEditorContext } from "../contexts/SqlEditorContext";
 import { serviceService } from "@/features/services/services/service.service";
 import { CATALOG_VIEWS_UPDATED_EVENT } from "../constants";
+import { datasetService } from "@/features/explore/services/dataset.service";
 
 type ExplorerNodeType =
   | "catalog"
@@ -28,6 +29,7 @@ type ExplorerNodeType =
   | "table"
   | "column"
   | "connection"
+  | "dataset"
   | "placeholder"
   | "load-more";
 
@@ -69,6 +71,8 @@ const getIcon = (type: ExplorerNodeType) => {
       return Type;
     case "connection":
       return Activity;
+    case "dataset":
+      return Package;
     case "load-more":
       return FolderOpen;
     case "placeholder":
@@ -114,6 +118,14 @@ function getInitialTreeData(): ExplorerNode[] {
         },
       ],
       isLoaded: true,
+    },
+    {
+      id: "root-files",
+      name: "Files",
+      type: "folder",
+      hasChildren: true,
+      children: [],
+      isLoaded: false,
     },
   ];
 }
@@ -368,6 +380,39 @@ export function SchemaExplorer() {
               isLoaded: false,
             }));
           }
+        } else if (targetNode.id === "root-files") {
+          const datasets = await datasetService.getDatasets({
+            source_type: "file",
+            skip: 0,
+            limit: 100,
+          });
+
+          const fileDatasets = (Array.isArray(datasets) ? datasets : []).filter(
+            (dataset) => dataset.source_type === "file" || dataset.source_type === "files",
+          );
+
+          if (fileDatasets.length === 0) {
+            children = [
+              {
+                id: `empty-files-${targetNode.id}`,
+                name: "No file datasets found",
+                type: "placeholder",
+                hasChildren: false,
+                children: [],
+              },
+            ];
+          } else {
+            children = fileDatasets.map((dataset) => ({
+              id: `dataset-${dataset.id}`,
+              name: dataset.display_name || dataset.name,
+              type: "dataset",
+              asset_id: dataset.id,
+              schema: dataset.name,
+              hasChildren: true,
+              children: [],
+              isLoaded: false,
+            }));
+          }
         } else if (targetNode.type === "connection") {
           // Level 2: Databases Discovery
           const dbs = await serviceService.getDatabases(targetNode.connection_id!);
@@ -462,6 +507,36 @@ export function SchemaExplorer() {
               catalog: targetNode.catalog,
               schema: targetNode.schema,
               table: table.name,
+              hasChildren: true,
+              children: [],
+              isLoaded: false,
+            }));
+          }
+        } else if (targetNode.type === "dataset" && targetNode.asset_id) {
+          const fileAssets = await serviceService.getDataAssets({
+            dataset_id: targetNode.asset_id,
+            asset_type: "file",
+            limit: 100,
+          });
+
+          if (!fileAssets || fileAssets.length === 0) {
+            children = [
+              {
+                id: `empty-file-assets-${targetNode.id}`,
+                name: "No files found",
+                type: "placeholder",
+                hasChildren: false,
+                children: [],
+              },
+            ];
+          } else {
+            children = fileAssets.map((asset) => ({
+              id: `file-asset-${asset.id}`,
+              name: asset.display_name || asset.name || "Unnamed File Asset",
+              type: "table",
+              asset_id: asset.id,
+              schema: targetNode.schema || "files",
+              table: asset.name,
               hasChildren: true,
               children: [],
               isLoaded: false,

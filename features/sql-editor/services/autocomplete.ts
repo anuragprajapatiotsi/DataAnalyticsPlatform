@@ -3,6 +3,7 @@ import { serviceService } from "@/features/services/services/service.service";
 
 const DEFAULT_CATALOG = "iceberg";
 const FETCH_DEBOUNCE_MS = 250;
+const PROVIDER_THROTTLE_MS = 200;
 const MAX_SUGGESTIONS = 30;
 
 let isRegistered = false;
@@ -23,6 +24,10 @@ const cache = {
   columns: new Map<string, CachedValue>(),
   pending: new Map<string, Promise<CachedValue>>(),
 };
+
+let lastCompletionKey = "";
+let lastCompletionAt = 0;
+let lastCompletionResult: monaco.languages.CompletionList = { suggestions: [] };
 
 function normalizeIdentifier(value: string) {
   return value.replace(/^["`]|["`]$/g, "").trim();
@@ -394,6 +399,22 @@ function buildKeywordSuggestions(
   ];
 }
 
+async function resolveCompletionResult(
+  key: string,
+  producer: () => Promise<monaco.languages.CompletionList>,
+) {
+  const now = Date.now();
+  if (key === lastCompletionKey && now - lastCompletionAt < PROVIDER_THROTTLE_MS) {
+    return lastCompletionResult;
+  }
+
+  const result = await producer();
+  lastCompletionKey = key;
+  lastCompletionAt = Date.now();
+  lastCompletionResult = result;
+  return result;
+}
+
 export function registerSqlAutocomplete(monacoInstance: typeof monaco) {
   if (isRegistered) {
     return;
@@ -402,7 +423,7 @@ export function registerSqlAutocomplete(monacoInstance: typeof monaco) {
   isRegistered = true;
 
   monacoInstance.languages.registerCompletionItemProvider("sql", {
-    triggerCharacters: [".", " ", "("],
+    triggerCharacters: ["."],
     provideCompletionItems: async (model, position) => {
       const fullText = model.getValue();
       if (!fullText.trim()) {
@@ -415,6 +436,8 @@ export function registerSqlAutocomplete(monacoInstance: typeof monaco) {
         endLineNumber: position.lineNumber,
         endColumn: position.column,
       });
+      const lineContent = model.getLineContent(position.lineNumber);
+      const lineUntilPosition = lineContent.slice(0, Math.max(position.column - 1, 0));
       const rawTextUntilPosition = fullTextUntilPosition;
       const word = model.getWordUntilPosition(position);
       const defaultRange = getSuggestionRange(
@@ -422,146 +445,150 @@ export function registerSqlAutocomplete(monacoInstance: typeof monaco) {
         word.startColumn,
         word.endColumn,
       );
-      const contextMap = extractTableContext(fullText);
+      const completionKey = `${position.lineNumber}:${position.column}:${lineUntilPosition.trimStart()}`;
 
-      try {
-        const dotContext = getDotContext(rawTextUntilPosition);
-        const schemaContext = getSchemaContext(rawTextUntilPosition);
-        const tableContext = getTableContextAfterSchema(rawTextUntilPosition);
+      return resolveCompletionResult(completionKey, async () => {
+        const contextMap = extractTableContext(fullTextUntilPosition);
 
-        if (tableContext?.schema) {
-          const range = getSuggestionRange(
-            position,
-            getWordStartColumn(position, tableContext.prefix.length),
-            position.column,
-          );
-          const tables = await getTables(tableContext.schema);
-          return {
-            suggestions: toCompletionItems(
-              monacoInstance,
-              filterAndLimit(tables, tableContext.prefix),
-              monacoInstance.languages.CompletionItemKind.Class,
-              `Table (${tableContext.schema})`,
-              range,
-            ),
-          };
-        }
+        try {
+          const dotContext = getDotContext(rawTextUntilPosition);
+          const schemaContext = getSchemaContext(rawTextUntilPosition);
+          const tableContext = getTableContextAfterSchema(rawTextUntilPosition);
 
-        if (schemaContext) {
-          const range = getSuggestionRange(
-            position,
-            getWordStartColumn(position, schemaContext.prefix.length),
-            position.column,
-          );
-          const schemas = await getSchemas();
-          return {
-            suggestions: toCompletionItems(
-              monacoInstance,
-              filterAndLimit(schemas, schemaContext.prefix),
-              monacoInstance.languages.CompletionItemKind.Module,
-              "Schema",
-              range,
-            ),
-          };
-        }
-
-        if (dotContext) {
-          const dotRange = getSuggestionRange(
-            position,
-            getWordStartColumn(position, dotContext.prefix.length),
-            position.column,
-          );
-
-          const targetParts = dotContext.target
-            .split(".")
-            .map((part) => normalizeIdentifier(part))
-            .filter(Boolean);
-
-          if (isTablePathContext(rawTextUntilPosition) && targetParts.length === 1) {
-            const tables = await getTables(targetParts[0]);
+          if (tableContext?.schema) {
+            const range = getSuggestionRange(
+              position,
+              getWordStartColumn(position, tableContext.prefix.length),
+              position.column,
+            );
+            const tables = await getTables(tableContext.schema);
             return {
               suggestions: toCompletionItems(
                 monacoInstance,
-                filterAndLimit(tables, dotContext.prefix),
+                filterAndLimit(tables, tableContext.prefix),
                 monacoInstance.languages.CompletionItemKind.Class,
-                `Table (${targetParts[0]})`,
-                dotRange,
+                `Table (${tableContext.schema})`,
+                range,
               ),
             };
           }
 
-          let resolvedReference: TableReference | null = null;
-
-          if (targetParts.length === 2) {
-            resolvedReference = parseQualifiedReference(
-              `${targetParts[0]}.${targetParts[1]}`,
-              currentContext.schema || undefined,
+          if (schemaContext) {
+            const range = getSuggestionRange(
+              position,
+              getWordStartColumn(position, schemaContext.prefix.length),
+              position.column,
             );
-          } else if (targetParts.length === 1) {
-            resolvedReference =
-              contextMap.get(targetParts[0]) ||
-              parseQualifiedReference(targetParts[0], currentContext.schema || undefined);
-          }
-
-          if (resolvedReference) {
-            const columns = await getColumns(
-              resolvedReference.schema,
-              resolvedReference.table,
-            );
+            const schemas = await getSchemas();
             return {
               suggestions: toCompletionItems(
                 monacoInstance,
-                filterAndLimit(columns, dotContext.prefix),
-                monacoInstance.languages.CompletionItemKind.Field,
-                `Column (${resolvedReference.reference})`,
-                dotRange,
+                filterAndLimit(schemas, schemaContext.prefix),
+                monacoInstance.languages.CompletionItemKind.Module,
+                "Schema",
+                range,
               ),
             };
           }
-        }
 
-        if (isSelectListContext(rawTextUntilPosition)) {
-          const prefix = getStandaloneIdentifierPrefix(rawTextUntilPosition);
-          const references = getUniqueReferences(contextMap);
-
-          if (references.length > 0) {
-            const columnSets = await Promise.all(
-              references.map(async (reference) => ({
-                reference,
-                columns: await getColumns(reference.schema, reference.table),
-              })),
+          if (dotContext) {
+            const dotRange = getSuggestionRange(
+              position,
+              getWordStartColumn(position, dotContext.prefix.length),
+              position.column,
             );
 
-            const suggestions = columnSets
-              .flatMap(({ reference, columns }) =>
-                columns.map((column) => ({
-                  label: column,
-                  kind: monacoInstance.languages.CompletionItemKind.Field,
-                  detail: `Column (${reference.reference})`,
-                  insertText: column,
-                  range: defaultRange,
-                })),
-              )
-              .filter(
-                (item) => !prefix || item.label.toLowerCase().startsWith(prefix.toLowerCase()),
-              )
-              .sort((a, b) => a.label.localeCompare(b.label))
-              .slice(0, MAX_SUGGESTIONS);
+            const targetParts = dotContext.target
+              .split(".")
+              .map((part) => normalizeIdentifier(part))
+              .filter(Boolean);
 
-            if (suggestions.length > 0) {
-              return { suggestions };
+            if (isTablePathContext(rawTextUntilPosition) && targetParts.length === 1) {
+              const tables = await getTables(targetParts[0]);
+              return {
+                suggestions: toCompletionItems(
+                  monacoInstance,
+                  filterAndLimit(tables, dotContext.prefix),
+                  monacoInstance.languages.CompletionItemKind.Class,
+                  `Table (${targetParts[0]})`,
+                  dotRange,
+                ),
+              };
+            }
+
+            let resolvedReference: TableReference | null = null;
+
+            if (targetParts.length === 2) {
+              resolvedReference = parseQualifiedReference(
+                `${targetParts[0]}.${targetParts[1]}`,
+                currentContext.schema || undefined,
+              );
+            } else if (targetParts.length === 1) {
+              resolvedReference =
+                contextMap.get(targetParts[0]) ||
+                parseQualifiedReference(targetParts[0], currentContext.schema || undefined);
+            }
+
+            if (resolvedReference) {
+              const columns = await getColumns(
+                resolvedReference.schema,
+                resolvedReference.table,
+              );
+              return {
+                suggestions: toCompletionItems(
+                  monacoInstance,
+                  filterAndLimit(columns, dotContext.prefix),
+                  monacoInstance.languages.CompletionItemKind.Field,
+                  `Column (${resolvedReference.reference})`,
+                  dotRange,
+                ),
+              };
             }
           }
-        }
 
-        return {
-          suggestions: buildKeywordSuggestions(monacoInstance, defaultRange),
-        };
-      } catch {
-        return {
-          suggestions: buildKeywordSuggestions(monacoInstance, defaultRange),
-        };
-      }
+          if (isSelectListContext(rawTextUntilPosition)) {
+            const prefix = getStandaloneIdentifierPrefix(rawTextUntilPosition);
+            const references = getUniqueReferences(contextMap);
+
+            if (references.length > 0) {
+              const columnSets = await Promise.all(
+                references.map(async (reference) => ({
+                  reference,
+                  columns: await getColumns(reference.schema, reference.table),
+                })),
+              );
+
+              const suggestions = columnSets
+                .flatMap(({ reference, columns }) =>
+                  columns.map((column) => ({
+                    label: column,
+                    kind: monacoInstance.languages.CompletionItemKind.Field,
+                    detail: `Column (${reference.reference})`,
+                    insertText: column,
+                    range: defaultRange,
+                  })),
+                )
+                .filter(
+                  (item) => !prefix || item.label.toLowerCase().startsWith(prefix.toLowerCase()),
+                )
+                .sort((a, b) => a.label.localeCompare(b.label))
+                .slice(0, MAX_SUGGESTIONS);
+
+              if (suggestions.length > 0) {
+                return { suggestions };
+              }
+            }
+          }
+
+          return {
+            suggestions: buildKeywordSuggestions(monacoInstance, defaultRange),
+          };
+        } catch {
+          return {
+            suggestions: buildKeywordSuggestions(monacoInstance, defaultRange),
+          };
+        }
+      });
     },
   });
 }
