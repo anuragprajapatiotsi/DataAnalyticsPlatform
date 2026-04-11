@@ -29,6 +29,14 @@ import { userService } from "@/features/users/services/user.service";
 import { savedQueryService } from "../services/saved-query.service";
 import type { editor as MonacoEditorType } from "monaco-editor";
 
+const SQL_EDITOR_DRAG_DATA_TYPE = "application/x-sql-editor-table-reference";
+
+type DragTableReferencePayload = {
+  schema?: string;
+  table?: string;
+  reference?: string;
+};
+
 // Ensure Monaco is available window-wide for the plugin if needed,
 // but @monaco-editor/react handles loader.
 loader.init().then((monaco) => {
@@ -51,6 +59,7 @@ export function QueryEditor() {
   const editorRef = useRef<MonacoEditorType.IStandaloneCodeEditor | null>(null);
   const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
   const [lastSavedQueryId, setLastSavedQueryId] = useState<string | null>(null);
+  const [isDropZoneActive, setIsDropZoneActive] = useState(false);
   
   // Step 4: Reactive Autocomplete Context Sync
   useEffect(() => {
@@ -77,6 +86,81 @@ export function QueryEditor() {
       },
     });
   };
+
+  const insertTableReference = React.useCallback(
+    (reference: string, clientX?: number, clientY?: number) => {
+      if (!activeTab || !editorRef.current || !reference.trim()) {
+        return;
+      }
+
+      const editor = editorRef.current;
+      const targetPosition =
+        typeof clientX === "number" && typeof clientY === "number"
+          ? editor.getTargetAtClientPoint(clientX, clientY)?.position
+          : undefined;
+      const position = targetPosition || editor.getPosition();
+
+      if (!position) {
+        return;
+      }
+
+      const selection = editor.getSelection();
+      const range =
+        selection && !selection.isEmpty()
+          ? selection
+          : {
+              startLineNumber: position.lineNumber,
+              startColumn: position.column,
+              endLineNumber: position.lineNumber,
+              endColumn: position.column,
+            };
+
+      editor.focus();
+      editor.pushUndoStop();
+      editor.executeEdits("schema-explorer-drag-drop", [
+        {
+          range,
+          text: reference,
+          forceMoveMarkers: true,
+        },
+      ]);
+      editor.pushUndoStop();
+
+      updateTabQuery(activeTab.id, editor.getValue());
+    },
+    [activeTab, updateTabQuery],
+  );
+
+  const handleEditorDrop = React.useCallback(
+    (event: React.DragEvent<HTMLDivElement>) => {
+      event.preventDefault();
+      setIsDropZoneActive(false);
+
+      const rawPayload =
+        event.dataTransfer.getData(SQL_EDITOR_DRAG_DATA_TYPE) ||
+        event.dataTransfer.getData("text/plain");
+
+      if (!rawPayload) {
+        return;
+      }
+
+      let reference = rawPayload;
+
+      try {
+        const parsed = JSON.parse(rawPayload) as DragTableReferencePayload;
+        reference =
+          parsed.reference ||
+          (parsed.schema && parsed.table
+            ? `${parsed.schema}.${parsed.table}`
+            : rawPayload);
+      } catch {
+        reference = rawPayload;
+      }
+
+      insertTableReference(reference, event.clientX, event.clientY);
+    },
+    [insertTableReference],
+  );
 
   const handleExecute = (openNewTab: boolean = false) => {
     if (!activeTabId || !editorRef.current) return;
@@ -299,27 +383,50 @@ export function QueryEditor() {
       </div>
 
       {/* Editor Content */}
-      <div className="flex-1 min-h-0 relative">
+      <div
+        className={cn(
+          "flex-1 min-h-0 relative transition-colors",
+          isDropZoneActive && "bg-blue-50/40",
+        )}
+        onDragOver={(event) => {
+          if (event.dataTransfer.types.includes(SQL_EDITOR_DRAG_DATA_TYPE)) {
+            event.preventDefault();
+            event.dataTransfer.dropEffect = "copy";
+            setIsDropZoneActive(true);
+          }
+        }}
+        onDragLeave={() => setIsDropZoneActive(false)}
+        onDrop={handleEditorDrop}
+      >
         {activeTab ? (
-          <Editor
-            height="100%"
-            defaultLanguage="sql"
-            value={activeTab.query}
-            onMount={handleEditorDidMount}
-            onChange={(value) => updateTabQuery(activeTab.id, value || "")}
-            options={{
-              minimap: { enabled: false },
-              fontSize: 14,
-              fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
-              wordWrap: "on",
-              automaticLayout: true,
-              scrollBeyondLastLine: false,
-              lineNumbers: "on",
-              renderLineHighlight: "all",
-              padding: { top: 16, bottom: 16 },
-              theme: "vs-light",
-            }}
-          />
+          <>
+            <Editor
+              height="100%"
+              defaultLanguage="sql"
+              value={activeTab.query}
+              onMount={handleEditorDidMount}
+              onChange={(value) => updateTabQuery(activeTab.id, value || "")}
+              options={{
+                minimap: { enabled: false },
+                fontSize: 14,
+                fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
+                wordWrap: "on",
+                automaticLayout: true,
+                scrollBeyondLastLine: false,
+                lineNumbers: "on",
+                renderLineHighlight: "all",
+                padding: { top: 16, bottom: 16 },
+                theme: "vs-light",
+              }}
+            />
+            {isDropZoneActive && (
+              <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center border-2 border-dashed border-blue-300 bg-blue-50/30">
+                <div className="rounded-full border border-blue-200 bg-white px-4 py-2 text-sm font-medium text-blue-600 shadow-sm">
+                  Drop to insert table reference
+                </div>
+              </div>
+            )}
+          </>
         ) : (
           <div className="h-full flex flex-col items-center justify-center text-slate-400 gap-4">
             <PlusCircle size={48} className="text-slate-100" />

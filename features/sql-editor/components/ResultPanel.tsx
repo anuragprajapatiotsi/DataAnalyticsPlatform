@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { Tooltip } from "antd";
 import {
   Table as TableIcon,
   X,
@@ -88,9 +89,11 @@ export function ResultPanel() {
                   : "text-slate-500 hover:text-slate-700 hover:bg-slate-100/50 border-transparent",
               )}
             >
-              <span className="truncate flex-1">
-                Result {activeTab.results.indexOf(res) + 1}
-              </span>
+              <Tooltip title={res.query}>
+                <span className="truncate flex-1">
+                  {res.title || `Result ${activeTab.results.indexOf(res) + 1}`}
+                </span>
+              </Tooltip>
               {res.loading && (
                 <Loader2
                   size={10}
@@ -251,7 +254,7 @@ export function ResultPanel() {
                     <th className="sticky left-0 z-20 w-12 px-3 py-2.5 border-b border-r border-slate-200 bg-slate-50 text-slate-400 font-medium text-[10px] text-center shadow-[1px_0_0_rgba(0,0,0,0.05)]">
                       #
                     </th>
-                    {activeResult.columns.map((col: string, idx: number) => {
+                    {activeResult.columns.map((col: string) => {
                       const parts = col.split(".");
                       const hasAlias = parts.length > 1 && !col.includes("-");
                       const displayName = col.includes("-") ? col.split("-")[0] : col;
@@ -276,7 +279,7 @@ export function ResultPanel() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {activeResult.data.map((row: any[], idx: number) => (
+                  {activeResult.data.map((row: unknown[], idx: number) => (
                     <tr
                       key={idx}
                       className="hover:bg-blue-50/40 transition-colors group"
@@ -284,7 +287,7 @@ export function ResultPanel() {
                       <td className="sticky left-0 px-3 py-2 border-r border-slate-100 bg-white group-hover:bg-blue-50/40 text-center text-slate-400 text-[10px] font-mono shadow-[1px_0_0_rgba(0,0,0,0.05)]">
                         {idx + 1}
                       </td>
-                      {row.map((cell: any, cIdx: number) => (
+                      {row.map((cell: unknown, cIdx: number) => (
                         <td
                           key={cIdx}
                           className="px-4 py-2 border-r border-slate-100 truncate max-w-[400px] align-top"

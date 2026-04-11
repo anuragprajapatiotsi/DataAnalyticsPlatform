@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import type { QueryClient, QueryKey } from "@tanstack/react-query";
 import { useQueryClient } from "@tanstack/react-query";
+import { message } from "antd";
 
 import { API_BASE_URL, handleLogout } from "@/shared/api/axios";
 import { NOTIFICATION_FEED_QUERY_KEY } from "../constants";
@@ -13,12 +14,14 @@ import type {
 } from "@/features/notifications/types";
 
 const STREAM_RETRY_MS = 5000;
+const TOAST_DEDUPE_WINDOW_MS = 5000;
 
 let subscriberCount = 0;
 let activeAbortController: AbortController | null = null;
 let reconnectTimeout: ReturnType<typeof setTimeout> | null = null;
 let activeQueryClient: QueryClient | null = null;
 let reconnectEnabled = true;
+const recentToastEvents = new Map<string, number>();
 
 function isSyncItem(value: unknown): value is NotificationSyncItem {
   if (!value || typeof value !== "object") return false;
@@ -99,6 +102,157 @@ function normalizeNotificationPayload(
   }
 
   return null;
+}
+
+type NotificationToastPayload = {
+  key: string;
+  type: "success" | "error" | "info";
+  content: string;
+};
+
+function getStatusToastType(status?: string): NotificationToastPayload["type"] {
+  const normalizedStatus = String(status || "").toLowerCase();
+
+  if (normalizedStatus === "success" || normalizedStatus === "completed") {
+    return "success";
+  }
+
+  if (
+    normalizedStatus === "failed" ||
+    normalizedStatus === "error" ||
+    normalizedStatus === "cancelled"
+  ) {
+    return "error";
+  }
+
+  return "info";
+}
+
+function getToastMessageFromItem(
+  item: NotificationSyncItem | NotificationBotItem | Record<string, unknown>,
+) {
+  const itemRecord = item as Record<string, unknown>;
+  const status = typeof itemRecord.status === "string" ? itemRecord.status : undefined;
+  const messageValue =
+    typeof itemRecord.message === "string" && itemRecord.message.trim()
+      ? itemRecord.message.trim()
+      : typeof itemRecord.error_message === "string" &&
+          itemRecord.error_message.trim()
+        ? itemRecord.error_message.trim()
+        : undefined;
+  const outputValue =
+    typeof itemRecord.output === "string" && itemRecord.output.trim()
+      ? itemRecord.output.trim()
+      : undefined;
+
+  if (messageValue) {
+    return {
+      type: getStatusToastType(status),
+      content: messageValue,
+    };
+  }
+
+  if (status) {
+    return {
+      type: getStatusToastType(status),
+      content: `Status updated to ${status}`,
+    };
+  }
+
+  if (outputValue) {
+    return {
+      type: "info" as const,
+      content: "New output received",
+    };
+  }
+
+  return null;
+}
+
+function buildToastPayloads(
+  eventName: string,
+  payload: unknown,
+): NotificationToastPayload[] {
+  if (!payload || typeof payload !== "object") {
+    return [];
+  }
+
+  const value = payload as Record<string, unknown>;
+  const data = value.data ?? payload;
+  const normalizedData =
+    data && typeof data === "object" ? (data as Record<string, unknown>) : value;
+  const items: Array<NotificationSyncItem | NotificationBotItem | Record<string, unknown>> = [];
+
+  if (Array.isArray(normalizedData.sync)) {
+    items.push(...normalizedData.sync.filter((item) => item && typeof item === "object") as Record<string, unknown>[]);
+  }
+
+  if (Array.isArray(normalizedData.bots)) {
+    items.push(...normalizedData.bots.filter((item) => item && typeof item === "object") as Record<string, unknown>[]);
+  }
+
+  if (items.length === 0 && normalizedData && typeof normalizedData === "object") {
+    items.push(normalizedData);
+  }
+
+  return items
+    .map((item) => {
+      const toastMessage = getToastMessageFromItem(item);
+      if (!toastMessage) {
+        return null;
+      }
+
+      const id =
+        typeof item.id === "string"
+          ? item.id
+          : typeof normalizedData.id === "string"
+            ? normalizedData.id
+            : eventName;
+      const status = typeof item.status === "string" ? item.status : "";
+      const updatedAt =
+        typeof item.updated_at === "string"
+          ? item.updated_at
+          : typeof item.created_at === "string"
+            ? item.created_at
+            : "";
+
+      return {
+        key: `${eventName}:${id}:${status}:${toastMessage.content}:${updatedAt}`,
+        ...toastMessage,
+      } satisfies NotificationToastPayload;
+    })
+    .filter((item): item is NotificationToastPayload => Boolean(item));
+}
+
+function pruneRecentToastEvents(now: number) {
+  recentToastEvents.forEach((timestamp, key) => {
+    if (now - timestamp > TOAST_DEDUPE_WINDOW_MS) {
+      recentToastEvents.delete(key);
+    }
+  });
+}
+
+function showNotificationToasts(eventName: string, payload: unknown) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  const now = Date.now();
+  pruneRecentToastEvents(now);
+
+  buildToastPayloads(eventName, payload).forEach((toast) => {
+    const lastSeenAt = recentToastEvents.get(toast.key);
+    if (lastSeenAt && now - lastSeenAt < TOAST_DEDUPE_WINDOW_MS) {
+      return;
+    }
+
+    recentToastEvents.set(toast.key, now);
+    message.open({
+      type: toast.type,
+      content: toast.content,
+      duration: 3,
+    });
+  });
 }
 
 function sortByNewest<T extends { updated_at: string; created_at: string }>(
@@ -227,6 +381,7 @@ async function openNotificationStream() {
 
     try {
       const parsed = JSON.parse(eventData);
+      showNotificationToasts(eventName, parsed);
       const normalized = normalizeNotificationPayload(parsed);
       if (normalized) {
         applyIncomingNotification(activeQueryClient, normalized);

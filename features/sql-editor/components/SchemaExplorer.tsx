@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
-import { useRouter } from "next/navigation";
 import {
   ChevronRight,
   ChevronDown,
@@ -13,7 +12,6 @@ import {
   Package,
   Database,
   Type,
-  Folders,
   Activity,
 } from "lucide-react";
 import { cn } from "@/shared/utils/cn";
@@ -50,6 +48,8 @@ interface ExplorerNode {
   isLoaded?: boolean;
   visibleCount?: number;
 }
+
+const SQL_EDITOR_DRAG_DATA_TYPE = "application/x-sql-editor-table-reference";
 
 const getIcon = (type: ExplorerNodeType) => {
   switch (type) {
@@ -147,13 +147,8 @@ function shouldRefetchCatalogViewNode(node: ExplorerNode) {
   );
 }
 
-function buildDefaultQuery(schema: string, table: string) {
-  return `SELECT * FROM ${schema}.${table} LIMIT 10;`;
-}
-
 export function SchemaExplorer() {
-  const router = useRouter();
-  const { activeTab, activeTabId, updateTabContext, updateTabQuery } =
+  const { activeTabId, updateTabContext } =
     useSqlEditorContext();
 
   // Core State with dual-discovery roots
@@ -239,23 +234,12 @@ export function SchemaExplorer() {
     if (targetNode.type === "table" || targetNode.type === "database") {
       setSelectedNodeId(targetNode.id);
       if (activeTabId) {
-        const selectedSchema = targetNode.schema || activeTab?.schema || "catalog_views";
+        const selectedSchema = targetNode.schema || "catalog_views";
         updateTabContext(activeTabId, {
           catalog: "iceberg",
           schema: selectedSchema,
           table: targetNode.name,
         });
-
-        if (
-          targetNode.type === "table" &&
-          activeTab &&
-          !activeTab.query.trim()
-        ) {
-          updateTabQuery(
-            activeTabId,
-            buildDefaultQuery(selectedSchema, targetNode.name),
-          );
-        }
       }
     } else if (targetNode.type === "column") {
       setSelectedNodeId(targetNode.id);
@@ -594,7 +578,7 @@ export function SchemaExplorer() {
         });
       }
     }
-  }, [activeTab, activeTabId, expandedKeys, loadingNodes, updateTabContext, updateTabQuery, updateTreeNodes]);
+  }, [activeTabId, expandedKeys, loadingNodes, updateTabContext, updateTreeNodes]);
 
   useEffect(() => {
     const staleExpandedNode = findExpandedUnloadedNode(treeData, expandedKeys);
@@ -643,6 +627,9 @@ export function SchemaExplorer() {
     // Simplified chevron visibility for Step 1
     const isExpandable = node.hasChildren && !node.error;
 
+    const tableReference =
+      node.type === "table" && node.schema ? `${node.schema}.${node.name}` : null;
+
     return (
       <div key={node.id} className="flex flex-col w-full">
         <div
@@ -659,6 +646,22 @@ export function SchemaExplorer() {
           )}
           style={{ paddingLeft: `${depth * 16}px` }}
           onClick={() => toggleNode(node)}
+          draggable={node.type === "table"}
+          onDragStart={(event) => {
+            if (!tableReference) {
+              return;
+            }
+
+            const payload = JSON.stringify({
+              schema: node.schema,
+              table: node.name,
+              reference: tableReference,
+            });
+
+            event.dataTransfer.setData(SQL_EDITOR_DRAG_DATA_TYPE, payload);
+            event.dataTransfer.setData("text/plain", tableReference);
+            event.dataTransfer.effectAllowed = "copy";
+          }}
         >
           <div className="w-5 h-5 mr-1 flex items-center justify-center shrink-0">
             {isLoading ? (

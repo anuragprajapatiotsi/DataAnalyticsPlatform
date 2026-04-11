@@ -13,6 +13,22 @@ function extractSchemaFromSql(query: string): string | undefined {
   return match?.[1];
 }
 
+function getExecutionErrorMessage(error: unknown) {
+  if (typeof error === "object" && error !== null) {
+    const apiError = error as {
+      response?: { data?: { message?: string } };
+      message?: string;
+    };
+    return (
+      apiError.response?.data?.message ||
+      apiError.message ||
+      "Failed to execute Trino query"
+    );
+  }
+
+  return "Failed to execute Trino query";
+}
+
 export interface SqlTab {
   id: string;
   name: string;
@@ -26,6 +42,7 @@ export interface SqlTab {
 
 export interface QueryResultState {
   id: string;
+  title: string;
   query: string;
   data: unknown[][];
   columns: string[];
@@ -40,6 +57,79 @@ export interface QueryResultState {
   };
   status: "loading" | "success" | "error";
   totalCount?: number;
+}
+
+function createLoadingResult(
+  id: string,
+  query: string,
+  pageSize: number,
+  index: number,
+): QueryResultState {
+  return {
+    id,
+    title: getResultTitle(query, index),
+    query,
+    data: [],
+    columns: [],
+    totalRows: 0,
+    executionTime: 0,
+    loading: true,
+    error: null,
+    queryId: null,
+    pagination: { pageSize, current: 0 },
+    status: "loading",
+  };
+}
+
+function cleanSqlStatement(query: string) {
+  return query.trim().replace(/;+$/g, "").trim();
+}
+
+function splitSqlStatements(query: string) {
+  const statements: string[] = [];
+  let current = "";
+  let inSingleQuote = false;
+  let inDoubleQuote = false;
+
+  for (let index = 0; index < query.length; index += 1) {
+    const char = query[index];
+    const previousChar = index > 0 ? query[index - 1] : "";
+
+    if (char === "'" && !inDoubleQuote && previousChar !== "\\") {
+      inSingleQuote = !inSingleQuote;
+    } else if (char === '"' && !inSingleQuote && previousChar !== "\\") {
+      inDoubleQuote = !inDoubleQuote;
+    }
+
+    if (char === ";" && !inSingleQuote && !inDoubleQuote) {
+      const normalized = cleanSqlStatement(current);
+      if (normalized) {
+        statements.push(normalized);
+      }
+      current = "";
+      continue;
+    }
+
+    current += char;
+  }
+
+  const trailing = cleanSqlStatement(current);
+  if (trailing) {
+    statements.push(trailing);
+  }
+
+  return statements;
+}
+
+function getResultTitle(query: string, index: number) {
+  const normalized = query.replace(/\s+/g, " ").trim();
+  if (!normalized) {
+    return `Result ${index + 1}`;
+  }
+
+  return normalized.length > 36
+    ? `${normalized.slice(0, 36)}...`
+    : normalized;
 }
 
 export function useSqlEditor() {
@@ -110,69 +200,17 @@ export function useSqlEditor() {
       const isAlreadyRunning = activeResult?.status === "loading";
       if (isAlreadyRunning) return;
 
-      const queryToRun = selectedQuery || tab.query;
       const currentPage = options?.page ?? activeResult?.pagination.current ?? 0;
       const currentPageSize = options?.pageSize ?? activeResult?.pagination.pageSize ?? 50;
       
       const isPaging = options?.page !== undefined || options?.pageSize !== undefined;
-      const openNewTab = options?.openNewTab ?? false;
-      
-      const createNewResult = openNewTab || !activeResult;
-      const resultId = createNewResult ? `res-${Date.now()}` : activeResult.id;
-      
-      if (!isPaging) {
-        if (createNewResult) {
-          // Initial execution: Create new result
-          const newResult: QueryResultState = {
-            id: resultId,
-            query: queryToRun,
-            data: [],
-            columns: [],
-            totalRows: 0,
-            executionTime: 0,
-            loading: true,
-            error: null,
-            queryId: null,
-            pagination: { pageSize: currentPageSize, current: 0 },
-            status: "loading",
-          };
+      const sourceQuery = selectedQuery || tab.query;
 
-          setTabs((prev) =>
-            prev.map((t) =>
-              t.id === tabId
-                ? {
-                    ...t,
-                    results: [newResult, ...t.results].slice(0, 5), // Keep max 5 results in history
-                    activeResultTabId: resultId,
-                  }
-                : t,
-            ),
-          );
-        } else {
-          // Overwrite existing active result
-          setTabs((prev) =>
-            prev.map((t) =>
-              t.id === tabId
-                ? {
-                    ...t,
-                    results: t.results.map(r => r.id === resultId ? {
-                      ...r,
-                      query: queryToRun,
-                      data: [],
-                      columns: [],
-                      totalRows: 0,
-                      executionTime: 0,
-                      error: null,
-                      status: "loading",
-                      loading: true,
-                      pagination: { pageSize: currentPageSize, current: 0 } 
-                    } : r)
-                  }
-                : t,
-            ),
-          );
-        }
-      } else {
+      if (isPaging) {
+        const queryToRun = cleanSqlStatement(sourceQuery);
+        if (!queryToRun || !activeResult) return;
+        const resultId = activeResult.id;
+
         // Paging execution: Update existing result status
         setTabs((prev) =>
           prev.map((t) =>
@@ -189,75 +227,185 @@ export function useSqlEditor() {
               : t,
           ),
         );
+
+        try {
+          const startTime = Date.now();
+          const executionSchema =
+            extractSchemaFromSql(queryToRun) || tab.schema || "catalog_views";
+          const hasLimit = /\bLIMIT\s+\d+/i.test(queryToRun);
+          const response = await serviceService.executeTrinoQuery({
+            sql: queryToRun,
+            catalog: "iceberg",
+            schema: executionSchema,
+            ...(hasLimit ? {} : {
+              limit: currentPageSize,
+              offset: currentPage * currentPageSize
+            }),
+          });
+
+          const qualifiedCols = qualifyColumns(queryToRun, response.columns);
+          const endTime = Date.now();
+
+          setTabs((prev) =>
+            prev.map((t) =>
+              t.id === tabId
+                ? {
+                    ...t,
+                    results: t.results.map((r) =>
+                      r.id === resultId
+                        ? {
+                            ...r,
+                            query: queryToRun,
+                            loading: false,
+                            data: response.rows,
+                            columns: qualifiedCols,
+                            totalRows: response.rows.length,
+                            totalCount: r.totalCount ?? (response.rows.length < currentPageSize
+                              ? (currentPage * currentPageSize) + response.rows.length
+                              : response.stats?.processedRows),
+                            executionTime:
+                              response.stats?.executionTimeMs || endTime - startTime,
+                            status: "success",
+                          }
+                        : r,
+                    ),
+                  }
+                : t,
+            ),
+          );
+        } catch (error: unknown) {
+          setTabs((prev) =>
+            prev.map((t) =>
+              t.id === tabId
+                ? {
+                    ...t,
+                    results: t.results.map((r) =>
+                      r.id === resultId
+                        ? {
+                            ...r,
+                            query: queryToRun,
+                            loading: false,
+                            error: getExecutionErrorMessage(error),
+                            status: "error",
+                          }
+                        : r,
+                    ),
+                  }
+                : t,
+            ),
+          );
+        }
+
+        return;
       }
 
-      try {
-        const startTime = Date.now();
-        const executionSchema =
-          extractSchemaFromSql(queryToRun) || tab.schema || "catalog_views";
-        
-        // Step 4: Execute using Trino API with context
-        const hasLimit = /\bLIMIT\s+\d+/i.test(queryToRun);
-        const response = await serviceService.executeTrinoQuery({
-          sql: queryToRun,
-          catalog: "iceberg",
-          schema: executionSchema,
-          ...(hasLimit ? {} : { 
-            limit: currentPageSize,
-            offset: currentPage * currentPageSize
-          }),
-        });
+      const queries = selectedQuery
+        ? [cleanSqlStatement(sourceQuery)].filter(Boolean)
+        : splitSqlStatements(sourceQuery);
 
-        const qualifiedCols = qualifyColumns(queryToRun, response.columns);
-        
-        const endTime = Date.now();
+      if (queries.length === 0) {
+        return;
+      }
 
-        setTabs((prev) =>
-          prev.map((t) =>
-            t.id === tabId
-              ? {
-                  ...t,
-                  results: t.results.map((r) =>
-                    r.id === resultId
-                      ? {
-                          ...r,
-                          loading: false,
-                          data: response.rows,
-                          columns: qualifiedCols,
-                          totalRows: response.rows.length,
-                          totalCount: r.totalCount ?? (response.rows.length < currentPageSize 
-                            ? (currentPage * currentPageSize) + response.rows.length 
-                            : response.stats?.processedRows),
-                          executionTime:
-                            response.stats?.executionTimeMs || endTime - startTime,
-                          status: "success",
-                        }
-                      : r,
-                  ),
-                }
-              : t,
-          ),
-        );
-      } catch (error: unknown) {
-        setTabs((prev) =>
-          prev.map((t) =>
-            t.id === tabId
-              ? {
-                  ...t,
-                  results: t.results.map((r) =>
-                    r.id === resultId
-                      ? {
-                          ...r,
-                          loading: false,
-                          error: getExecutionErrorMessage(error),
-                          status: "error",
-                        }
-                      : r,
-                  ),
-                }
-              : t,
-          ),
-        );
+      const shouldReuseActiveResult = !options?.openNewTab && Boolean(activeResult);
+      const resultIds = queries.map((_, index) =>
+        shouldReuseActiveResult && index === 0 && activeResult
+          ? activeResult.id
+          : `res-${Date.now()}-${index}`,
+      );
+      const newResults: QueryResultState[] = queries.map((query, index) =>
+        createLoadingResult(resultIds[index], query, currentPageSize, index),
+      );
+
+      setTabs((prev) =>
+        prev.map((t) =>
+          t.id === tabId
+            ? {
+                ...t,
+                results: (
+                  shouldReuseActiveResult && activeResult
+                    ? [
+                        ...newResults,
+                        ...t.results.filter((result) => result.id !== activeResult.id),
+                      ]
+                    : [...newResults, ...t.results]
+                ).slice(0, 10),
+                activeResultTabId: newResults[0]?.id || t.activeResultTabId,
+              }
+            : t,
+        ),
+      );
+
+      for (let index = 0; index < newResults.length; index += 1) {
+        const result = newResults[index];
+        const queryToRun = result.query;
+
+        try {
+          const startTime = Date.now();
+          const executionSchema =
+            extractSchemaFromSql(queryToRun) || tab.schema || "catalog_views";
+          const hasLimit = /\bLIMIT\s+\d+/i.test(queryToRun);
+          const response = await serviceService.executeTrinoQuery({
+            sql: queryToRun,
+            catalog: "iceberg",
+            schema: executionSchema,
+            ...(hasLimit ? {} : {
+              limit: currentPageSize,
+              offset: 0,
+            }),
+          });
+
+          const qualifiedCols = qualifyColumns(queryToRun, response.columns);
+          const endTime = Date.now();
+
+          setTabs((prev) =>
+            prev.map((t) =>
+              t.id === tabId
+                ? {
+                    ...t,
+                    results: t.results.map((existingResult) =>
+                      existingResult.id === result.id
+                        ? {
+                            ...existingResult,
+                            loading: false,
+                            data: response.rows,
+                            columns: qualifiedCols,
+                            totalRows: response.rows.length,
+                            totalCount:
+                              response.rows.length < currentPageSize
+                                ? response.rows.length
+                                : response.stats?.processedRows,
+                            executionTime:
+                              response.stats?.executionTimeMs || endTime - startTime,
+                            status: "success",
+                          }
+                        : existingResult,
+                    ),
+                  }
+                : t,
+            ),
+          );
+        } catch (error: unknown) {
+          setTabs((prev) =>
+            prev.map((t) =>
+              t.id === tabId
+                ? {
+                    ...t,
+                    results: t.results.map((existingResult) =>
+                      existingResult.id === result.id
+                        ? {
+                            ...existingResult,
+                            loading: false,
+                            error: getExecutionErrorMessage(error),
+                            status: "error",
+                          }
+                        : existingResult,
+                    ),
+                  }
+                : t,
+            ),
+          );
+        }
       }
     },
     [tabs],
@@ -333,18 +481,3 @@ export function useSqlEditor() {
     cancelQuery,
   };
 }
-  const getExecutionErrorMessage = (error: unknown) => {
-    if (typeof error === "object" && error !== null) {
-      const apiError = error as {
-        response?: { data?: { message?: string } };
-        message?: string;
-      };
-      return (
-        apiError.response?.data?.message ||
-        apiError.message ||
-        "Failed to execute Trino query"
-      );
-    }
-
-    return "Failed to execute Trino query";
-  };
