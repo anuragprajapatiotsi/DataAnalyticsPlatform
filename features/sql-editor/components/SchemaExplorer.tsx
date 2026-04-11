@@ -13,12 +13,20 @@ import {
   Database,
   Type,
   Activity,
+  MoreHorizontal,
 } from "lucide-react";
+import { Dropdown } from "antd";
 import { cn } from "@/shared/utils/cn";
 import { useSqlEditorContext } from "../contexts/SqlEditorContext";
 import { serviceService } from "@/features/services/services/service.service";
 import { CATALOG_VIEWS_UPDATED_EVENT } from "../constants";
 import { datasetService } from "@/features/explore/services/dataset.service";
+import { CreateCatalogViewModal } from "@/features/explore/components/CreateCatalogViewModal";
+import { FileAssetCatalogViewModal } from "@/features/explore/components/FileAssetCatalogViewModal";
+import {
+  useCreateCatalogView,
+  type CreateCatalogViewFromFileAssetRequest,
+} from "@/features/explore/hooks/useCreateCatalogView";
 
 type ExplorerNodeType =
   | "catalog"
@@ -39,6 +47,7 @@ interface ExplorerNode {
   type: ExplorerNodeType;
   hasChildren: boolean;
   children: ExplorerNode[];
+  source_kind?: "file-dataset" | "data-asset-dataset";
   catalog?: string;
   schema?: string;
   table?: string;
@@ -162,6 +171,7 @@ function shouldRefetchCatalogViewNode(node: ExplorerNode) {
 export function SchemaExplorer() {
   const { activeTabId, updateTabContext } =
     useSqlEditorContext();
+  const createCatalogViewMutation = useCreateCatalogView();
 
   // Core State with dual-discovery roots
   const [treeData, setTreeData] = useState<ExplorerNode[]>(getInitialTreeData);
@@ -173,6 +183,10 @@ export function SchemaExplorer() {
   );
 
   const [loadingNodes, setLoadingNodes] = useState<Set<string>>(new Set());
+  const [creatingDatasetId, setCreatingDatasetId] = useState<string | null>(null);
+  const [catalogViewModalNode, setCatalogViewModalNode] = useState<ExplorerNode | null>(null);
+  const [sourceCatalogViewNode, setSourceCatalogViewNode] = useState<ExplorerNode | null>(null);
+  const [dataAssetCatalogViewNode, setDataAssetCatalogViewNode] = useState<ExplorerNode | null>(null);
 
   const updateTreeNodes = useCallback((
     nodeList: ExplorerNode[],
@@ -191,6 +205,23 @@ export function SchemaExplorer() {
       }
       return node;
     });
+  }, []);
+
+  const openCatalogViewModalForNode = useCallback((node: ExplorerNode) => {
+    if (!node.asset_id || createCatalogViewMutation.isPending) {
+      setCreatingDatasetId(null);
+      return;
+    }
+
+    setCatalogViewModalNode(node);
+  }, [createCatalogViewMutation.isPending]);
+
+  const openSourceCatalogViewModalForNode = useCallback((node: ExplorerNode) => {
+    setSourceCatalogViewNode(node);
+  }, []);
+
+  const openDataAssetCatalogViewModalForNode = useCallback((node: ExplorerNode) => {
+    setDataAssetCatalogViewNode(node);
   }, []);
 
   const toggleNode = useCallback(async (targetNode: ExplorerNode) => {
@@ -365,13 +396,12 @@ export function SchemaExplorer() {
               id: `da-${item.id}`,
               name:
                 item.display_name || item.name || item.sn || "Unnamed Asset",
-              type:
-                item.asset_type === "view" || item.asset_type === "table"
-                  ? "table"
-                  : item.type === "database"
-                    ? "database"
-                    : "table",
-              catalog: item.extra_metadata?.catalog || "iceberg",
+              type: "dataset",
+              source_kind: "data-asset-dataset",
+              connection_id:
+                typeof item.service_endpoint_id === "string"
+                  ? item.service_endpoint_id
+                  : undefined,
               schema: item.extra_metadata?.schema || "catalog_views",
               table: item.name,
               asset_id: item.id,
@@ -406,6 +436,7 @@ export function SchemaExplorer() {
               id: `dataset-${dataset.id}`,
               name: dataset.display_name || dataset.name,
               type: "dataset",
+              source_kind: "file-dataset",
               asset_id: dataset.id,
               schema: dataset.name,
               hasChildren: true,
@@ -513,34 +544,59 @@ export function SchemaExplorer() {
             }));
           }
         } else if (targetNode.type === "dataset" && targetNode.asset_id) {
-          const fileAssets = await serviceService.getDataAssets({
-            dataset_id: targetNode.asset_id,
-            asset_type: "file",
-            limit: 100,
-          });
-
-          if (!fileAssets || fileAssets.length === 0) {
-            children = [
-              {
-                id: `empty-file-assets-${targetNode.id}`,
-                name: "No files found",
-                type: "placeholder",
-                hasChildren: false,
-                children: [],
-              },
-            ];
-          } else {
-            children = fileAssets.map((asset) => ({
-              id: `file-asset-${asset.id}`,
-              name: asset.display_name || asset.name || "Unnamed File Asset",
-              type: "table",
-              asset_id: asset.id,
-              schema: targetNode.schema || "files",
-              table: asset.name,
-              hasChildren: true,
+          if (targetNode.source_kind === "data-asset-dataset") {
+            const columns = await serviceService.getDataAssetColumns(targetNode.asset_id);
+            children = (columns || []).map((col: any) => ({
+              id: `col-da-${targetNode.asset_id}-${col.id || col.name}`,
+              name: col.display_name || col.name,
+              type: "column",
+              data_type: col.data_type,
+              hasChildren: false,
               children: [],
-              isLoaded: false,
+              isLoaded: true,
             }));
+
+            if (children.length === 0) {
+              children = [
+                {
+                  id: `empty-da-${targetNode.id}`,
+                  name: "No columns available",
+                  type: "placeholder",
+                  hasChildren: false,
+                  children: [],
+                },
+              ];
+            }
+          } else {
+            const fileAssets = await serviceService.getDataAssets({
+              dataset_id: targetNode.asset_id,
+              asset_type: "file",
+              limit: 100,
+            });
+
+            if (!fileAssets || fileAssets.length === 0) {
+              children = [
+                {
+                  id: `empty-file-assets-${targetNode.id}`,
+                  name: "No files found",
+                  type: "placeholder",
+                  hasChildren: false,
+                  children: [],
+                },
+              ];
+            } else {
+              children = fileAssets.map((asset) => ({
+                id: `file-asset-${asset.id}`,
+                name: asset.display_name || asset.name || "Unnamed File Asset",
+                type: "table",
+                asset_id: asset.id,
+                schema: targetNode.schema || "files",
+                table: asset.name,
+                hasChildren: true,
+                children: [],
+                isLoaded: false,
+              }));
+            }
           }
         } else if (targetNode.type === "table") {
           if (targetNode.asset_id) {
@@ -698,6 +754,19 @@ export function SchemaExplorer() {
     const isOpen = expandedKeys.has(node.id);
     const isLoading = loadingNodes.has(node.id);
     const isSelected = selectedNodeId === node.id;
+    const isFileObjectNode =
+      node.type === "table" &&
+      node.id.startsWith("file-asset-") &&
+      Boolean(node.asset_id);
+    const isDataAssetDatasetNode =
+      node.type === "dataset" &&
+      node.source_kind === "data-asset-dataset" &&
+      Boolean(node.asset_id);
+    const isSourceTableNode =
+      node.type === "table" &&
+      Boolean(node.connection_id) &&
+      Boolean(node.schema);
+    const isCreatingDataset = creatingDatasetId === node.id;
 
     // Simplified chevron visibility for Step 1
     const isExpandable = node.hasChildren && !node.error;
@@ -765,6 +834,99 @@ export function SchemaExplorer() {
           <span className="truncate flex-1 tracking-tight select-none">
             {node.name}
           </span>
+          {isFileObjectNode && (
+            <Dropdown
+              trigger={["click"]}
+              menu={{
+                items: [
+                  {
+                    key: "create_catalog_view",
+                    label: isCreatingDataset
+                      ? "Opening..."
+                      : "Create Catalog View",
+                    disabled: isCreatingDataset || createCatalogViewMutation.isPending,
+                    onClick: ({ domEvent }) => {
+                      domEvent.stopPropagation();
+                      setCreatingDatasetId(node.id);
+                      openCatalogViewModalForNode(node);
+                    },
+                  },
+                ],
+              }}
+            >
+              <button
+                type="button"
+                onClick={(event) => event.stopPropagation()}
+                className={cn(
+                  "ml-2 flex h-7 w-7 items-center justify-center rounded-md text-slate-400 transition-all hover:bg-slate-100 hover:text-slate-600",
+                  "opacity-0 group-hover:opacity-100",
+                  (isCreatingDataset || createCatalogViewMutation.isPending) &&
+                    "opacity-100 text-blue-600",
+                )}
+                aria-label={`Open actions for ${node.name}`}
+              >
+                <MoreHorizontal size={14} />
+              </button>
+            </Dropdown>
+          )}
+          {isDataAssetDatasetNode && (
+            <Dropdown
+              trigger={["click"]}
+              menu={{
+                items: [
+                  {
+                    key: "create_catalog_view",
+                    label: "Create Catalog View",
+                    onClick: ({ domEvent }) => {
+                      domEvent.stopPropagation();
+                      openDataAssetCatalogViewModalForNode(node);
+                    },
+                  },
+                ],
+              }}
+            >
+              <button
+                type="button"
+                onClick={(event) => event.stopPropagation()}
+                className={cn(
+                  "ml-2 flex h-7 w-7 items-center justify-center rounded-md text-slate-400 transition-all hover:bg-slate-100 hover:text-slate-600",
+                  "opacity-0 group-hover:opacity-100",
+                )}
+                aria-label={`Open actions for ${node.name}`}
+              >
+                <MoreHorizontal size={14} />
+              </button>
+            </Dropdown>
+          )}
+          {isSourceTableNode && (
+            <Dropdown
+              trigger={["click"]}
+              menu={{
+                items: [
+                  {
+                    key: "create_catalog_view",
+                    label: "Create Catalog View",
+                    onClick: ({ domEvent }) => {
+                      domEvent.stopPropagation();
+                      openSourceCatalogViewModalForNode(node);
+                    },
+                  },
+                ],
+              }}
+            >
+              <button
+                type="button"
+                onClick={(event) => event.stopPropagation()}
+                className={cn(
+                  "ml-2 flex h-7 w-7 items-center justify-center rounded-md text-slate-400 transition-all hover:bg-slate-100 hover:text-slate-600",
+                  "opacity-0 group-hover:opacity-100",
+                )}
+                aria-label={`Open actions for ${node.name}`}
+              >
+                <MoreHorizontal size={14} />
+              </button>
+            </Dropdown>
+          )}
           {node.type === "column" && node.data_type && (
             <span className="text-[10px] font-mono text-slate-400 opacity-70 ml-2 uppercase truncate max-w-[80px]">
               {node.data_type}
@@ -822,6 +984,77 @@ export function SchemaExplorer() {
           {treeData.map((node: ExplorerNode) => renderNode(node))}
         </div>
       </div>
+      <FileAssetCatalogViewModal
+        open={Boolean(catalogViewModalNode)}
+        onClose={() => {
+          setCatalogViewModalNode(null);
+          setCreatingDatasetId(null);
+        }}
+        dataAssetId={catalogViewModalNode?.asset_id || ""}
+        defaultName={(catalogViewModalNode?.name || "file_asset")
+          .trim()
+          .replace(/[^a-zA-Z0-9]+/g, "_")
+          .replace(/^_+|_+$/g, "")
+          .toLowerCase()}
+        defaultDisplayName={catalogViewModalNode?.name || "File Asset"}
+        isSubmitting={createCatalogViewMutation.isPending}
+        onSubmit={async (values) => {
+          let parsedSyncConfig: Record<string, unknown> | undefined;
+          if (values.sync_config?.trim()) {
+            parsedSyncConfig = JSON.parse(values.sync_config);
+          }
+
+          const payload: CreateCatalogViewFromFileAssetRequest = {
+            data_asset_id: values.data_asset_id,
+            name: values.name.trim(),
+            display_name: values.display_name.trim(),
+            description: values.description?.trim() || undefined,
+            tags: values.tags ?? [],
+            glossary_term_ids: values.glossary_term_ids ?? [],
+            synonyms: values.synonyms ?? [],
+            sync_mode: values.sync_mode || "on_demand",
+            cron_expr:
+              values.sync_mode === "scheduled"
+                ? values.cron_expr?.trim() || undefined
+                : undefined,
+            sync_config: parsedSyncConfig,
+          };
+
+          await createCatalogViewMutation.mutateAsync(payload);
+          setCatalogViewModalNode(null);
+          setCreatingDatasetId(null);
+        }}
+      />
+      <CreateCatalogViewModal
+        open={Boolean(sourceCatalogViewNode)}
+        onCancel={() => setSourceCatalogViewNode(null)}
+        initialAssetId={sourceCatalogViewNode?.asset_id}
+        initialEndpointContext={
+          sourceCatalogViewNode?.connection_id && sourceCatalogViewNode?.schema
+            ? {
+                source_connection_id: sourceCatalogViewNode.connection_id,
+                source_schema: sourceCatalogViewNode.schema,
+                source_table: sourceCatalogViewNode.name,
+              }
+            : undefined
+        }
+        onSuccess={() => {
+          setSourceCatalogViewNode(null);
+        }}
+      />
+      <CreateCatalogViewModal
+        open={Boolean(dataAssetCatalogViewNode)}
+        onCancel={() => setDataAssetCatalogViewNode(null)}
+        initialAssetId={dataAssetCatalogViewNode?.asset_id}
+        initialEndpointContext={{
+          source_connection_id: dataAssetCatalogViewNode?.connection_id || "",
+          source_schema: dataAssetCatalogViewNode?.schema || "",
+          source_table: dataAssetCatalogViewNode?.name || "",
+        }}
+        onSuccess={() => {
+          setDataAssetCatalogViewNode(null);
+        }}
+      />
     </div>
   );
 }

@@ -285,7 +285,12 @@ export default function ConnectionDetailPage() {
                 onTableClick={(dbName) => router.push(`/explore/${serviceType}/${id}/${dbName}`)}
               />
             )}
-            {activeTab === "agents" && <AgentsTabView connectionId={id} />}
+            {activeTab === "agents" && (
+              <AgentsTabView
+                connectionId={id}
+                onRunComplete={() => setActiveTab("agentRuns")}
+              />
+            )}
             {activeTab === "agentRuns" && <AgentRunsTabView connectionId={id} />}
             {activeTab === "connection" && (
               <ConnectionTabView
@@ -695,7 +700,13 @@ function ConnectionTabView({ connection, onEdit, onTest, isTesting }: { connecti
   );
 }
 
-function AgentsTabView({ connectionId }: { connectionId: string }) {
+function AgentsTabView({
+  connectionId,
+  onRunComplete,
+}: {
+  connectionId: string;
+  onRunComplete: () => void;
+}) {
   const [bots, setBots] = useState<Bot[]>([]);
   const [loading, setLoading] = useState(true);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -727,6 +738,81 @@ function AgentsTabView({ connectionId }: { connectionId: string }) {
 
   useEffect(() => { fetchBots(); }, [fetchBots]);
 
+  const showBotStatusMessage = useCallback((status: BotRun["status"], messageText?: string) => {
+    if (status === "success") {
+      message.success(messageText || "Agent completed successfully");
+      return;
+    }
+
+    if (status === "failed") {
+      message.error(messageText || "Agent failed");
+      return;
+    }
+
+    if (status === "running") {
+      message.info(messageText || "Agent is now running");
+      return;
+    }
+
+    if (status === "pending") {
+      message.info(messageText || "Agent is queued");
+    }
+  }, []);
+
+  const updateBotRunStatus = useCallback((botId: string, status: Bot["last_run_status"]) => {
+    setBots((prev) =>
+      prev.map((bot) =>
+        ((bot as any).bot_id || bot.id) === botId
+          ? {
+              ...bot,
+              last_run_status: status,
+              last_run_at: new Date().toISOString(),
+            }
+          : bot,
+      ),
+    );
+  }, []);
+
+  const watchBotRunCompletion = useCallback(
+    async (botId: string) => {
+      const maxAttempts = 40;
+      let lastKnownStatus: BotRun["status"] | null = null;
+
+      for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+        await new Promise((resolve) => setTimeout(resolve, 3000));
+
+        try {
+          const latestRuns = await serviceService.getBotRuns(botId, { limit: 1 });
+          const latestRun = latestRuns?.[0];
+
+          if (!latestRun) {
+            continue;
+          }
+
+          updateBotRunStatus(botId, latestRun.status);
+
+          if (latestRun.status !== lastKnownStatus) {
+            showBotStatusMessage(latestRun.status, latestRun.message);
+            lastKnownStatus = latestRun.status;
+          }
+
+          if (latestRun.status === "running" || latestRun.status === "pending") {
+            continue;
+          }
+
+          fetchBots();
+          onRunComplete();
+          return;
+        } catch {
+          // Keep polling quietly; the user already has the run in progress.
+        }
+      }
+
+      fetchBots();
+    },
+    [fetchBots, onRunComplete, showBotStatusMessage, updateBotRunStatus],
+  );
+
   const handleRunBot = async (botId: string) => {
     if (!connectionId) {
       message.error("Please select a service endpoint before running the agent");
@@ -737,8 +823,9 @@ function AgentsTabView({ connectionId }: { connectionId: string }) {
       setIsActionLoading(true);
       const res = await serviceService.runBot(botId, connectionId);
       if (res.success) {
-        message.success("Agent run started successfully");
-        fetchBots();
+        updateBotRunStatus(botId, "running");
+        message.info(res.message || "Agent run started. We’ll take you to Agent Runs when it finishes.");
+        void watchBotRunCompletion(botId);
       }
     } catch (err: any) {
       message.error(err?.message || "Failed to start agent.");
