@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Table, Input, Tooltip, Button, Spin, Empty, Alert } from "antd";
+import { Table, Input, Tooltip, Button, Spin, Empty, Alert, Dropdown, Modal, Select, message } from "antd";
 import {
   Search,
   Database,
@@ -11,15 +11,17 @@ import {
   ArrowRight,
   Folder,
   Shield,
+  MoreHorizontal,
 } from "lucide-react";
 import { useRouter, useParams, useSearchParams } from "next/navigation";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { serviceService } from "@/features/services/services/service.service";
 import { ExplorerObjectAsset, ExplorerSchemaAsset } from "@/features/services/types";
 import { PageHeader } from "@/shared/components/layout/PageHeader";
 import { cn } from "@/shared/utils/cn";
 import type { ColumnsType } from "antd/es/table";
 import dayjs from "dayjs";
+import { classificationService } from "@/features/classifications/services/classification.service";
 
 type PageLevel = "database" | "schema";
 
@@ -28,6 +30,10 @@ export default function SchemaAssetsPage() {
   const { asset_id } = useParams();
   const searchParams = useSearchParams();
   const [searchTerm, setSearchTerm] = useState("");
+  const [isClassificationModalOpen, setIsClassificationModalOpen] = useState(false);
+  const [selectedNode, setSelectedNode] = useState<ExplorerObjectAsset | null>(null);
+  const [selectedClassification, setSelectedClassification] = useState<string | undefined>();
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
 
   const level = (searchParams.get("level") as PageLevel | null) || "database";
   const eid = searchParams.get("eid");
@@ -71,6 +77,36 @@ export default function SchemaAssetsPage() {
       return label.includes(searchTerm.toLowerCase()) || description.includes(searchTerm.toLowerCase());
     });
   }, [rows, searchTerm]);
+
+  const { data: classifications = [], isLoading: isClassificationsLoading } = useQuery({
+    queryKey: ["classifications", "data-assets-explorer"],
+    queryFn: () =>
+      classificationService.getClassifications({ is_active: true, skip: 0, limit: 100 }),
+    enabled: isClassificationModalOpen,
+    staleTime: 10 * 60 * 1000,
+  });
+
+  const { data: classificationTags = [], isLoading: isClassificationTagsLoading } = useQuery({
+    queryKey: ["classification-tags", selectedClassification, "data-assets-explorer"],
+    queryFn: () => classificationService.getClassificationTags(selectedClassification!),
+    enabled: Boolean(isClassificationModalOpen && selectedClassification),
+    staleTime: 10 * 60 * 1000,
+  });
+
+  const applyClassificationMutation = useMutation({
+    mutationFn: ({ selectedAssetId, tagIds }: { selectedAssetId: string; tagIds: string[] }) =>
+      serviceService.attachDataAssetTags(selectedAssetId, tagIds),
+    onSuccess: () => {
+      message.success("Classification applied successfully");
+      setIsClassificationModalOpen(false);
+      setSelectedNode(null);
+      setSelectedClassification(undefined);
+      setSelectedTags([]);
+    },
+    onError: () => {
+      message.error("Failed to apply classification");
+    },
+  });
 
   const breadcrumbItems = [
     { label: "Catalog", href: "/explore" },
@@ -212,10 +248,39 @@ export default function SchemaAssetsPage() {
     {
       title: "",
       key: "action",
-      width: "6%",
+      width: "8%",
       align: "right",
-      render: () => (
-        <ArrowRight size={16} className="text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity mr-2" />
+      render: (_, record) => (
+        <div className="flex items-center justify-end gap-1 pr-2">
+          <Dropdown
+            trigger={["click"]}
+            menu={{
+              items: [
+                {
+                  key: "add_classification",
+                  label: "Add Classification",
+                    onClick: ({ domEvent }) => {
+                      domEvent.stopPropagation();
+                      setSelectedNode(record);
+                      setSelectedClassification(undefined);
+                      setSelectedTags([]);
+                    setIsClassificationModalOpen(true);
+                  },
+                },
+              ],
+            }}
+          >
+            <button
+              type="button"
+              onClick={(event) => event.stopPropagation()}
+              className="flex h-8 w-8 items-center justify-center rounded-md text-slate-400 opacity-0 transition-all hover:bg-slate-100 hover:text-slate-600 group-hover:opacity-100"
+              aria-label={`Open actions for ${record.display_name || record.name}`}
+            >
+              <MoreHorizontal size={14} />
+            </button>
+          </Dropdown>
+          <ArrowRight size={16} className="text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+        </div>
       ),
     },
   ];
@@ -374,6 +439,79 @@ export default function SchemaAssetsPage() {
           background: #F8FAFC !important;
         }
       `}</style>
+
+      <Modal
+        title="Add Classification"
+        open={isClassificationModalOpen}
+        onCancel={() => {
+          setIsClassificationModalOpen(false);
+          setSelectedNode(null);
+          setSelectedClassification(undefined);
+          setSelectedTags([]);
+        }}
+        onOk={async () => {
+          if (!selectedNode?.id || selectedTags.length === 0) {
+            return;
+          }
+
+          await applyClassificationMutation.mutateAsync({
+            selectedAssetId: selectedNode.id,
+            tagIds: selectedTags,
+          });
+        }}
+        okText="Apply"
+        okButtonProps={{ disabled: !selectedClassification || selectedTags.length === 0 }}
+        confirmLoading={applyClassificationMutation.isPending}
+        centered
+      >
+        <div className="mt-4 flex flex-col gap-4">
+          <div>
+            <label className="mb-2 block text-sm font-medium text-slate-700">
+              Classification
+            </label>
+            <Select
+              showSearch
+              placeholder="Select Classification"
+              value={selectedClassification}
+              onChange={(value) => {
+                setSelectedClassification(value);
+                setSelectedTags([]);
+              }}
+              loading={isClassificationsLoading}
+              optionFilterProp="label"
+              className="w-full"
+              options={classifications.map((classification) => ({
+                label: classification.display_name || classification.name,
+                value: classification.id,
+              }))}
+            />
+          </div>
+
+          <div>
+            <label className="mb-2 block text-sm font-medium text-slate-700">
+              Tags
+            </label>
+            <Select
+              mode="multiple"
+              placeholder={
+                selectedClassification
+                  ? "Select Tags"
+                  : "Select a classification first"
+              }
+              value={selectedTags}
+              onChange={(values) => setSelectedTags(values)}
+              disabled={!selectedClassification}
+              loading={isClassificationTagsLoading}
+              optionFilterProp="label"
+              className="w-full"
+              options={classificationTags.map((tag) => ({
+                label: tag.display_name || tag.name,
+                value: tag.id,
+              }))}
+            />
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

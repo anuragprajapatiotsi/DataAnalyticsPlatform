@@ -289,6 +289,24 @@ export function Sidebar() {
               ))}
               <SidebarItem
                 item={{
+                  id: "saved-queries",
+                  slug: "saved-queries",
+                  display_name: "Saved Queries",
+                  icon: "database",
+                  nav_url: "/saved-queries",
+                  sort_order: 99,
+                  has_children: false,
+                }}
+                level={0}
+                collapsed={collapsed}
+                pathname={pathname}
+                expandedMenus={expandedMenus}
+                toggleMenu={toggleMenu}
+                onMouseEnter={handleMouseEnter}
+                onMouseLeave={handleMouseLeave}
+              />
+              <SidebarItem
+                item={{
                   id: "sql-editor",
                   slug: "sql-editor",
                   display_name: "SQL Editor",
