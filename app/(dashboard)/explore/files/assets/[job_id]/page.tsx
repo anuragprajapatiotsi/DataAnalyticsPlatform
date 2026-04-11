@@ -193,7 +193,7 @@ export default function FileAssetDetailPage() {
               <Button
                 type="primary"
                 icon={<CheckCircle2 size={16} />}
-                disabled={!canCreateCatalogView}
+                // disabled={canCreateCatalogView}
                 onClick={() => setIsModalOpen(true)}
                 className="h-9 rounded-md border-none bg-slate-900 px-4 font-medium text-white shadow-sm hover:bg-slate-800"
               >
@@ -303,7 +303,7 @@ export default function FileAssetDetailPage() {
                         <h3 className="m-0 text-sm font-semibold text-slate-900">Asset Metadata</h3>
                         <div className="mt-4 flex flex-col gap-3 text-sm text-slate-600">
                           <div><span className="font-medium text-slate-800">Job ID:</span> {jobId}</div>
-                          <div><span className="font-medium text-slate-800">Asset Type:</span> {file.asset_type || "-"}</div>
+                          <div><span className="font-medium text-slate-800">Asset Type:</span> {file.asset_type || "File"}</div>
                           <div><span className="font-medium text-slate-800">Column Count:</span> {file.column_count ?? orderedSchema.length}</div>
                           <div><span className="font-medium text-slate-800">Bucket:</span> {file.bucket || "-"}</div>
                           <div><span className="font-medium text-slate-800">Object Key:</span> {file.object_key || "-"}</div>
@@ -323,7 +323,7 @@ export default function FileAssetDetailPage() {
                 },
                 {
                   key: "profile",
-                  label: "Profile",
+                  label: "Sample Data",
                   children: sampleRows.length > 0 ? (
                     <div className="overflow-x-auto">
                       <Table

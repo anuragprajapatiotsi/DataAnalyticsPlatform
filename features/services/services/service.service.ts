@@ -381,7 +381,7 @@ export const serviceService = {
     cron_expr?: string;
     sync_config?: Record<string, unknown>;
   }) {
-    const response = await api.post<CatalogView>("/catalog-view/from-file-asset", data);
+    const response = await api.post<CatalogView>("/catalog-views/from-file-asset", data);
     return response.data;
   },
 
