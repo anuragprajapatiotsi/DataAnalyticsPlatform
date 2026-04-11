@@ -12,7 +12,6 @@ import {
   Loader2,
   ChevronDown,
   FileCode,
-  Save,
 } from "lucide-react";
 import { Dropdown, Space, message } from "antd";
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -23,10 +22,9 @@ import { loader } from "@monaco-editor/react";
 import { registerSqlAutocomplete, setAutocompleteContext } from "../services/autocomplete";
 import { SaveQueryModal, type SaveQueryFormValues } from "./SaveQueryModal";
 import { datasetService } from "@/features/explore/services/dataset.service";
-import { domainService } from "@/features/domains/services/domain.service";
-import { userService } from "@/features/users/services/user.service";
 import { savedQueryService } from "../services/saved-query.service";
 import type { editor as MonacoEditorType } from "monaco-editor";
+import { SQL_EDITOR_OPEN_SAVE_QUERY_MODAL_EVENT } from "../constants";
 
 const SQL_EDITOR_DRAG_DATA_TYPE = "application/x-sql-editor-table-reference";
 
@@ -60,9 +58,9 @@ export function QueryEditor() {
   const pendingQueryUpdateRef = useRef<{ tabId: string; value: string } | null>(null);
   const previousTabIdRef = useRef<string | null>(null);
   const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
-  const [lastSavedQueryId, setLastSavedQueryId] = useState<string | null>(null);
   const [isDropZoneActive, setIsDropZoneActive] = useState(false);
   const [currentEditorText, setCurrentEditorText] = useState(activeTab?.query || "");
+  const [saveModalQueryText, setSaveModalQueryText] = useState<string | null>(null);
   const activeCatalog = activeTab?.catalog;
   const activeSchema = activeTab?.schema;
   const activeQuery = activeTab?.query;
@@ -129,6 +127,35 @@ export function QueryEditor() {
     },
     [flushPendingQueryUpdate],
   );
+
+  useEffect(() => {
+    const handleOpenSaveQueryModal = (event: Event) => {
+      const customEvent = event as CustomEvent<{ queryText?: string }>;
+      const requestedQueryText = customEvent.detail?.queryText?.trim();
+      const fallbackQueryText =
+        editorRef.current?.getValue().trim() || currentEditorText.trim();
+
+      if (!requestedQueryText && !fallbackQueryText) {
+        message.warning("Add a query before saving it.");
+        return;
+      }
+
+      setSaveModalQueryText(requestedQueryText || fallbackQueryText);
+      setIsSaveModalOpen(true);
+    };
+
+    window.addEventListener(
+      SQL_EDITOR_OPEN_SAVE_QUERY_MODAL_EVENT,
+      handleOpenSaveQueryModal,
+    );
+
+    return () => {
+      window.removeEventListener(
+        SQL_EDITOR_OPEN_SAVE_QUERY_MODAL_EVENT,
+        handleOpenSaveQueryModal,
+      );
+    };
+  }, [currentEditorText]);
 
   const handleEditorDidMount: OnMount = (editor, monaco) => {
     editorRef.current = editor;
@@ -272,22 +299,13 @@ export function QueryEditor() {
   );
 
   const { data: datasets = [], isLoading: isDatasetsLoading } = useQuery({
-    queryKey: ["datasets", "saved-query-modal"],
-    queryFn: () => datasetService.getDatasets({ skip: 0, limit: 100 }),
-    enabled: isSaveModalOpen,
-    staleTime: 5 * 60 * 1000,
-  });
-
-  const { data: domains = [], isLoading: isDomainsLoading } = useQuery({
-    queryKey: ["catalog-domains", "saved-query-modal"],
-    queryFn: domainService.getDomains,
-    enabled: isSaveModalOpen,
-    staleTime: 5 * 60 * 1000,
-  });
-
-  const { data: users = [], isLoading: isUsersLoading } = useQuery({
-    queryKey: ["admin-users", "saved-query-modal"],
-    queryFn: () => userService.getAdminUsers({ skip: 0, limit: 100 }),
+    queryKey: ["published-datasets", "saved-query-modal"],
+    queryFn: () =>
+      datasetService.getDatasets({
+        source_type: "published_api",
+        skip: 0,
+        limit: 100,
+      }),
     enabled: isSaveModalOpen,
     staleTime: 5 * 60 * 1000,
   });
@@ -299,22 +317,11 @@ export function QueryEditor() {
         name: values.name,
         description: values.description,
         sql: values.sql,
-        catalog: values.catalog,
-        schema: values.schema,
-        domain_id: values.domain_id,
-        trino_endpoint_id: values.trino_endpoint_id,
-        tags: values.tags ?? [],
-        owner_ids: values.owner_ids ?? [],
-        classification_tag_ids: values.classification_tag_ids ?? [],
-        glossary_term_ids: values.glossary_term_ids ?? [],
+        catalog: "iceberg",
         extra_metadata: {},
       }),
-    onSuccess: (response) => {
-      const savedId =
-        (typeof response.saved_query_id === "string" && response.saved_query_id) ||
-        (typeof response.id === "string" && response.id) ||
-        null;
-      setLastSavedQueryId(savedId);
+    onSuccess: () => {
+      setSaveModalQueryText(null);
       setIsSaveModalOpen(false);
       message.success("Query saved successfully");
     },
@@ -331,18 +338,13 @@ export function QueryEditor() {
   const saveInitialValues = useMemo(
     () => ({
       name: activeTab?.name || "Saved Query",
-      sql: currentEditorText || activeTab?.query || "",
-      catalog: activeTab?.catalog || "",
-      schema: activeTab?.schema || "",
-      trino_endpoint_id: lastSavedQueryId ? undefined : "",
+      sql: saveModalQueryText || currentEditorText || activeTab?.query || "",
     }),
     [
-      activeTab?.catalog,
       activeTab?.name,
       activeTab?.query,
-      activeTab?.schema,
       currentEditorText,
-      lastSavedQueryId,
+      saveModalQueryText,
     ],
   );
 
@@ -448,16 +450,6 @@ export function QueryEditor() {
           <Button
             size="sm"
             variant="outline"
-            onClick={() => setIsSaveModalOpen(true)}
-            disabled={!currentEditorText.trim()}
-            className="h-8 border-slate-200 text-slate-600 font-bold hover:bg-slate-50 shadow-sm"
-          >
-            <Save size={13} className="mr-2" />
-            Save Query
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
             onClick={handleCancel}
             disabled={!isRunning}
             className="h-8 border-slate-200 text-slate-600 font-bold hover:bg-slate-50 shadow-sm"
@@ -529,16 +521,16 @@ export function QueryEditor() {
 
       <SaveQueryModal
         open={isSaveModalOpen}
-        onClose={() => setIsSaveModalOpen(false)}
+        onClose={() => {
+          setIsSaveModalOpen(false);
+          setSaveModalQueryText(null);
+        }}
         onSubmit={async (values) => {
           await saveQueryMutation.mutateAsync(values);
         }}
         isSubmitting={saveQueryMutation.isPending}
         datasets={datasets}
-        domains={domains}
-        users={users}
         isDatasetsLoading={isDatasetsLoading}
-        isOptionsLoading={isDomainsLoading || isUsersLoading}
         initialValues={saveInitialValues}
       />
     </div>

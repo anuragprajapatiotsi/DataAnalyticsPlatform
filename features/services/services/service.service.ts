@@ -406,6 +406,13 @@ export const serviceService = {
     return response.data;
   },
 
+  async attachDataAssetTags(assetId: string, tag_ids: string[]) {
+    const response = await api.post(`/data-assets/${assetId}/tags`, {
+      tag_ids,
+    });
+    return response.data;
+  },
+
   async syncCatalogView(id: string, payload: { sync_data: boolean; force: boolean }) {
     const response = await api.post(`/catalog-views/${id}/sync`, payload);
     return response.data;

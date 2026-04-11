@@ -1,25 +1,15 @@
 "use client";
 
 import React from "react";
-import { Collapse, Form, Input, Modal, Select, Spin } from "antd";
+import { Form, Input, Modal, Select, Spin } from "antd";
 
 import type { DatasetGroup } from "@/features/explore/services/dataset.service";
-import type { CatalogDomain } from "@/features/domains/types";
-import type { AdminUser } from "@/features/users/types";
 
 export type SaveQueryFormValues = {
   dataset_id: string;
   name: string;
   description?: string;
   sql: string;
-  catalog?: string;
-  schema?: string;
-  domain_id?: string;
-  trino_endpoint_id?: string;
-  tags?: string[];
-  owner_ids?: string[];
-  classification_tag_ids?: string[];
-  glossary_term_ids?: string[];
 };
 
 type SaveQueryModalProps = {
@@ -28,11 +18,11 @@ type SaveQueryModalProps = {
   onSubmit: (values: SaveQueryFormValues) => Promise<void>;
   isSubmitting?: boolean;
   datasets: DatasetGroup[];
-  domains: CatalogDomain[];
-  users: AdminUser[];
   isDatasetsLoading?: boolean;
-  isOptionsLoading?: boolean;
   initialValues: Partial<SaveQueryFormValues>;
+  title?: string;
+  submitLabel?: string;
+  showSqlField?: boolean;
 };
 
 export function SaveQueryModal({
@@ -41,11 +31,11 @@ export function SaveQueryModal({
   onSubmit,
   isSubmitting = false,
   datasets,
-  domains,
-  users,
   isDatasetsLoading = false,
-  isOptionsLoading = false,
   initialValues,
+  title = "Save Query",
+  submitLabel = "Save Query",
+  showSqlField = false,
 }: SaveQueryModalProps) {
   const [form] = Form.useForm<SaveQueryFormValues>();
 
@@ -55,18 +45,10 @@ export function SaveQueryModal({
     }
 
     form.setFieldsValue({
-      dataset_id: undefined,
+      dataset_id: initialValues.dataset_id,
       name: initialValues.name || "",
       description: initialValues.description || "",
       sql: initialValues.sql || "",
-      catalog: initialValues.catalog || "",
-      schema: initialValues.schema || "",
-      domain_id: initialValues.domain_id,
-      trino_endpoint_id: initialValues.trino_endpoint_id || "",
-      tags: initialValues.tags || [],
-      owner_ids: initialValues.owner_ids || [],
-      classification_tag_ids: initialValues.classification_tag_ids || [],
-      glossary_term_ids: initialValues.glossary_term_ids || [],
     });
   }, [form, initialValues, open]);
 
@@ -78,11 +60,11 @@ export function SaveQueryModal({
 
   return (
     <Modal
-      title="Save Query"
+      title={title}
       open={open}
       onCancel={onClose}
       onOk={() => form.submit()}
-      okText="Save Query"
+      okText={submitLabel}
       confirmLoading={isSubmitting}
       okButtonProps={{ disabled: isSubmitDisabled }}
       width={960}
@@ -128,85 +110,23 @@ export function SaveQueryModal({
           <Input.TextArea rows={2} placeholder="What is this query for?" />
         </Form.Item>
 
-        <Form.Item
-          name="sql"
-          label="SQL"
-          rules={[{ required: true, message: "SQL is required." }]}
-        >
-          <Input.TextArea rows={8} placeholder="SELECT * FROM ..." />
-        </Form.Item>
-
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          <Form.Item name="catalog" label="Catalog">
-            <Input placeholder="Catalog" />
+        {showSqlField ? (
+          <Form.Item
+            name="sql"
+            label="Query"
+            rules={[{ required: true, message: "SQL is required." }]}
+          >
+            <Input.TextArea rows={8} placeholder="SELECT * FROM ..." />
           </Form.Item>
-
-          <Form.Item name="schema" label="Schema">
-            <Input placeholder="Schema" />
+        ) : (
+          <Form.Item
+            name="sql"
+            rules={[{ required: true, message: "SQL is required." }]}
+            hidden
+          >
+            <Input.TextArea />
           </Form.Item>
-
-          <Form.Item name="domain_id" label="Domain ID">
-            <Select
-              allowClear
-              placeholder="Select domain"
-              loading={isOptionsLoading}
-              options={domains.map((domain) => ({
-                label: domain.display_name || domain.name,
-                value: domain.id,
-              }))}
-            />
-          </Form.Item>
-
-          <Form.Item name="trino_endpoint_id" label="Trino Endpoint ID">
-            <Input placeholder="Trino endpoint ID" />
-          </Form.Item>
-        </div>
-
-        <Collapse
-          className="mt-4"
-          items={[
-            {
-              key: "advanced",
-              label: "Advanced Fields",
-              children: (
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                  <Form.Item name="tags" label="Tags">
-                    <Select mode="tags" tokenSeparators={[","]} placeholder="Add tags" />
-                  </Form.Item>
-
-                  <Form.Item name="classification_tag_ids" label="Classification Tags">
-                    <Select
-                      mode="tags"
-                      tokenSeparators={[","]}
-                      placeholder="Add classification tag IDs"
-                    />
-                  </Form.Item>
-
-                  <Form.Item name="glossary_term_ids" label="Glossary Terms">
-                    <Select
-                      mode="tags"
-                      tokenSeparators={[","]}
-                      placeholder="Add glossary term IDs"
-                    />
-                  </Form.Item>
-
-                  <Form.Item name="owner_ids" label="Owners">
-                    <Select
-                      mode="multiple"
-                      allowClear
-                      placeholder="Select owners"
-                      loading={isOptionsLoading}
-                      options={users.map((user) => ({
-                        label: user.display_name || user.username || user.email,
-                        value: user.id,
-                      }))}
-                    />
-                  </Form.Item>
-                </div>
-              ),
-            },
-          ]}
-        />
+        )}
       </Form>
     </Modal>
   );
