@@ -289,6 +289,24 @@ export function Sidebar() {
               ))}
               <SidebarItem
                 item={{
+                  id: "notebooks",
+                  slug: "notebooks",
+                  display_name: "Notebook",
+                  icon: "box",
+                  nav_url: "/notebooks",
+                  sort_order: 98,
+                  has_children: false,
+                }}
+                level={0}
+                collapsed={collapsed}
+                pathname={pathname}
+                expandedMenus={expandedMenus}
+                toggleMenu={toggleMenu}
+                onMouseEnter={handleMouseEnter}
+                onMouseLeave={handleMouseLeave}
+              />
+              <SidebarItem
+                item={{
                   id: "saved-queries",
                   slug: "saved-queries",
                   display_name: "Saved Queries",

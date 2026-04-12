@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import type { QueryClient, QueryKey } from "@tanstack/react-query";
 import { useQueryClient } from "@tanstack/react-query";
 import { message } from "antd";
@@ -10,105 +10,122 @@ import { NOTIFICATION_FEED_QUERY_KEY } from "../constants";
 import type {
   NotificationBotItem,
   NotificationFeedResponse,
+  NotificationStreamState,
   NotificationSyncItem,
 } from "@/features/notifications/types";
+import {
+  mergeNotificationFeed,
+  normalizeNotificationPayload,
+} from "@/features/notifications/utils/stream";
 
-const STREAM_RETRY_MS = 5000;
+const STREAM_RETRY_BASE_MS = 1000;
+const STREAM_RETRY_MAX_MS = 30000;
+const STREAM_STALE_AFTER_MS = 15000;
+const STREAM_HEALTH_CHECK_MS = 5000;
 const TOAST_DEDUPE_WINDOW_MS = 5000;
+const TOAST_FLUSH_MS = 1000;
 
 let subscriberCount = 0;
 let activeAbortController: AbortController | null = null;
 let reconnectTimeout: ReturnType<typeof setTimeout> | null = null;
+let streamHealthInterval: ReturnType<typeof setInterval> | null = null;
+let toastFlushTimeout: ReturnType<typeof setTimeout> | null = null;
 let activeQueryClient: QueryClient | null = null;
 let reconnectEnabled = true;
+let reconnectAttempt = 0;
+let streamState: NotificationStreamState = {
+  status: "idle",
+  isConnected: false,
+  isDegraded: true,
+  reconnectAttempt: 0,
+  lastConnectedAt: null,
+  lastEventAt: null,
+};
+
 const recentToastEvents = new Map<string, number>();
-
-function isSyncItem(value: unknown): value is NotificationSyncItem {
-  if (!value || typeof value !== "object") return false;
-  const item = value as Record<string, unknown>;
-  return (
-    typeof item.id === "string" &&
-    (item.category === "sync" || typeof item.catalog_view_id === "string")
-  );
-}
-
-function isBotItem(value: unknown): value is NotificationBotItem {
-  if (!value || typeof value !== "object") return false;
-  const item = value as Record<string, unknown>;
-  return (
-    typeof item.id === "string" &&
-    ((item.category === "bots" || item.category === "bot_runs") ||
-      typeof item.bot_id === "string")
-  );
-}
-
-function normalizeNotificationPayload(
-  payload: unknown,
-): Partial<NotificationFeedResponse> | null {
-  if (!payload || typeof payload !== "object") {
-    return null;
-  }
-
-  const value = payload as Record<string, unknown>;
-
-  if (value.data) {
-    return normalizeNotificationPayload(value.data);
-  }
-
-  if (Array.isArray(value.sync) || Array.isArray(value.bots)) {
-    return {
-      org_id: typeof value.org_id === "string" ? value.org_id : "",
-      user_id: typeof value.user_id === "string" ? value.user_id : "",
-      sync: Array.isArray(value.sync)
-        ? value.sync.filter(isSyncItem)
-        : [],
-      bots: Array.isArray(value.bots)
-        ? value.bots.filter(isBotItem)
-        : [],
-    };
-  }
-
-  if (isSyncItem(value)) {
-    return {
-      sync: [value],
-      bots: [],
-    };
-  }
-
-  if (isBotItem(value)) {
-    return {
-      sync: [],
-      bots: [
-        {
-          ...value,
-          category: value.category === "bot_runs" ? "bots" : value.category,
-        },
-      ],
-    };
-  }
-
-  if (isSyncItem(value.sync)) {
-    return {
-      sync: [value.sync],
-      bots: [],
-    };
-  }
-
-  if (isBotItem(value.bots)) {
-    return {
-      sync: [],
-      bots: [value.bots],
-    };
-  }
-
-  return null;
-}
+const queuedToastPayloads = new Map<string, NotificationToastPayload>();
+const streamStateListeners = new Set<(state: NotificationStreamState) => void>();
 
 type NotificationToastPayload = {
   key: string;
   type: "success" | "error" | "info";
   content: string;
 };
+
+function emitStreamState() {
+  streamStateListeners.forEach((listener) => listener(streamState));
+}
+
+function updateStreamState(
+  nextState:
+    | Partial<NotificationStreamState>
+    | ((currentState: NotificationStreamState) => NotificationStreamState),
+) {
+  streamState =
+    typeof nextState === "function"
+      ? nextState(streamState)
+      : {
+          ...streamState,
+          ...nextState,
+        };
+
+  emitStreamState();
+}
+
+function getStreamActivityTimestamp(state: NotificationStreamState) {
+  return state.lastEventAt ?? state.lastConnectedAt ?? 0;
+}
+
+function isStreamSilent(state: NotificationStreamState, now: number = Date.now()) {
+  if (!state.isConnected) {
+    return false;
+  }
+
+  const lastActivityAt = getStreamActivityTimestamp(state);
+  if (!lastActivityAt) {
+    return false;
+  }
+
+  return now - lastActivityAt >= STREAM_STALE_AFTER_MS;
+}
+
+function evaluateStreamHealth() {
+  if (typeof window === "undefined" || subscriberCount === 0) {
+    return;
+  }
+
+  if (isStreamSilent(streamState)) {
+    updateStreamState((currentState) => {
+      if (!currentState.isConnected || currentState.isDegraded) {
+        return currentState;
+      }
+
+      return {
+        ...currentState,
+        status: "degraded",
+        isConnected: true,
+        isDegraded: true,
+      };
+    });
+  }
+}
+
+function ensureStreamHealthMonitor() {
+  if (streamHealthInterval || typeof window === "undefined") {
+    return;
+  }
+
+  streamHealthInterval = setInterval(() => {
+    evaluateStreamHealth();
+  }, STREAM_HEALTH_CHECK_MS);
+}
+
+function clearStreamHealthMonitor() {
+  if (streamHealthInterval) {
+    clearInterval(streamHealthInterval);
+    streamHealthInterval = null;
+  }
+}
 
 function getStatusToastType(status?: string): NotificationToastPayload["type"] {
   const normalizedStatus = String(status || "").toLowerCase();
@@ -184,11 +201,47 @@ function buildToastPayloads(
   const items: Array<NotificationSyncItem | NotificationBotItem | Record<string, unknown>> = [];
 
   if (Array.isArray(normalizedData.sync)) {
-    items.push(...normalizedData.sync.filter((item) => item && typeof item === "object") as Record<string, unknown>[]);
+    items.push(
+      ...(normalizedData.sync.filter(
+        (item) => item && typeof item === "object",
+      ) as Record<string, unknown>[]),
+    );
   }
 
   if (Array.isArray(normalizedData.bots)) {
-    items.push(...normalizedData.bots.filter((item) => item && typeof item === "object") as Record<string, unknown>[]);
+    items.push(
+      ...(normalizedData.bots.filter(
+        (item) => item && typeof item === "object",
+      ) as Record<string, unknown>[]),
+    );
+  }
+
+  if (normalizedData.notebooks && typeof normalizedData.notebooks === "object") {
+    const notebookPayload = normalizedData.notebooks as Record<string, unknown>;
+
+    if (Array.isArray(notebookPayload.notebook_runs)) {
+      items.push(
+        ...(notebookPayload.notebook_runs.filter(
+          (item) => item && typeof item === "object",
+        ) as Record<string, unknown>[]),
+      );
+    }
+
+    if (Array.isArray(notebookPayload.spark_job_runs)) {
+      items.push(
+        ...(notebookPayload.spark_job_runs.filter(
+          (item) => item && typeof item === "object",
+        ) as Record<string, unknown>[]),
+      );
+    }
+
+    if (Array.isArray(notebookPayload.schedule_runs)) {
+      items.push(
+        ...(notebookPayload.schedule_runs.filter(
+          (item) => item && typeof item === "object",
+        ) as Record<string, unknown>[]),
+      );
+    }
   }
 
   if (items.length === 0 && normalizedData && typeof normalizedData === "object") {
@@ -232,6 +285,30 @@ function pruneRecentToastEvents(now: number) {
   });
 }
 
+function flushQueuedToasts() {
+  toastFlushTimeout = null;
+  const payloads = Array.from(queuedToastPayloads.values());
+  queuedToastPayloads.clear();
+
+  payloads.forEach((toast) => {
+    message.open({
+      type: toast.type,
+      content: toast.content,
+      duration: 3,
+    });
+  });
+}
+
+function scheduleToastFlush() {
+  if (toastFlushTimeout) {
+    return;
+  }
+
+  toastFlushTimeout = setTimeout(() => {
+    flushQueuedToasts();
+  }, TOAST_FLUSH_MS);
+}
+
 function showNotificationToasts(eventName: string, payload: unknown) {
   if (typeof window === "undefined") {
     return;
@@ -247,65 +324,10 @@ function showNotificationToasts(eventName: string, payload: unknown) {
     }
 
     recentToastEvents.set(toast.key, now);
-    message.open({
-      type: toast.type,
-      content: toast.content,
-      duration: 3,
-    });
-  });
-}
-
-function sortByNewest<T extends { updated_at: string; created_at: string }>(
-  items: T[],
-) {
-  return [...items].sort((first, second) => {
-    const firstTimestamp = new Date(
-      first.updated_at || first.created_at,
-    ).getTime();
-    const secondTimestamp = new Date(
-      second.updated_at || second.created_at,
-    ).getTime();
-
-    return secondTimestamp - firstTimestamp;
-  });
-}
-
-function mergeItemsById<T extends { id: string; updated_at: string; created_at: string }>(
-  existing: T[],
-  incoming: T[],
-  limit?: number,
-) {
-  const mergedMap = new Map<string, T>();
-
-  existing.forEach((item) => {
-    mergedMap.set(item.id, item);
+    queuedToastPayloads.set(toast.key, toast);
   });
 
-  incoming.forEach((item) => {
-    mergedMap.set(item.id, item);
-  });
-
-  const mergedItems = sortByNewest(Array.from(mergedMap.values()));
-
-  return typeof limit === "number" ? mergedItems.slice(0, limit) : mergedItems;
-}
-
-function mergeNotificationFeed(
-  existing: NotificationFeedResponse | undefined,
-  incoming: Partial<NotificationFeedResponse>,
-  limit?: number,
-): NotificationFeedResponse {
-  const currentSync = existing?.sync ?? [];
-  const currentBots = existing?.bots ?? [];
-  const incomingSync = incoming.sync ?? [];
-  const incomingBots = incoming.bots ?? [];
-
-  return {
-    org_id: incoming.org_id || existing?.org_id || "",
-    user_id: incoming.user_id || existing?.user_id || "",
-    sync: mergeItemsById(currentSync, incomingSync, limit),
-    bots: mergeItemsById(currentBots, incomingBots, limit),
-  };
+  scheduleToastFlush();
 }
 
 function getQueryLimit(queryKey: QueryKey) {
@@ -321,9 +343,8 @@ function applyIncomingNotification(
     queryKey: NOTIFICATION_FEED_QUERY_KEY,
   });
 
-  queryEntries.forEach(([queryKey, existing]) => {
-    queryClient.setQueryData<NotificationFeedResponse>(
-      queryKey,
+  queryEntries.forEach(([queryKey]) => {
+    queryClient.setQueryData<NotificationFeedResponse>(queryKey, (existing) =>
       mergeNotificationFeed(existing, incoming, getQueryLimit(queryKey)),
     );
   });
@@ -337,14 +358,33 @@ function clearReconnectTimeout() {
 }
 
 function scheduleReconnect() {
-  if (!reconnectEnabled || subscriberCount === 0 || reconnectTimeout) {
+  if (
+    !reconnectEnabled ||
+    subscriberCount === 0 ||
+    reconnectTimeout ||
+    activeAbortController
+  ) {
     return;
   }
+
+  const nextAttempt = reconnectAttempt + 1;
+  const retryDelay = Math.min(
+    STREAM_RETRY_BASE_MS * 2 ** Math.max(0, nextAttempt - 1),
+    STREAM_RETRY_MAX_MS,
+  );
+
+  reconnectAttempt = nextAttempt;
+  updateStreamState({
+    status: "degraded",
+    isConnected: false,
+    isDegraded: true,
+    reconnectAttempt,
+  });
 
   reconnectTimeout = setTimeout(() => {
     reconnectTimeout = null;
     void openNotificationStream();
-  }, STREAM_RETRY_MS);
+  }, retryDelay);
 }
 
 async function openNotificationStream() {
@@ -361,12 +401,23 @@ async function openNotificationStream() {
 
   const token = window.localStorage.getItem("token");
   if (!token) {
+    updateStreamState({
+      status: "disconnected",
+      isConnected: false,
+      isDegraded: true,
+    });
     return;
   }
 
   const controller = new AbortController();
   const decoder = new TextDecoder();
   activeAbortController = controller;
+  updateStreamState({
+    status: streamState.lastConnectedAt ? "degraded" : "connecting",
+    isConnected: false,
+    isDegraded: Boolean(streamState.lastConnectedAt),
+    reconnectAttempt,
+  });
 
   let buffer = "";
   let eventName = "message";
@@ -381,6 +432,13 @@ async function openNotificationStream() {
 
     try {
       const parsed = JSON.parse(eventData);
+      const now = Date.now();
+      updateStreamState({
+        status: "connected",
+        isConnected: true,
+        isDegraded: false,
+        lastEventAt: now,
+      });
       showNotificationToasts(eventName, parsed);
       const normalized = normalizeNotificationPayload(parsed);
       if (normalized) {
@@ -420,6 +478,16 @@ async function openNotificationStream() {
       throw new Error("Notifications stream body is not available.");
     }
 
+    reconnectAttempt = 0;
+    clearReconnectTimeout();
+    updateStreamState({
+      status: "connected",
+      isConnected: true,
+      isDegraded: false,
+      reconnectAttempt: 0,
+      lastConnectedAt: Date.now(),
+    });
+
     const reader = response.body.getReader();
 
     while (true) {
@@ -455,14 +523,23 @@ async function openNotificationStream() {
     if (controller.signal.aborted) {
       return;
     }
+
     scheduleReconnect();
   } finally {
     if (activeAbortController === controller) {
       activeAbortController = null;
     }
+
     if (reconnectEnabled && subscriberCount > 0) {
       scheduleReconnect();
+      return;
     }
+
+    updateStreamState({
+      status: "disconnected",
+      isConnected: false,
+      isDegraded: true,
+    });
   }
 }
 
@@ -472,29 +549,52 @@ function closeNotificationStream(disableReconnect: boolean = false) {
   }
 
   clearReconnectTimeout();
+  clearStreamHealthMonitor();
 
   if (activeAbortController) {
     activeAbortController.abort();
     activeAbortController = null;
   }
+
+  if (disableReconnect) {
+    updateStreamState({
+      status: "disconnected",
+      isConnected: false,
+      isDegraded: true,
+      reconnectAttempt: 0,
+    });
+  }
 }
 
 export function useNotificationStream() {
   const queryClient = useQueryClient();
+  const [currentStreamState, setCurrentStreamState] =
+    useState<NotificationStreamState>(streamState);
+
+  useEffect(() => {
+    streamStateListeners.add(setCurrentStreamState);
+
+    return () => {
+      streamStateListeners.delete(setCurrentStreamState);
+    };
+  }, []);
 
   useEffect(() => {
     activeQueryClient = queryClient;
     subscriberCount += 1;
     reconnectEnabled = true;
     clearReconnectTimeout();
+    ensureStreamHealthMonitor();
     void openNotificationStream();
 
     const restartStream = () => {
+      reconnectAttempt = 0;
       closeNotificationStream();
       void openNotificationStream();
     };
 
     const stopStream = () => {
+      reconnectAttempt = 0;
       closeNotificationStream(true);
     };
 
@@ -508,8 +608,12 @@ export function useNotificationStream() {
       window.removeEventListener("auth-logout", stopStream);
 
       if (subscriberCount === 0) {
+        reconnectAttempt = 0;
         closeNotificationStream(true);
+        clearStreamHealthMonitor();
       }
     };
   }, [queryClient]);
+
+  return currentStreamState;
 }
