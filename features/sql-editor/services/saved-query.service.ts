@@ -25,6 +25,8 @@ export interface SavedQuery {
   query?: string;
   catalog?: string;
   schema?: string;
+  route_path?: string;
+  api_id?: string;
   domain_id?: string;
   trino_endpoint_id?: string;
   tags?: string[];
@@ -48,6 +50,8 @@ export type UpdateSavedQueryRequest = Partial<CreateSavedQueryRequest>;
 
 export interface SavedQueryResponse extends Partial<SavedQuery> {
   saved_query_id?: string;
+  api_id?: string;
+  route_path?: string;
 }
 
 export interface PublishSavedQueryRequest {

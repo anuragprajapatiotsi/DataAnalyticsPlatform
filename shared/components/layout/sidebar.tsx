@@ -302,19 +302,37 @@ export function Sidebar() {
                 pathname={pathname}
                 expandedMenus={expandedMenus}
                 toggleMenu={toggleMenu}
-                onMouseEnter={handleMouseEnter}
-                onMouseLeave={handleMouseLeave}
-              />
-              <SidebarItem
-                item={{
-                  id: "sql-editor",
-                  slug: "sql-editor",
-                  display_name: "SQL Editor",
-                  icon: "terminal",
-                  nav_url: "/sql-editor",
-                  sort_order: 100,
-                  has_children: false,
-                }}
+                  onMouseEnter={handleMouseEnter}
+                  onMouseLeave={handleMouseLeave}
+                />
+                <SidebarItem
+                  item={{
+                    id: "published-apis",
+                    slug: "published-apis",
+                    display_name: "Published APIs",
+                    icon: "globe",
+                    nav_url: "/published-apis",
+                    sort_order: 100,
+                    has_children: false,
+                  }}
+                  level={0}
+                  collapsed={collapsed}
+                  pathname={pathname}
+                  expandedMenus={expandedMenus}
+                  toggleMenu={toggleMenu}
+                  onMouseEnter={handleMouseEnter}
+                  onMouseLeave={handleMouseLeave}
+                />
+                <SidebarItem
+                  item={{
+                    id: "sql-editor",
+                    slug: "sql-editor",
+                    display_name: "SQL Editor",
+                    icon: "terminal",
+                    nav_url: "/sql-editor",
+                    sort_order: 101,
+                    has_children: false,
+                  }}
                 level={0}
                 collapsed={collapsed}
                 pathname={pathname}

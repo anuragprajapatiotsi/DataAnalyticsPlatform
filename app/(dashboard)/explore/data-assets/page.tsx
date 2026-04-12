@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 
 import { datasetService, type DatasetGroup } from "@/features/explore/services/dataset.service";
+import { ServiceEndpointActions } from "@/features/services/components/ServiceEndpointActions";
 import { serviceService } from "@/features/services/services/service.service";
 import { type ExplorerServiceEndpoint } from "@/features/services/types";
 import { PageHeader } from "@/shared/components/layout/PageHeader";
@@ -155,12 +156,24 @@ export default function ExploreDataAssetsPage() {
       render: (value) => <span className="text-[13px] font-medium text-slate-700">{value ?? 0}</span>,
     },
     {
-      title: "",
-      key: "action",
+      title: "Actions",
+      key: "actions",
       width: "10%",
       align: "right",
-      render: () => (
-        <ArrowRight size={16} className="mr-2 text-slate-400 opacity-0 transition-opacity group-hover:opacity-100" />
+      render: (_, record) => (
+        <div
+          className="flex items-center justify-end gap-1"
+          onClick={(event) => event.stopPropagation()}
+        >
+          <ServiceEndpointActions
+            endpointId={getConnectionId(record)}
+            endpointName={record.service_name}
+            onChanged={() => {
+              void refetchServices();
+            }}
+          />
+          <ArrowRight size={16} className="text-slate-400 opacity-0 transition-opacity group-hover:opacity-100" />
+        </div>
       ),
     },
   ];
