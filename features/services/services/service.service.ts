@@ -138,8 +138,10 @@ export const serviceService = {
     await api.delete(`/service-endpoints/${id}`);
   },
 
-  async deleteServiceEndpoint(id: string) {
-    await api.delete(`/service-endpoints/${id}`);
+  async deleteServiceEndpoint(id: string, action: "archive" | "delete" = "delete") {
+    await api.delete(`/service-endpoints/${id}`, {
+      params: { action },
+    });
   },
 
   async testDatabaseConnection(payload: any) {

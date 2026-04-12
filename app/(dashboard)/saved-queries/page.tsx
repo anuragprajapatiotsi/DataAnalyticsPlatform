@@ -25,6 +25,7 @@ import {
   Search,
   Send,
   Trash2,
+  Copy,
 } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -150,6 +151,10 @@ export default function SavedQueriesPage() {
   const [editingQuery, setEditingQuery] = React.useState<SavedQuery | null>(null);
   const [runResult, setRunResult] = React.useState<QueryResultState | null>(null);
   const [publishForm] = Form.useForm<{ visibility: "public" | "private" }>();
+  const [publishedApiInfo, setPublishedApiInfo] = React.useState<{
+    api_id?: string;
+    route_path?: string;
+  } | null>(null);
 
   const breadcrumbItems = [{ label: "Saved Queries" }];
 
@@ -183,6 +188,7 @@ export default function SavedQueriesPage() {
 
   React.useEffect(() => {
     setRunResult(null);
+    setPublishedApiInfo(null);
   }, [selectedQuery?.id]);
 
   const isOptionsQueryEnabled = isModalOpen;
@@ -266,9 +272,13 @@ export default function SavedQueriesPage() {
       id: string;
       visibility: "public" | "private";
     }) => savedQueryService.publishSavedQuery(id, { visibility }),
-    onSuccess: async () => {
+    onSuccess: async (response) => {
       await invalidateSavedQueries();
       setIsPublishModalOpen(false);
+      setPublishedApiInfo({
+        api_id: typeof response.api_id === "string" ? response.api_id : undefined,
+        route_path: typeof response.route_path === "string" ? response.route_path : undefined,
+      });
       message.success("Saved query published successfully.");
     },
     onError: () => {
@@ -357,6 +367,23 @@ export default function SavedQueriesPage() {
     }),
     [editingQuery],
   );
+
+  const handleCopyPublishedPath = async (routePath?: string) => {
+    const resolvedRoutePath =
+      routePath ||
+      publishedApiInfo?.route_path ||
+      selectedQuery?.published_api?.route_path;
+    if (!resolvedRoutePath) {
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(resolvedRoutePath);
+      message.success("API path copied.");
+    } catch {
+      message.error("Failed to copy API path.");
+    }
+  };
 
   return (
     <div className="flex h-full flex-col bg-[#FAFAFA]">
@@ -564,6 +591,37 @@ export default function SavedQueriesPage() {
 
                 <div className="grid gap-6 overflow-y-auto p-6 xl:grid-cols-[minmax(0,1.4fr)_340px]">
                   <div className="min-w-0 space-y-6">
+                    {publishedApiInfo?.route_path ? (
+                      <Alert
+                        type="success"
+                        showIcon
+                        title="API Published Successfully"
+                        description={
+                          <div className="space-y-3">
+                            <div>
+                              <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                                API Path
+                              </div>
+                              <code className="block break-all rounded-md bg-emerald-50 px-3 py-2 text-xs text-emerald-800">
+                                {publishedApiInfo.route_path}
+                              </code>
+                            </div>
+                            <div className="flex flex-wrap gap-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-8 border-emerald-200 text-emerald-700 hover:bg-emerald-50"
+                                onClick={() => void handleCopyPublishedPath(publishedApiInfo.route_path)}
+                              >
+                                <Copy size={13} className="mr-2" />
+                                Copy Path
+                              </Button>
+                            </div>
+                          </div>
+                        }
+                      />
+                    ) : null}
+
                     <div className="rounded-2xl border border-slate-200 bg-slate-50 shadow-sm">
                       <div className="flex items-center justify-between border-b border-slate-200 bg-white/70 px-4 py-3">
                         <div className="text-sm font-medium text-slate-700">SQL</div>
@@ -610,6 +668,45 @@ export default function SavedQueriesPage() {
                         Metadata
                       </div>
                       <div className="mt-4 space-y-3 text-sm">
+                        {selectedQuery.published_api ? (
+                          <div className="flex flex-col gap-2 rounded-xl border border-emerald-200 bg-emerald-50/60 p-3">
+                            <div>
+                              <div className="text-xs text-slate-400">API ID</div>
+                              <div className="mt-1">
+                                <code className="rounded bg-white px-2 py-1 text-xs text-slate-700">
+                                  {selectedQuery.published_api.api_id || "-"}
+                                </code>
+                              </div>
+                            </div>
+                            <div>
+                              <div className="text-xs text-slate-400">Route Path</div>
+                              <div className="mt-1 flex items-start gap-2">
+                                <code className="block max-w-full break-all rounded bg-white px-2 py-1 text-xs text-slate-700">
+                                  {selectedQuery.published_api.route_path || "-"}
+                                </code>
+                                {selectedQuery.published_api.route_path ? (
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-7 w-7"
+                                    onClick={() =>
+                                      void handleCopyPublishedPath(
+                                        selectedQuery.published_api?.route_path,
+                                      )
+                                    }
+                                  >
+                                    <Copy size={13} />
+                                  </Button>
+                                ) : null}
+                              </div>
+                            </div>
+                          </div>
+                        ) : (
+                          <div>
+                            <div className="text-xs text-slate-400">Published API</div>
+                            <div className="mt-1 text-slate-500">Not Published</div>
+                          </div>
+                        )}
                         <div>
                           <div className="text-xs text-slate-400">Dataset ID</div>
                           <div className="mt-1 break-all font-medium text-slate-900">

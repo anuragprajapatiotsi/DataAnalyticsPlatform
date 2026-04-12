@@ -14,6 +14,7 @@ import {
   Filter
 } from "lucide-react";
 import { serviceService } from "@/features/services/services/service.service";
+import { ServiceEndpointActions } from "@/features/services/components/ServiceEndpointActions";
 import { PageHeader } from "@/shared/components/layout/PageHeader";
 import {
   ServiceEndpoint,
@@ -181,20 +182,31 @@ export default function ExploreServiceTypePage() {
     {
       title: "Action",
       key: "actions",
-      width: "10%",
+      width: "14%",
       align: "right",
       render: (_, record) => (
-        <Tooltip title="View Details">
-          <Button
-            type="text"
-            className="flex items-center justify-center text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
-            icon={<ArrowRight size={16} />}
-            onClick={(e) => {
-              e.stopPropagation();
-              router.push(`/explore/${serviceType}/${record.id}`);
-            }}
+        <div
+          className="flex items-center justify-end gap-1"
+          onClick={(event) => event.stopPropagation()}
+        >
+          <ServiceEndpointActions
+            endpointId={record.id}
+            endpointName={record.service_name}
+            serviceSlug={serviceType}
+            onChanged={fetchData}
           />
-        </Tooltip>
+          <Tooltip title="View Details">
+            <Button
+              type="text"
+              className="flex items-center justify-center text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+              icon={<ArrowRight size={16} />}
+              onClick={(e) => {
+                e.stopPropagation();
+                router.push(`/explore/${serviceType}/${record.id}`);
+              }}
+            />
+          </Tooltip>
+        </div>
       ),
     },
   ];
