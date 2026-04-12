@@ -344,7 +344,7 @@ export default function PublishedApiDetailPage() {
                   <Descriptions
                     column={1}
                     size="small"
-                    labelStyle={{ width: "38%", color: "#64748b" }}
+                    styles={{ label: { width: "38%", color: "#64748b" } }}
                   >
                     <Descriptions.Item label="API ID">
                       {data.api_id}

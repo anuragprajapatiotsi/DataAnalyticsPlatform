@@ -27,6 +27,7 @@ import {
   useCreateCatalogView,
   type CreateCatalogViewFromFileAssetRequest,
 } from "@/features/explore/hooks/useCreateCatalogView";
+import { parseError } from "@/shared/utils/error-handler";
 
 type ExplorerNodeType =
   | "catalog"
@@ -166,6 +167,20 @@ function shouldRefetchCatalogViewNode(node: ExplorerNode) {
     (node.type === "schema" && !!node.catalog && !node.connection_id) ||
     (node.type === "table" && !!node.catalog && !node.connection_id && !node.asset_id)
   );
+}
+
+function isCatalogViewDraggableNode(node: ExplorerNode) {
+  return (
+    node.type === "table" &&
+    !node.connection_id &&
+    !node.asset_id &&
+    Boolean(node.schema)
+  );
+}
+
+function getDiscoveryErrorMessage(error: unknown) {
+  const parsed = parseError(error);
+  return parsed.message || "Failed to discover items";
 }
 
 export function SchemaExplorer() {
@@ -692,12 +707,12 @@ export function SchemaExplorer() {
             error: null,
           }),
         );
-      } catch (error: any) {
-        console.error("Discovery Error", error);
+      } catch (error: unknown) {
+        const errorMessage = getDiscoveryErrorMessage(error);
         // Fallback for visual stability
         setTreeData((prev) =>
           updateTreeNodes(prev, targetNode.id, {
-            error: "Failed to Discover items",
+            error: errorMessage,
             isLoaded: false,
           }),
         );
@@ -773,6 +788,7 @@ export function SchemaExplorer() {
 
     const tableReference =
       node.type === "table" && node.schema ? `${node.schema}.${node.name}` : null;
+    const isDraggableCatalogViewNode = isCatalogViewDraggableNode(node);
 
     return (
       <div key={node.id} className="flex flex-col w-full">
@@ -787,12 +803,14 @@ export function SchemaExplorer() {
             node.type === "load-more" &&
               "text-blue-500 hover:text-blue-700 italic font-semibold mt-1",
             node.error && "opacity-60",
+            isDraggableCatalogViewNode ? "cursor-grab active:cursor-grabbing" : "cursor-default",
           )}
           style={{ paddingLeft: `${depth * 16}px` }}
           onClick={() => toggleNode(node)}
-          draggable={node.type === "table"}
+          draggable={isDraggableCatalogViewNode}
           onDragStart={(event) => {
-            if (!tableReference) {
+            if (!isDraggableCatalogViewNode || !tableReference) {
+              event.preventDefault();
               return;
             }
 
