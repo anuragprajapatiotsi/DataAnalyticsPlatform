@@ -16,6 +16,49 @@ import {
 } from "@/features/published-apis/services/published-api.service";
 import type { QueryResultState } from "@/features/sql-editor/hooks/useSqlEditor";
 
+function getResponseColumns(response: PublishedApiExecutionResponse): string[] {
+  if (Array.isArray(response.columns) && response.columns.length > 0) {
+    return response.columns;
+  }
+
+  if (
+    response &&
+    typeof response === "object" &&
+    !Array.isArray(response) &&
+    !("rows" in response) &&
+    !("data" in response) &&
+    !("stats" in response) &&
+    !("total_count" in response) &&
+    !("returned" in response) &&
+    !("limit" in response) &&
+    !("offset" in response)
+  ) {
+    return Object.keys(response as Record<string, unknown>);
+  }
+
+  if (
+    Array.isArray(response.rows) &&
+    response.rows.length > 0 &&
+    !Array.isArray(response.rows[0]) &&
+    response.rows[0] &&
+    typeof response.rows[0] === "object"
+  ) {
+    return Object.keys(response.rows[0] as Record<string, unknown>);
+  }
+
+  if (
+    Array.isArray(response.data) &&
+    response.data.length > 0 &&
+    !Array.isArray(response.data[0]) &&
+    response.data[0] &&
+    typeof response.data[0] === "object"
+  ) {
+    return Object.keys(response.data[0] as Record<string, unknown>);
+  }
+
+  return [];
+}
+
 function normalizeRunRows(
   response: PublishedApiExecutionResponse,
   columns: string[],
@@ -34,6 +77,24 @@ function normalizeRunRows(
     );
   }
 
+  if (Array.isArray(response.data)) {
+    return (response.data as Record<string, unknown>[]).map((row) =>
+      columns.map((column) => row?.[column] ?? null),
+    );
+  }
+
+  if (
+    response &&
+    typeof response === "object" &&
+    !Array.isArray(response) &&
+    !("rows" in response) &&
+    !("data" in response) &&
+    columns.length > 0
+  ) {
+    const record = response as Record<string, unknown>;
+    return [columns.map((column) => record[column] ?? null)];
+  }
+
   return [];
 }
 
@@ -43,7 +104,9 @@ export default function PublishedApiDetailPage() {
   const queryClient = useQueryClient();
   const id = params.id as string;
 
-  const [runResult, setRunResult] = React.useState<QueryResultState | null>(null);
+  const [runResult, setRunResult] = React.useState<QueryResultState | null>(
+    null,
+  );
 
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["published-api-detail", id],
@@ -72,14 +135,16 @@ export default function PublishedApiDetailPage() {
         status: "loading",
       });
 
-      return publishedApiService.executePublishedApi(data.api_id, { limit: 100 });
+      return publishedApiService.executePublishedApi(data.api_id, {
+        limit: 100,
+      });
     },
     onSuccess: (response) => {
       if (!data) {
         return;
       }
 
-      const columns = Array.isArray(response.columns) ? response.columns : [];
+      const columns = getResponseColumns(response);
       const rows = normalizeRunRows(response, columns);
       setRunResult({
         id: `published-api-run-${data.api_id}`,
@@ -94,7 +159,9 @@ export default function PublishedApiDetailPage() {
         queryId: null,
         pagination: {
           pageSize: Number(response.limit || 100),
-          current: Math.floor(Number(response.offset || 0) / Number(response.limit || 100 || 1)),
+          current: Math.floor(
+            Number(response.offset || 0) / Number(response.limit || 100 || 1),
+          ),
         },
         status: "success",
         totalCount:
@@ -131,7 +198,9 @@ export default function PublishedApiDetailPage() {
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["published-apis"] });
-      await queryClient.invalidateQueries({ queryKey: ["published-api-detail", id] });
+      await queryClient.invalidateQueries({
+        queryKey: ["published-api-detail", id],
+      });
       message.success("Published API deactivated successfully.");
     },
     onError: () => {
@@ -180,7 +249,10 @@ export default function PublishedApiDetailPage() {
               className="h-9 border-blue-200 text-blue-700 hover:bg-blue-50"
               onClick={() => refetch()}
             >
-              <RefreshCw size={14} className={`mr-2 ${isLoading ? "animate-spin" : ""}`} />
+              <RefreshCw
+                size={14}
+                className={`mr-2 ${isLoading ? "animate-spin" : ""}`}
+              />
               Refresh
             </Button>
           </div>
@@ -192,13 +264,20 @@ export default function PublishedApiDetailPage() {
           <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
             {isLoading ? (
               <div className="flex items-center justify-center py-16">
-                <Spin indicator={<RefreshCw className="animate-spin text-blue-600" size={24} />} />
+                <Spin
+                  indicator={
+                    <RefreshCw
+                      className="animate-spin text-blue-600"
+                      size={24}
+                    />
+                  }
+                />
               </div>
             ) : isError || !data ? (
               <Alert
                 type="error"
                 showIcon
-                message="Failed to load published API"
+                title="Failed to load published API"
                 description="We couldn't load this published API right now."
               />
             ) : (
@@ -207,7 +286,9 @@ export default function PublishedApiDetailPage() {
                   <div>
                     <div className="flex items-center gap-2">
                       <Globe size={16} className="text-blue-600" />
-                      <h2 className="text-lg font-semibold text-slate-900">{data.route_path || data.api_id}</h2>
+                      <h2 className="text-lg font-semibold text-slate-900">
+                        {data.route_path || data.api_id}
+                      </h2>
                     </div>
                     <div className="mt-2 flex flex-wrap items-center gap-2">
                       <Tag className="m-0 rounded-full border-blue-200 bg-blue-50 text-blue-700">
@@ -226,15 +307,7 @@ export default function PublishedApiDetailPage() {
                     </div>
                   </div>
 
-                  <div className="flex flex-wrap gap-2">
-                    <Button
-                      variant="outline"
-                      className="h-9 border-slate-300 bg-slate-50 text-slate-700 hover:bg-slate-100"
-                      onClick={() => router.push("/published-apis")}
-                    >
-                      <ArrowLeft size={14} className="mr-2" />
-                      Back
-                    </Button>
+                  <div className="flex flex-wrap gap-2 pb-2">
                     <Button
                       className="h-9 border border-blue-600 bg-blue-600 text-white hover:bg-blue-700 hover:border-blue-700"
                       onClick={handleCopy}
@@ -252,7 +325,9 @@ export default function PublishedApiDetailPage() {
                     </Button>
                     <Button
                       variant="outline"
-                      disabled={data.is_active === false || deactivateMutation.isPending}
+                      disabled={
+                        data.is_active === false || deactivateMutation.isPending
+                      }
                       className="h-9 border-red-200 text-red-600 hover:bg-red-50"
                       onClick={() => deactivateMutation.mutate()}
                     >
@@ -263,17 +338,35 @@ export default function PublishedApiDetailPage() {
                 </div>
 
                 <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                  <div className="mb-4 text-sm font-semibold text-slate-900">API Details</div>
-                  <Descriptions column={1} size="small" labelStyle={{ width: "38%", color: "#64748b" }}>
-                    <Descriptions.Item label="API ID">{data.api_id}</Descriptions.Item>
-                    <Descriptions.Item label="Dataset ID">{data.dataset_id || "-"}</Descriptions.Item>
-                    <Descriptions.Item label="Resource Type">{data.resource_type || "-"}</Descriptions.Item>
-                    <Descriptions.Item label="Route Path">{data.route_path || "-"}</Descriptions.Item>
+                  <div className="mb-4 text-sm font-semibold text-slate-900">
+                    API Details
+                  </div>
+                  <Descriptions
+                    column={1}
+                    size="small"
+                    labelStyle={{ width: "38%", color: "#64748b" }}
+                  >
+                    <Descriptions.Item label="API ID">
+                      {data.api_id}
+                    </Descriptions.Item>
+                    <Descriptions.Item label="Dataset ID">
+                      {data.dataset_id || "-"}
+                    </Descriptions.Item>
+                    <Descriptions.Item label="Resource Type">
+                      {data.resource_type || "-"}
+                    </Descriptions.Item>
+                    <Descriptions.Item label="Route Path">
+                      <div className="break-all text-slate-900">{data.route_path || "-"}</div>
+                    </Descriptions.Item>
                     <Descriptions.Item label="Created">
-                      {data.created_at ? dayjs(data.created_at).format("MMM D, YYYY h:mm A") : "-"}
+                      {data.created_at
+                        ? dayjs(data.created_at).format("MMM D, YYYY h:mm A")
+                        : "-"}
                     </Descriptions.Item>
                     <Descriptions.Item label="Updated">
-                      {data.updated_at ? dayjs(data.updated_at).format("MMM D, YYYY h:mm A") : "-"}
+                      {data.updated_at
+                        ? dayjs(data.updated_at).format("MMM D, YYYY h:mm A")
+                        : "-"}
                     </Descriptions.Item>
                   </Descriptions>
                 </div>
@@ -291,7 +384,10 @@ export default function PublishedApiDetailPage() {
 
             {runResult ? (
               <div className="flex min-h-0 flex-1 flex-col">
-                <SqlResultViewer result={runResult} onDismissError={() => setRunResult(null)} />
+                <SqlResultViewer
+                  result={runResult}
+                  onDismissError={() => setRunResult(null)}
+                />
               </div>
             ) : (
               <div className="flex flex-1 items-center justify-center bg-slate-50/50">

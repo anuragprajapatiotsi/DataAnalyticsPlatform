@@ -27,6 +27,12 @@ export interface SavedQuery {
   schema?: string;
   route_path?: string;
   api_id?: string;
+  published_api?: {
+    api_id?: string;
+    route_path?: string;
+    is_active?: boolean;
+    [key: string]: unknown;
+  } | null;
   domain_id?: string;
   trino_endpoint_id?: string;
   tags?: string[];

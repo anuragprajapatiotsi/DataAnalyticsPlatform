@@ -301,14 +301,14 @@ export default function PublishedApisPage() {
                     { label: "Dataset", value: "dataset" },
                   ]}
                 />
-                <Button
+                {/* <Button
                   variant="outline"
                   className="h-10 border-blue-200 text-blue-700 hover:bg-blue-50"
                   onClick={() => refetch()}
                 >
                   <RefreshCw size={14} className="mr-2" />
                   Refresh
-                </Button>
+                </Button> */}
               </div>
             </div>
 

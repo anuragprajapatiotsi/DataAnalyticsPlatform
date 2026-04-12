@@ -274,27 +274,6 @@ export default function SavedQueriesPage() {
     }) => savedQueryService.publishSavedQuery(id, { visibility }),
     onSuccess: async (response) => {
       await invalidateSavedQueries();
-      queryClient.setQueriesData<SavedQuery[] | undefined>(
-        { queryKey: ["saved-queries"] },
-        (previous) =>
-          Array.isArray(previous)
-            ? previous.map((query) =>
-                query.id === selectedQuery?.id
-                  ? {
-                      ...query,
-                      route_path:
-                        typeof response.route_path === "string"
-                          ? response.route_path
-                          : query.route_path,
-                      api_id:
-                        typeof response.api_id === "string"
-                          ? response.api_id
-                          : query.api_id,
-                    }
-                  : query,
-              )
-            : previous,
-      );
       setIsPublishModalOpen(false);
       setPublishedApiInfo({
         api_id: typeof response.api_id === "string" ? response.api_id : undefined,
@@ -390,7 +369,10 @@ export default function SavedQueriesPage() {
   );
 
   const handleCopyPublishedPath = async (routePath?: string) => {
-    const resolvedRoutePath = routePath || publishedApiInfo?.route_path || selectedQuery?.route_path;
+    const resolvedRoutePath =
+      routePath ||
+      publishedApiInfo?.route_path ||
+      selectedQuery?.published_api?.route_path;
     if (!resolvedRoutePath) {
       return;
     }
@@ -620,7 +602,7 @@ export default function SavedQueriesPage() {
                               <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-500">
                                 API Path
                               </div>
-                              <code className="block rounded-md bg-emerald-50 px-3 py-2 text-xs text-emerald-800">
+                              <code className="block break-all rounded-md bg-emerald-50 px-3 py-2 text-xs text-emerald-800">
                                 {publishedApiInfo.route_path}
                               </code>
                             </div>
@@ -686,6 +668,45 @@ export default function SavedQueriesPage() {
                         Metadata
                       </div>
                       <div className="mt-4 space-y-3 text-sm">
+                        {selectedQuery.published_api ? (
+                          <div className="flex flex-col gap-2 rounded-xl border border-emerald-200 bg-emerald-50/60 p-3">
+                            <div>
+                              <div className="text-xs text-slate-400">API ID</div>
+                              <div className="mt-1">
+                                <code className="rounded bg-white px-2 py-1 text-xs text-slate-700">
+                                  {selectedQuery.published_api.api_id || "-"}
+                                </code>
+                              </div>
+                            </div>
+                            <div>
+                              <div className="text-xs text-slate-400">Route Path</div>
+                              <div className="mt-1 flex items-start gap-2">
+                                <code className="block max-w-full break-all rounded bg-white px-2 py-1 text-xs text-slate-700">
+                                  {selectedQuery.published_api.route_path || "-"}
+                                </code>
+                                {selectedQuery.published_api.route_path ? (
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-7 w-7"
+                                    onClick={() =>
+                                      void handleCopyPublishedPath(
+                                        selectedQuery.published_api?.route_path,
+                                      )
+                                    }
+                                  >
+                                    <Copy size={13} />
+                                  </Button>
+                                ) : null}
+                              </div>
+                            </div>
+                          </div>
+                        ) : (
+                          <div>
+                            <div className="text-xs text-slate-400">Published API</div>
+                            <div className="mt-1 text-slate-500">Not Published</div>
+                          </div>
+                        )}
                         <div>
                           <div className="text-xs text-slate-400">Dataset ID</div>
                           <div className="mt-1 break-all font-medium text-slate-900">
@@ -702,28 +723,6 @@ export default function SavedQueriesPage() {
                           <div className="text-xs text-slate-400">Schema</div>
                           <div className="mt-1 font-medium text-slate-900">
                             {selectedQuery.schema || "-"}
-                          </div>
-                        </div>
-                        <div>
-                          <div className="text-xs text-slate-400">API Route</div>
-                          <div className="mt-1">
-                            {selectedQuery.route_path ? (
-                              <div className="flex items-center gap-2">
-                                <code className="rounded bg-slate-100 px-2 py-1 text-xs text-slate-700">
-                                  {selectedQuery.route_path}
-                                </code>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-7 w-7"
-                                  onClick={() => void handleCopyPublishedPath(selectedQuery.route_path)}
-                                >
-                                  <Copy size={13} />
-                                </Button>
-                              </div>
-                            ) : (
-                              <span className="text-slate-500">-</span>
-                            )}
                           </div>
                         </div>
                         <div>
