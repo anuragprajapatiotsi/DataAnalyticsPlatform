@@ -13,6 +13,7 @@ import { parseError } from "@/shared/utils/error-handler";
 
 import { AuthProvider } from "@/shared/contexts/auth-context";
 import { SidebarProvider } from "@/shared/contexts/sidebar-context";
+import { NotificationProvider } from "@/features/notifications/components/notification-provider";
 
 export function Providers({ children }: { children: ReactNode }) {
   const [queryClient] = useState(
@@ -56,7 +57,9 @@ export function Providers({ children }: { children: ReactNode }) {
   return (
     <QueryClientProvider client={queryClient}>
       <SidebarProvider>
-        <AuthProvider>{children}</AuthProvider>
+        <AuthProvider>
+          <NotificationProvider>{children}</NotificationProvider>
+        </AuthProvider>
       </SidebarProvider>
       <ReactQueryDevtools initialIsOpen={false} />
     </QueryClientProvider>

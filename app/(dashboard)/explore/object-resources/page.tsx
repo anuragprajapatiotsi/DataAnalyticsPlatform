@@ -1,12 +1,11 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Table, Input, message, Tooltip, Empty, Button, Spin } from "antd";
 import {
   Search,
   Layers,
-  Activity,
   Database,
   Clock,
   Calendar,
@@ -17,9 +16,11 @@ import {
 import { useRouter } from "next/navigation";
 import { serviceService } from "@/features/services/services/service.service";
 import { CatalogView } from "@/features/services/types";
+import { useCatalogViews } from "@/features/services/hooks/useCatalogViews";
 import { PageHeader } from "@/shared/components/layout/PageHeader";
 import { CreateCatalogViewModal } from "@/features/explore/components/CreateCatalogViewModal";
 import { NOTIFICATION_FEED_QUERY_KEY } from "@/features/notifications/constants";
+import { useNotificationFeed } from "@/features/notifications/hooks/useNotificationFeed";
 import { cn } from "@/shared/utils/cn";
 import type { ColumnsType } from "antd/es/table";
 import dayjs from "dayjs";
@@ -30,12 +31,22 @@ dayjs.extend(relativeTime);
 export default function ExploreObjectResourcesPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const [catalogViews, setCatalogViews] = useState<CatalogView[]>([]);
-  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
-  const [pagination, setPagination] = useState({ skip: 0, limit: 100 });
+  const [pagination] = useState({ skip: 0, limit: 100 });
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [syncingViews, setSyncingViews] = useState<Set<string>>(new Set());
+  const latestNotificationSignatureRef = useRef<string | null>(null);
+
+  const {
+    data: catalogViews = [],
+    isLoading,
+    isFetching,
+    refetch,
+  } = useCatalogViews({
+    skip: pagination.skip,
+    limit: pagination.limit,
+  });
+  const { data: notificationFeed } = useNotificationFeed(100);
 
   const handleSync = async (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
@@ -44,10 +55,14 @@ export default function ExploreObjectResourcesPage() {
       await serviceService.syncCatalogView(id, { sync_data: true, force: false });
       await queryClient.invalidateQueries({ queryKey: NOTIFICATION_FEED_QUERY_KEY });
       message.info("Sync started. Status will update automatically.");
-      setTimeout(fetchCatalogViews, 1000);
-    } catch (err: any) {
+      void queryClient.invalidateQueries({ queryKey: ["catalog-views"] });
+    } catch (err: unknown) {
+      const errorMessage =
+        err instanceof Error
+          ? err.message
+          : "Failed to trigger sync.";
       console.error(err);
-      message.error(err?.response?.data?.message || "Failed to trigger sync.");
+      message.error(errorMessage);
     } finally {
       setSyncingViews((prev) => {
         const next = new Set(prev);
@@ -62,30 +77,6 @@ export default function ExploreObjectResourcesPage() {
     { label: "Catalog Views" },
   ];
 
-  const isInitialMount = useRef(true);
-  const fetchCatalogViews = useCallback(async () => {
-    try {
-      setLoading(true);
-      const resp = await serviceService.getCatalogViews({
-        skip: pagination.skip,
-        limit: pagination.limit,
-      });
-      setCatalogViews(Array.isArray(resp) ? resp : []);
-    } catch (err) {
-      console.error("Failed to fetch catalog views:", err);
-      message.error("Failed to load catalog views.");
-    } finally {
-      setLoading(false);
-    }
-  }, [pagination.skip, pagination.limit]);
-
-  useEffect(() => {
-    if (isInitialMount.current) {
-      fetchCatalogViews();
-      isInitialMount.current = false;
-    }
-  }, [fetchCatalogViews]);
-
   const filteredViews = useMemo(() => {
     return catalogViews.filter(
       (v) =>
@@ -94,6 +85,32 @@ export default function ExploreObjectResourcesPage() {
         v.description?.toLowerCase().includes(searchTerm.toLowerCase()),
     );
   }, [catalogViews, searchTerm]);
+
+  const syncNotificationSignature = useMemo(() => {
+    const syncNotifications = notificationFeed?.sync ?? [];
+    return syncNotifications
+      .map((item) => `${item.catalog_view_id}:${item.status}:${item.updated_at}`)
+      .join("|");
+  }, [notificationFeed?.sync]);
+
+  useEffect(() => {
+    if (!syncNotificationSignature) {
+      latestNotificationSignatureRef.current = null;
+      return;
+    }
+
+    if (!latestNotificationSignatureRef.current) {
+      latestNotificationSignatureRef.current = syncNotificationSignature;
+      return;
+    }
+
+    if (latestNotificationSignatureRef.current === syncNotificationSignature) {
+      return;
+    }
+
+    latestNotificationSignatureRef.current = syncNotificationSignature;
+    void queryClient.invalidateQueries({ queryKey: ["catalog-views"] });
+  }, [queryClient, syncNotificationSignature]);
 
   const columns: ColumnsType<CatalogView> = [
     {
@@ -240,8 +257,8 @@ export default function ExploreObjectResourcesPage() {
               <div className="flex items-center gap-2">
                 <Tooltip title="Refresh Catalog Views">
                   <Button
-                    onClick={fetchCatalogViews}
-                    icon={<RefreshCw size={14} className={loading ? "animate-spin" : ""} />}
+                    onClick={() => void refetch()}
+                    icon={<RefreshCw size={14} className={isFetching ? "animate-spin" : ""} />}
                     className="h-9 w-9 p-0 flex items-center justify-center rounded-md border-slate-200 text-slate-500 hover:text-indigo-600 hover:border-indigo-200 hover:bg-indigo-50"
                   />
                 </Tooltip>
@@ -284,7 +301,7 @@ export default function ExploreObjectResourcesPage() {
               columns={columns}
               rowKey="id"
               loading={{
-                spinning: loading,
+                spinning: isLoading || isFetching,
                 indicator: <Spin indicator={<RefreshCw className="animate-spin text-indigo-600" size={24} />} />
               }}
               pagination={{
@@ -351,7 +368,7 @@ export default function ExploreObjectResourcesPage() {
       <CreateCatalogViewModal
         open={isModalOpen}
         onCancel={() => setIsModalOpen(false)}
-        onSuccess={() => fetchCatalogViews()}
+        onSuccess={() => void queryClient.invalidateQueries({ queryKey: ["catalog-views"] })}
       />
     </div>
   );
