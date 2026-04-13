@@ -296,7 +296,7 @@ export default function PublishedApisPage() {
                   onChange={(value) => setResourceType(value)}
                   placeholder="Resource Type"
                   options={[
-                    { label: "Saved Query", value: "saved_query" },
+                    { label: "Save Query", value: "saved_query" },
                     { label: "Table", value: "table" },
                     { label: "Dataset", value: "dataset" },
                   ]}

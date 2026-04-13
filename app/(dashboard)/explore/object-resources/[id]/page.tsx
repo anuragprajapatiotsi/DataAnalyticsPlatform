@@ -240,7 +240,7 @@ export default function ExploreObjectResourceDetailPage() {
   const [syncAlert, setSyncAlert] = useState<SyncAlertState>(null);
   const editorRef = useRef<any>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
-  const { data: notificationFeed } = useNotificationFeed(100);
+  const { data: notificationFeed } = useNotificationFeed(10);
 
   const activeQueryTab = queryTabs.find((t) => t.id === activeQueryTabId);
   const latestViewSyncNotification = useMemo(() => {

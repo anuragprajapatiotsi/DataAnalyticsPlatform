@@ -288,7 +288,7 @@ export default function NotebookDetailPage() {
   const [isScheduleModalOpen, setIsScheduleModalOpen] = React.useState(false);
   const [editingScheduleId, setEditingScheduleId] = React.useState<string | null>(null);
   const [selectedScheduleId, setSelectedScheduleId] = React.useState<string | null>(null);
-  const autosaveTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const draftSaveTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
   const hasInitializedContentRef = React.useRef(false);
   const hasPromptedDraftRestoreRef = React.useRef(false);
 
@@ -340,7 +340,7 @@ export default function NotebookDetailPage() {
     queryFn: () => notebookService.getNotebookExecutions(notebookId, selectedSessionId as string),
     enabled: Boolean(notebookId && selectedSessionId),
   });
-  const { data: notificationFeed } = useNotificationFeed(100);
+  const { data: notificationFeed } = useNotificationFeed(10);
 
   const {
     data: sparkJobs = [],
@@ -1190,7 +1190,7 @@ export default function NotebookDetailPage() {
         Modal.confirm({
           title: "Leave with invalid notebook JSON?",
           content:
-            "Your notebook content has unsaved changes and the JSON is invalid, so it cannot be autosaved right now.",
+            "Your notebook content has unsaved changes and the JSON is invalid, so it cannot be saved right now.",
           okText: "Leave Anyway",
           okType: "danger",
           cancelText: "Stay Here",
@@ -1225,31 +1225,6 @@ export default function NotebookDetailPage() {
   );
 
   React.useEffect(() => {
-    if (!isContentDirty || !isContentJsonValid || updateContentMutation.isPending) {
-      if (autosaveTimeoutRef.current) {
-        clearTimeout(autosaveTimeoutRef.current);
-        autosaveTimeoutRef.current = null;
-      }
-      return;
-    }
-
-    if (autosaveTimeoutRef.current) {
-      clearTimeout(autosaveTimeoutRef.current);
-    }
-
-    autosaveTimeoutRef.current = setTimeout(() => {
-      void updateContentMutation.mutateAsync(contentValue);
-    }, 2000);
-
-    return () => {
-      if (autosaveTimeoutRef.current) {
-        clearTimeout(autosaveTimeoutRef.current);
-        autosaveTimeoutRef.current = null;
-      }
-    };
-  }, [contentValue, isContentDirty, isContentJsonValid, updateContentMutation]);
-
-  React.useEffect(() => {
     const handleBeforeUnload = (event: BeforeUnloadEvent) => {
       if (!isContentDirty) {
         return;
@@ -1273,11 +1248,30 @@ export default function NotebookDetailPage() {
     const draftStorageKey = getNotebookDraftStorageKey(notebookId);
 
     if (isContentDirty) {
-      window.localStorage.setItem(draftStorageKey, contentValue);
+      if (draftSaveTimeoutRef.current) {
+        clearTimeout(draftSaveTimeoutRef.current);
+      }
+
+      draftSaveTimeoutRef.current = setTimeout(() => {
+        window.localStorage.setItem(draftStorageKey, contentValue);
+      }, 800);
+
       return;
     }
 
+    if (draftSaveTimeoutRef.current) {
+      clearTimeout(draftSaveTimeoutRef.current);
+      draftSaveTimeoutRef.current = null;
+    }
+
     window.localStorage.removeItem(draftStorageKey);
+
+    return () => {
+      if (draftSaveTimeoutRef.current) {
+        clearTimeout(draftSaveTimeoutRef.current);
+        draftSaveTimeoutRef.current = null;
+      }
+    };
   }, [contentValue, isContentDirty, notebookId]);
 
   const runColumns: ColumnsType<NotebookRun> = [
@@ -2219,6 +2213,7 @@ export default function NotebookDetailPage() {
 
         <div className="mt-5 flex justify-end">
           <Button
+            type="button"
             className="h-9 border border-blue-600 bg-blue-600 text-white hover:bg-blue-700 hover:border-blue-700"
             onClick={() => form.submit()}
             disabled={updateMetadataMutation.isPending}
@@ -2347,7 +2342,7 @@ export default function NotebookDetailPage() {
                                     </Tag>
                                   ) : updateContentMutation.isPending ? (
                                     <Tag className="m-0 rounded-full border-blue-200 bg-blue-50 text-[11px] text-blue-700">
-                                      Autosaving...
+                                      Saving...
                                     </Tag>
                                   ) : isContentDirty ? (
                                     <Tag className="m-0 rounded-full border-amber-200 bg-amber-50 text-[11px] text-amber-700">
@@ -2360,7 +2355,7 @@ export default function NotebookDetailPage() {
                                   )}
                                 </div>
                                 <div className="mt-1 text-sm text-slate-500">
-                                  This is a phase-1 editor placeholder so we can load, autosave, and still manually save notebook content now.
+                                  This is a phase-1 editor placeholder so we can edit notebook cells and save notebook content when you are ready.
                                 </div>
                                 </div>
                                 <div className="json-actions">
@@ -2476,9 +2471,9 @@ export default function NotebookDetailPage() {
                                 Create a runtime session, execute a code cell, and inspect execution outputs.
                               </div>
                             </div>
-                            <div className="section-actions">
+                            <div className="section-actions items-end">
                             {notebook?.execution_mode === "mixed_profile" ? (
-                              <div className="w-full max-w-[260px]">
+                              <div className="w-full max-w-[260px] self-end">
                                 <div className="mb-1 text-xs font-medium uppercase tracking-wide text-slate-500">
                                   Session Profile
                                 </div>
@@ -2493,12 +2488,12 @@ export default function NotebookDetailPage() {
                                 />
                               </div>
                             ) : (
-                              <div className="rounded-full border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700">
+                              <div className="self-end rounded-full border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700">
                                 Default Profile: {notebook?.default_execution_profile || "python"}
                               </div>
                             )}
                             <Button
-                              className="h-10 border border-blue-600 bg-blue-600 text-white hover:bg-blue-700 hover:border-blue-700"
+                              className="h-10 self-end border border-blue-600 bg-blue-600 text-white hover:bg-blue-700 hover:border-blue-700"
                               onClick={() => createSessionMutation.mutate()}
                               disabled={createSessionMutation.isPending}
                             >
@@ -2553,9 +2548,9 @@ export default function NotebookDetailPage() {
                                   Run code in the selected notebook session.
                                 </div>
                               </div>
-                              <div className="section-actions">
+                              <div className="section-actions execute-cell-actions items-end">
                                 <Select
-                                  className="w-full max-w-[260px]"
+                                  className="w-full max-w-[260px] self-end"
                                   placeholder="Insert code snippet"
                                   options={availableCodeSnippets.map((snippet) => ({
                                     label: snippet.label,
@@ -2575,7 +2570,7 @@ export default function NotebookDetailPage() {
                                   }}
                                 />
                                 <Button
-                                  className="h-9 border border-blue-600 bg-blue-600 text-white hover:bg-blue-700 hover:border-blue-700"
+                                  className="h-9 self-end border border-blue-600 bg-blue-600 text-white hover:bg-blue-700 hover:border-blue-700"
                                   onClick={() =>
                                     executeCellMutation.mutate({
                                       code: codeToExecute,
@@ -3548,6 +3543,23 @@ export default function NotebookDetailPage() {
 
         .section-header + .table-container {
           margin-top: 8px;
+        }
+
+        .execute-cell-actions {
+          flex-wrap: nowrap;
+          min-width: 0;
+          width: 100%;
+        }
+
+        .execute-cell-actions .ant-select {
+          flex: 1 1 0;
+          min-width: 0;
+          max-width: 100%;
+        }
+
+        .execute-cell-actions button {
+          flex-shrink: 0;
+          white-space: nowrap;
         }
 
         .json-body .ant-input-textarea textarea {

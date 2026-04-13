@@ -118,7 +118,10 @@ export default function ExploreKpisPage() {
       title: "KPI Name",
       dataIndex: "kpi_name",
       key: "kpi_name",
-      width: "20%",
+      width: 280,
+      onCell: () => ({
+        style: { whiteSpace: "nowrap" },
+      }),
       render: (value, record) => (
         <div className="flex items-center gap-3 group/name">
           <div className="flex h-8 w-8 items-center justify-center rounded-md border border-blue-100 bg-blue-50 text-blue-600">
@@ -139,14 +142,24 @@ export default function ExploreKpisPage() {
       title: "Column Name",
       dataIndex: "column_name",
       key: "column_name",
-      width: "14%",
-      render: (value) => <span className="text-[13px] text-slate-600">{value || "-"}</span>,
+      width: 180,
+      onCell: () => ({
+        style: { whiteSpace: "nowrap" },
+      }),
+      render: (value) => (
+        <Tooltip title={value || "-"}>
+          <span className="block truncate text-[13px] text-slate-600">{value || "-"}</span>
+        </Tooltip>
+      ),
     },
     {
       title: "KPI Type",
       dataIndex: "kpi_type",
       key: "kpi_type",
-      width: "12%",
+      width: 150,
+      onCell: () => ({
+        style: { whiteSpace: "nowrap" },
+      }),
       render: (value) => (
         <Tag className="m-0 rounded-full border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-medium text-slate-600">
           {value || "Unknown"}
@@ -156,7 +169,10 @@ export default function ExploreKpisPage() {
     {
       title: "Current Value",
       key: "current_value",
-      width: "14%",
+      width: 170,
+      onCell: () => ({
+        style: { whiteSpace: "nowrap" },
+      }),
       render: (_, record) => (
         <span className="font-medium text-slate-800">
           {formatKpiValue(record.current_value, record.unit)}
@@ -167,21 +183,30 @@ export default function ExploreKpisPage() {
       title: "Previous Value",
       dataIndex: "previous_value",
       key: "previous_value",
-      width: "10%",
+      width: 150,
+      onCell: () => ({
+        style: { whiteSpace: "nowrap" },
+      }),
       render: (value) => <span className="text-[13px] text-slate-500">{value ?? "-"}</span>,
     },
     {
       title: "Trend",
       dataIndex: "trend",
       key: "trend",
-      width: "10%",
+      width: 130,
+      onCell: () => ({
+        style: { whiteSpace: "nowrap" },
+      }),
       render: (value) => renderTrend(value),
     },
     {
       title: "Confidence Score",
       dataIndex: "confidence_score",
       key: "confidence_score",
-      width: "12%",
+      width: 180,
+      onCell: () => ({
+        style: { whiteSpace: "nowrap" },
+      }),
       render: (value) => {
         const score = typeof value === "number" ? Math.max(0, Math.min(100, value)) : 0;
         return (
@@ -199,18 +224,26 @@ export default function ExploreKpisPage() {
       title: "Last Computed At",
       dataIndex: "last_computed_at",
       key: "last_computed_at",
-      width: "14%",
+      width: 210,
+      onCell: () => ({
+        style: { whiteSpace: "nowrap" },
+      }),
       render: (value) => (
-        <span className="text-[13px] text-slate-500">
-          {value ? dayjs(value).format("MMM D, YYYY h:mm A") : "-"}
-        </span>
+        <Tooltip title={value || "-"}>
+          <span className="block truncate text-[13px] text-slate-500">
+            {value ? dayjs(value).format("MMM D, YYYY h:mm A") : "-"}
+          </span>
+        </Tooltip>
       ),
     },
     {
       title: "",
       key: "action",
-      width: "4%",
+      width: 70,
       align: "right",
+      onCell: () => ({
+        style: { whiteSpace: "nowrap" },
+      }),
       render: () => (
         <ArrowRight size={16} className="mr-2 text-slate-400 opacity-0 transition-opacity group-hover:opacity-100" />
       ),
@@ -276,38 +309,42 @@ export default function ExploreKpisPage() {
                 />
               </div>
             ) : (
-              <Table<CatalogKpi>
-                dataSource={filteredKpis}
-                columns={columns}
-                rowKey="id"
-                loading={{
-                  spinning: isLoading,
-                  indicator: <Spin indicator={<RefreshCw className="animate-spin text-blue-600" size={24} />} />,
-                }}
-                pagination={{
-                  pageSize: 50,
-                  hideOnSinglePage: true,
-                  className: "px-6 py-4 border-t border-slate-100 !mb-0 bg-white",
-                }}
-                className="custom-explore-table"
-                onRow={(record) => ({
-                  onClick: () => setSelectedKpiId(record.id),
-                  className: "cursor-pointer group",
-                })}
-                locale={{
-                  emptyText: (
-                    <Empty
-                      image={<div className="w-16 h-16 rounded-full bg-slate-50 flex items-center justify-center mx-auto mb-4 border border-slate-100"><TrendingUp className="text-slate-300" size={28} /></div>}
-                      description={
-                        <div className="flex flex-col gap-1">
-                          <span className="text-slate-700 font-medium text-sm">No KPIs available</span>
-                          <span className="text-slate-400 text-[13px]">No KPI records matched your current search.</span>
-                        </div>
-                      }
-                    />
-                  ),
-                }}
-              />
+              <div className="w-full overflow-x-auto">
+                <Table<CatalogKpi>
+                  dataSource={filteredKpis}
+                  columns={columns}
+                  rowKey="id"
+                  tableLayout="fixed"
+                  scroll={{ x: 1550 }}
+                  loading={{
+                    spinning: isLoading,
+                    indicator: <Spin indicator={<RefreshCw className="animate-spin text-blue-600" size={24} />} />,
+                  }}
+                  pagination={{
+                    pageSize: 50,
+                    hideOnSinglePage: true,
+                    className: "px-6 py-4 border-t border-slate-100 !mb-0 bg-white",
+                  }}
+                  className="custom-explore-table"
+                  onRow={(record) => ({
+                    onClick: () => setSelectedKpiId(record.id),
+                    className: "cursor-pointer group",
+                  })}
+                  locale={{
+                    emptyText: (
+                      <Empty
+                        image={<div className="w-16 h-16 rounded-full bg-slate-50 flex items-center justify-center mx-auto mb-4 border border-slate-100"><TrendingUp className="text-slate-300" size={28} /></div>}
+                        description={
+                          <div className="flex flex-col gap-1">
+                            <span className="text-slate-700 font-medium text-sm">No KPIs available</span>
+                            <span className="text-slate-400 text-[13px]">No KPI records matched your current search.</span>
+                          </div>
+                        }
+                      />
+                    ),
+                  }}
+                />
+              </div>
             )}
           </div>
         </div>

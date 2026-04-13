@@ -284,7 +284,7 @@ export function TableDetailView({
           <div className="flex gap-8 mt-2">
             {[
               { id: "columns", label: "Columns", icon: Info, count: tableDetail?.columns?.length },
-              ...(enableDataPreview ? [{ id: "data-preview", label: "Data Preview", icon: Database }] : []),
+              ...(enableDataPreview ? [{ id: "data-preview", label: "Sample Data", icon: Database }] : []),
               { id: "activity", label: "Activity Feeds", icon: History },
               { id: "contract", label: "Contract", icon: FileText },
               { id: "custom", label: "Settings", icon: Settings2 },
@@ -370,7 +370,7 @@ export function TableDetailView({
                 <div className="flex flex-wrap items-center gap-3">
                   <div className="flex items-center gap-2 text-[12px] font-semibold uppercase tracking-wider text-slate-500">
                     <Filter size={14} className="text-slate-400" />
-                    Data Preview
+                    Sample Data
                   </div>
                   <Select
                     allowClear
