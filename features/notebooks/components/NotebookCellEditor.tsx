@@ -152,12 +152,25 @@ function toSourceLines(value: string) {
   );
 }
 
+function createNotebookCellUiId() {
+  const cryptoApi =
+    typeof globalThis !== "undefined" && "crypto" in globalThis
+      ? globalThis.crypto
+      : undefined;
+
+  if (cryptoApi && typeof cryptoApi.randomUUID === "function") {
+    return cryptoApi.randomUUID();
+  }
+
+  return `cell-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
 function createCell(cellType: "code" | "markdown"): EditableNotebookCell {
   if (cellType === "markdown") {
     return {
       cell_type: "markdown",
       metadata: {
-        [NOTEBOOK_CELL_UI_ID_KEY]: crypto.randomUUID(),
+        [NOTEBOOK_CELL_UI_ID_KEY]: createNotebookCellUiId(),
       },
       source: ["# New Section\n", "Add your notes here.\n"],
     };
@@ -167,7 +180,7 @@ function createCell(cellType: "code" | "markdown"): EditableNotebookCell {
     cell_type: "code",
     execution_count: null,
     metadata: {
-      [NOTEBOOK_CELL_UI_ID_KEY]: crypto.randomUUID(),
+      [NOTEBOOK_CELL_UI_ID_KEY]: createNotebookCellUiId(),
     },
     outputs: [],
     source: ["# Write code here\n"],
@@ -813,7 +826,7 @@ export function NotebookCellEditor({
       const clonedCell = JSON.parse(JSON.stringify(sourceCell)) as EditableNotebookCell;
       clonedCell.metadata = {
         ...(clonedCell.metadata || {}),
-        [NOTEBOOK_CELL_UI_ID_KEY]: crypto.randomUUID(),
+        [NOTEBOOK_CELL_UI_ID_KEY]: createNotebookCellUiId(),
       };
       const nextCells = [...cells];
       nextCells.splice(index + 1, 0, clonedCell);
