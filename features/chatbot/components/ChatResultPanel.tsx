@@ -16,7 +16,13 @@ interface ChatResultPanelProps {
   chartOptions: ChatVisualizationConfig[];
   chartPrompt: string | null;
   selectedChartType?: string | null;
-  onSelectChartType?: (type: string) => void;
+  onSelectChartType?: (config: {
+    type: string;
+    x?: string;
+    y?: string;
+    series?: string[];
+    columns?: string[];
+  }) => void;
   isSavingChart?: boolean;
 }
 

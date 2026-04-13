@@ -241,7 +241,13 @@ export const chatbotService = {
   async visualizeMessage(
     sessionId: string,
     messageId: string,
-    payload: { type: string },
+    payload: {
+      chart_type: string;
+      x?: string;
+      y?: string;
+      series?: string[];
+      columns?: string[];
+    },
   ) {
     const response = await api.post<AskChatResponse>(
       `/chat/sessions/${sessionId}/messages/${messageId}/visualize`,

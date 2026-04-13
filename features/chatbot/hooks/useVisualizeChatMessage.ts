@@ -7,13 +7,32 @@ import { CHAT_SESSIONS_QUERY_KEY } from "@/features/chatbot/hooks/useChatSession
 
 export function useVisualizeChatMessage(
   sessionId?: string,
-  messageId?: string | null,
 ) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (payload: { type: string }) =>
-      chatbotService.visualizeMessage(sessionId as string, messageId as string, payload),
+    mutationFn: (payload: {
+      messageId: string;
+      type: string;
+      x?: string;
+      y?: string;
+      series?: string[];
+      columns?: string[];
+    }) => {
+      const { messageId, ...visualizationPayload } = payload;
+
+      return chatbotService.visualizeMessage(
+        sessionId as string,
+        messageId,
+        {
+          chart_type: visualizationPayload.type,
+          x: visualizationPayload.x,
+          y: visualizationPayload.y,
+          series: visualizationPayload.series,
+          columns: visualizationPayload.columns,
+        },
+      );
+    },
     onSuccess: async () => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: CHAT_SESSIONS_QUERY_KEY }),

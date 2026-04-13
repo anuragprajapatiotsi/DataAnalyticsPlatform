@@ -18,9 +18,14 @@ import { ChatSessionList } from "@/features/chatbot/components/ChatSessionList";
 import { useChatSessions } from "@/features/chatbot/hooks/useChatSessions";
 import { useChatSessionDetail } from "@/features/chatbot/hooks/useChatSessionDetail";
 import { useAskChat } from "@/features/chatbot/hooks/useAskChat";
+import { useVisualizeChatMessage } from "@/features/chatbot/hooks/useVisualizeChatMessage";
 import { chatbotService } from "@/features/chatbot/services/chatbot.service";
 import { Button } from "@/shared/components/ui/button";
-import type { AskChatResponse, ChatResultPreview } from "@/features/chatbot/types";
+import type {
+  AskChatResponse,
+  ChatResultPreview,
+  ChatVisualizationConfig,
+} from "@/features/chatbot/types";
 import type { ChatConversationMessage } from "@/features/chatbot/components/ChatConversation";
 
 function getMutationErrorMessage(error: unknown, fallback: string) {
@@ -49,6 +54,7 @@ export default function ChatbotSessionPage() {
   const [streamingAssistantText, setStreamingAssistantText] = React.useState("");
   const [isStreamingReply, setIsStreamingReply] = React.useState(false);
   const [isSessionDrawerOpen, setIsSessionDrawerOpen] = React.useState(false);
+  const [visualizingMessageId, setVisualizingMessageId] = React.useState<string | null>(null);
   const [optimisticMessages, setOptimisticMessages] = React.useState<
     ChatConversationMessage[]
   >([]);
@@ -75,6 +81,7 @@ export default function ChatbotSessionPage() {
   });
 
   const askChatMutation = useAskChat(sessionId);
+  const visualizeChatMutation = useVisualizeChatMessage(sessionId);
 
   const latestDebugMessageId = React.useMemo(
     () =>
@@ -95,16 +102,44 @@ export default function ChatbotSessionPage() {
 
     const hydratedSessionMessages = (session?.messages || []).map((message) => {
       const metadataPreview = message.message_metadata?.result_preview;
+      const metadataVisualization = message.message_metadata?.visualization;
+      const metadataChartOptions = message.message_metadata?.chart_options;
+      const metadataChartPrompt = message.message_metadata?.chart_prompt;
       const resultPreview =
         message.id === latestAssistantId && latestAskResponse?.result_preview
           ? latestAskResponse.result_preview
           : metadataPreview && typeof metadataPreview === "object"
             ? (metadataPreview as ChatResultPreview)
             : null;
+      const visualization =
+        message.id === latestAssistantId && latestAskResponse?.visualization
+          ? latestAskResponse.visualization
+          : message.visualization ||
+            (metadataVisualization && typeof metadataVisualization === "object"
+              ? (metadataVisualization as ChatVisualizationConfig)
+              : null);
+      const chartOptions =
+        message.id === latestAssistantId && Array.isArray(latestAskResponse?.chart_options)
+          ? latestAskResponse.chart_options
+          : Array.isArray(metadataChartOptions)
+            ? metadataChartOptions.filter(
+                (item): item is ChatVisualizationConfig =>
+                  Boolean(item) && typeof item === "object",
+              )
+            : [];
+      const chartPrompt =
+        message.id === latestAssistantId && typeof latestAskResponse?.chart_prompt === "string"
+          ? latestAskResponse.chart_prompt
+          : typeof metadataChartPrompt === "string"
+            ? metadataChartPrompt
+            : null;
 
       return {
         ...message,
         resultPreview,
+        visualization,
+        chartOptions,
+        chartPrompt,
       };
     });
 
@@ -232,9 +267,47 @@ export default function ChatbotSessionPage() {
     setLatestAskResponse(null);
     setStreamingAssistantText("");
     setIsStreamingReply(false);
+    setVisualizingMessageId(null);
     setOptimisticMessages([]);
     setIsDebugDrawerOpen(false);
   }, [sessionId]);
+
+  const handleSelectVisualization = React.useCallback(
+    (
+      messageId: string,
+      payload: {
+        type: string;
+        x?: string;
+        y?: string;
+        series?: string[];
+        columns?: string[];
+      },
+    ) => {
+      setVisualizingMessageId(messageId);
+      visualizeChatMutation.mutate(
+        {
+          messageId,
+          ...payload,
+        },
+        {
+          onSuccess: (response) => {
+            setLatestAskResponse(response);
+            message.success("Visualization updated.");
+          },
+          onError: (error: unknown) => {
+            message.error(
+              getMutationErrorMessage(error, "Failed to update visualization."),
+            );
+          },
+          onSettled: async () => {
+            setVisualizingMessageId(null);
+            await Promise.all([refetchSession(), refetchSessions()]);
+          },
+        },
+      );
+    },
+    [refetchSession, refetchSessions, visualizeChatMutation],
+  );
 
   const renderSessionList = (isDrawer = false) => (
     <ChatSessionList
@@ -279,6 +352,8 @@ export default function ChatbotSessionPage() {
         }
         showDebugAction={Boolean(latestDebugMessageId)}
         onOpenDebug={() => setIsDebugDrawerOpen(true)}
+        onSelectVisualization={handleSelectVisualization}
+        visualizingMessageId={visualizingMessageId}
       />
     </div>
   );
