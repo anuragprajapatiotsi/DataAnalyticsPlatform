@@ -1,9 +1,12 @@
 "use client";
 
+import React from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Select } from "antd";
 import { ChevronDown, Menu, Search, MessageSquareMore, UserCircle, Settings, LogOut } from "lucide-react";
 
+import { ChatQuickDrawer } from "@/features/chatbot/components/ChatQuickDrawer";
 import { NotificationMenu } from "@/features/notifications/components/notification-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/shared/components/ui/avatar";
 import { Button } from "@/shared/components/ui/button";
@@ -18,6 +21,8 @@ import { Input } from "@/shared/components/ui/input";
 import { useAuth } from "@/shared/hooks/use-auth";
 
 export function Topbar() {
+  const pathname = usePathname();
+  const [isChatQuickDrawerOpen, setIsChatQuickDrawerOpen] = React.useState(false);
   const {
     user,
     organizations,
@@ -79,7 +84,12 @@ export function Topbar() {
         <Button
           variant="ghost"
           size="sm"
-          className="flex items-center gap-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+          className={`flex items-center gap-2 ${
+            pathname.startsWith("/chatbot")
+              ? "bg-blue-50 text-blue-700 hover:bg-blue-100 hover:text-blue-800"
+              : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+          }`}
+          onClick={() => setIsChatQuickDrawerOpen(true)}
         >
           <MessageSquareMore className="h-4 w-4" />
           <span className="font-medium">Chatbot</span>
@@ -148,6 +158,11 @@ export function Topbar() {
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
+
+      <ChatQuickDrawer
+        open={isChatQuickDrawerOpen}
+        onClose={() => setIsChatQuickDrawerOpen(false)}
+      />
 
       <style jsx global>{`
         .org-switcher-select .ant-select-selector {

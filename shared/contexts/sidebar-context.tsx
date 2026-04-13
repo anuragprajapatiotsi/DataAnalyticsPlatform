@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 
 interface SidebarContextType {
@@ -14,21 +14,47 @@ const SidebarContext = createContext<SidebarContextType | undefined>(undefined);
 export function SidebarProvider({ children }: { children: React.ReactNode }) {
   const [collapsed, setCollapsed] = useState(false);
   const pathname = usePathname();
-  const [lastPathname, setLastPathname] = useState<string | null>(null);
+  const previousAutoCollapseRef = useRef<boolean | null>(null);
+  const wasAutoCollapsedRef = useRef(false);
+  const pendingFrameRef = useRef<number | null>(null);
 
   useEffect(() => {
-    // Only trigger collapse/expand when crossing the boundary of the /explore scope
-    const isExplore = pathname?.startsWith("/explore") || pathname?.startsWith("/sql-editor");
-    const wasExplore = lastPathname?.startsWith("/explore");
+    const isExploreOrSql =
+      pathname?.startsWith("/explore") || pathname?.startsWith("/sql-editor");
+    const isChatbotDetail = /^\/chatbot\/[^/]+$/.test(pathname || "");
+    const shouldAutoCollapse = Boolean(isExploreOrSql || isChatbotDetail);
 
-    if (isExplore && !wasExplore) {
-      setCollapsed(true);
-    } else if (!isExplore && wasExplore) {
-      setCollapsed(false);
+    if (pendingFrameRef.current !== null) {
+      cancelAnimationFrame(pendingFrameRef.current);
+      pendingFrameRef.current = null;
     }
-    
-    setLastPathname(pathname);
-  }, [pathname, lastPathname]);
+
+    if (shouldAutoCollapse && !wasAutoCollapsedRef.current) {
+      previousAutoCollapseRef.current = collapsed;
+      pendingFrameRef.current = requestAnimationFrame(() => {
+        setCollapsed(true);
+        pendingFrameRef.current = null;
+      });
+      wasAutoCollapsedRef.current = true;
+    } else if (!shouldAutoCollapse && wasAutoCollapsedRef.current) {
+      if (previousAutoCollapseRef.current !== null) {
+        const nextCollapsedState = previousAutoCollapseRef.current;
+        pendingFrameRef.current = requestAnimationFrame(() => {
+          setCollapsed(nextCollapsedState);
+          pendingFrameRef.current = null;
+        });
+      }
+      previousAutoCollapseRef.current = null;
+      wasAutoCollapsedRef.current = false;
+    }
+
+    return () => {
+      if (pendingFrameRef.current !== null) {
+        cancelAnimationFrame(pendingFrameRef.current);
+        pendingFrameRef.current = null;
+      }
+    };
+  }, [collapsed, pathname]);
 
   const toggleSidebar = () => {
     setCollapsed((prev) => !prev);
