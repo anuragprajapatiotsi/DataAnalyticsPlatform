@@ -139,7 +139,7 @@ export function ResultPanel() {
                 : "bg-slate-100 text-slate-600 hover:bg-slate-200",
             )}
           >
-            Saved Query
+            Save Query
           </button>
           <button
             type="button"
@@ -177,7 +177,7 @@ export function ResultPanel() {
                 No visualization available yet
               </p>
               <p className="mt-1 text-xs text-slate-400">
-                Switch back to Saved Query to inspect rows and pagination.
+                Switch back to Save Query to inspect rows and pagination.
               </p>
             </div>
           </div>

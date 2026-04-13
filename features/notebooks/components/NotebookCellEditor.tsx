@@ -129,6 +129,10 @@ function parseNotebookContent(contentValue: string): NotebookContent | null {
   }
 }
 
+function serializeNotebookContent(content: NotebookContent) {
+  return JSON.stringify(content, null, 2);
+}
+
 function normalizeSource(source: EditableNotebookCell["source"]) {
   if (Array.isArray(source)) {
     return source.join("");
@@ -220,6 +224,330 @@ function getCellUiId(cell: EditableNotebookCell, fallbackIndex: number) {
   return `cell-${fallbackIndex}`;
 }
 
+interface NotebookCellCardProps {
+  cell: EditableNotebookCell;
+  index: number;
+  totalCells: number;
+  cellUiId: string;
+  isMatched: boolean;
+  isActive: boolean;
+  isMarkdown: boolean;
+  isMixedProfileNotebook: boolean;
+  notebookDefaultExecutionProfile: NotebookExecutionProfile;
+  executingCellIndex?: number | null;
+  batchExecutingCellIndex?: number | null;
+  isBatchExecuting: boolean;
+  collapsedInput: boolean;
+  collapsedOutput: boolean;
+  onSetActiveCellId: (value: string) => void;
+  onMoveCell: (index: number, direction: -1 | 1) => void;
+  onToggleInputCollapse: (index: number) => void;
+  onToggleOutputCollapse: (index: number) => void;
+  onDuplicateCell: (index: number) => void;
+  onRemoveCell: (index: number) => void;
+  onInsertCell: (
+    index: number,
+    position: "above" | "below",
+    cellType: "code" | "markdown",
+  ) => void;
+  onUpdateCellType: (index: number, value: string) => void;
+  onUpdateCellProfile: (index: number, value: NotebookExecutionProfile) => void;
+  onCommitCellSource: (index: number, nextValue: string) => void;
+  onExecuteCell?: (
+    cellIndex: number,
+    cellCode: string,
+    cellType: string,
+    executionProfile?: NotebookExecutionProfile,
+  ) => Promise<void>;
+  onRunFromCell?: (cellIndex: number) => Promise<void>;
+}
+
+const NotebookCellCard = React.memo(function NotebookCellCard({
+  cell,
+  index,
+  totalCells,
+  cellUiId,
+  isMatched,
+  isActive,
+  isMarkdown,
+  isMixedProfileNotebook,
+  notebookDefaultExecutionProfile,
+  executingCellIndex,
+  batchExecutingCellIndex,
+  isBatchExecuting,
+  collapsedInput,
+  collapsedOutput,
+  onSetActiveCellId,
+  onMoveCell,
+  onToggleInputCollapse,
+  onToggleOutputCollapse,
+  onDuplicateCell,
+  onRemoveCell,
+  onInsertCell,
+  onUpdateCellType,
+  onUpdateCellProfile,
+  onCommitCellSource,
+  onExecuteCell,
+  onRunFromCell,
+}: NotebookCellCardProps) {
+  const hasOutputs = !isMarkdown && Array.isArray(cell.outputs) && cell.outputs.length > 0;
+  const sourceValue = React.useMemo(() => normalizeSource(cell.source), [cell.source]);
+  const executionProfile = React.useMemo(
+    () => getCellExecutionProfile(cell, notebookDefaultExecutionProfile),
+    [cell, notebookDefaultExecutionProfile],
+  );
+  const [draftSource, setDraftSource] = React.useState(sourceValue);
+
+  React.useEffect(() => {
+    setDraftSource(sourceValue);
+  }, [sourceValue]);
+
+  const flushDraftSource = React.useCallback(() => {
+    if (draftSource !== sourceValue) {
+      onCommitCellSource(index, draftSource);
+    }
+  }, [draftSource, index, onCommitCellSource, sourceValue]);
+
+  return (
+    <div
+      id={`notebook-cell-${index}`}
+      data-cell-editor-id={cellUiId}
+      className={[
+        "rounded-2xl border bg-white p-4 shadow-sm",
+        isMatched
+          ? "border-emerald-300 ring-2 ring-emerald-100"
+          : isActive
+            ? "border-blue-300 ring-2 ring-blue-100"
+            : "border-slate-200",
+      ].join(" ")}
+      onClick={() => onSetActiveCellId(cellUiId)}
+    >
+      <div className="mb-3 flex flex-wrap items-center gap-2">
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-7 border-blue-200 text-blue-700 hover:bg-blue-50"
+          onClick={() => onInsertCell(index, "above", "code")}
+          disabled={isBatchExecuting}
+        >
+          <Plus size={12} className="mr-1" />
+          Code Above
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-7 border-slate-300 text-slate-700 hover:bg-slate-100"
+          onClick={() => onInsertCell(index, "above", "markdown")}
+          disabled={isBatchExecuting}
+        >
+          <Plus size={12} className="mr-1" />
+          Markdown Above
+        </Button>
+      </div>
+
+      <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
+        <div className="flex min-w-0 items-center gap-2">
+          <div
+            className={[
+              "flex h-8 w-8 items-center justify-center rounded-lg",
+              isMarkdown ? "bg-slate-100 text-slate-700" : "bg-blue-50 text-blue-600",
+            ].join(" ")}
+          >
+            {isMarkdown ? <FileText size={15} /> : <FileCode2 size={15} />}
+          </div>
+          <div>
+            <div className="text-sm font-semibold text-slate-900">Cell {index + 1}</div>
+            <div className="text-xs text-slate-500">{isMarkdown ? "Markdown" : "Code"}</div>
+          </div>
+        </div>
+
+        <div className="flex max-w-full flex-wrap items-center justify-end gap-2">
+          <Select
+            size="small"
+            value={cell.cell_type || "code"}
+            className="min-w-[120px] sm:min-w-[140px]"
+            options={[
+              { label: "Code", value: "code" },
+              { label: "Markdown", value: "markdown" },
+            ]}
+            onChange={(value) => onUpdateCellType(index, value)}
+            disabled={isBatchExecuting}
+          />
+          {!isMarkdown ? (
+            isMixedProfileNotebook ? (
+              <Select
+                size="small"
+                value={executionProfile}
+                className="min-w-[128px] sm:min-w-[150px]"
+                options={NOTEBOOK_PROFILE_OPTIONS}
+                onChange={(value) => onUpdateCellProfile(index, value)}
+                disabled={isBatchExecuting}
+              />
+            ) : (
+              <Tag className="m-0 max-w-full rounded-full border-violet-200 bg-violet-50 px-3 py-1 text-[11px] font-medium text-violet-700">
+                {NOTEBOOK_PROFILE_OPTIONS.find(
+                  (option) => option.value === notebookDefaultExecutionProfile,
+                )?.label || notebookDefaultExecutionProfile}
+              </Tag>
+            )
+          ) : null}
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8 border-slate-300 text-slate-700 hover:bg-slate-100"
+            onClick={() => onMoveCell(index, -1)}
+            disabled={index === 0 || isBatchExecuting}
+          >
+            <ArrowUp size={13} />
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8 border-slate-300 text-slate-700 hover:bg-slate-100"
+            onClick={() => onMoveCell(index, 1)}
+            disabled={index === totalCells - 1 || isBatchExecuting}
+          >
+            <ArrowDown size={13} />
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8 border-slate-300 text-slate-700 hover:bg-slate-100"
+            onClick={() => onToggleInputCollapse(index)}
+            disabled={isBatchExecuting}
+          >
+            <EyeOff size={13} />
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8 border-slate-300 text-slate-700 hover:bg-slate-100"
+            onClick={() => onDuplicateCell(index)}
+            disabled={isBatchExecuting}
+          >
+            <Copy size={13} />
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8 border-red-200 text-red-600 hover:bg-red-50"
+            onClick={() => onRemoveCell(index)}
+            disabled={isBatchExecuting}
+          >
+            <Trash2 size={13} />
+          </Button>
+          {!isMarkdown ? (
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8 border-blue-200 text-blue-700 hover:bg-blue-50"
+              onClick={() => {
+                flushDraftSource();
+                void onExecuteCell?.(
+                  index,
+                  draftSource,
+                  cell.cell_type || "code",
+                  executionProfile,
+                );
+              }}
+              disabled={!onExecuteCell || isBatchExecuting || executingCellIndex === index}
+            >
+              <Play size={13} className="mr-1" />
+              {executingCellIndex === index ? "Running..." : "Run"}
+            </Button>
+          ) : null}
+          {!isMarkdown ? (
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8 border-emerald-200 text-emerald-700 hover:bg-emerald-50"
+              onClick={() => {
+                flushDraftSource();
+                void onRunFromCell?.(index);
+              }}
+              disabled={!onRunFromCell || isBatchExecuting}
+            >
+              <Play size={13} className="mr-1" />
+              {isBatchExecuting && batchExecutingCellIndex === index
+                ? "Running From Here..."
+                : "Run From Here"}
+            </Button>
+          ) : null}
+        </div>
+      </div>
+
+      {!collapsedInput ? (
+        <Input.TextArea
+          value={draftSource}
+          onChange={(event) => {
+            setDraftSource(event.target.value);
+          }}
+          onBlur={flushDraftSource}
+          onFocus={() => onSetActiveCellId(cellUiId)}
+          autoSize={{ minRows: isMarkdown ? 5 : 8, maxRows: 18 }}
+          className="font-mono text-xs"
+          disabled={isBatchExecuting}
+          placeholder={isMarkdown ? "Write markdown content for this cell" : "Write code for this cell"}
+        />
+      ) : (
+        <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-3 text-xs text-slate-500">
+          Input hidden. Expand the cell to keep editing.
+        </div>
+      )}
+      {isMarkdown ? (
+        <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-4">
+          <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+            Preview
+          </div>
+          <NotebookMarkdownPreview value={draftSource} />
+        </div>
+      ) : null}
+      {hasOutputs ? (
+        <div className="mt-4">
+          <button
+            type="button"
+            className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-500"
+            onClick={() => onToggleOutputCollapse(index)}
+          >
+            {collapsedOutput ? (
+              <ChevronRight size={14} className="text-slate-400" />
+            ) : (
+              <ChevronDown size={14} className="text-slate-400" />
+            )}
+            {collapsedOutput ? "Show Output" : "Hide Output"}
+          </button>
+          {!collapsedOutput ? <NotebookCellOutput outputs={cell.outputs} /> : null}
+        </div>
+      ) : !isMarkdown ? (
+        <NotebookCellOutput outputs={cell.outputs} />
+      ) : null}
+
+      <div className="mt-4 flex flex-wrap items-center gap-2">
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-7 border-blue-200 text-blue-700 hover:bg-blue-50"
+          onClick={() => onInsertCell(index, "below", "code")}
+          disabled={isBatchExecuting}
+        >
+          <Plus size={12} className="mr-1" />
+          Code Below
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-7 border-slate-300 text-slate-700 hover:bg-slate-100"
+          onClick={() => onInsertCell(index, "below", "markdown")}
+          disabled={isBatchExecuting}
+        >
+          <Plus size={12} className="mr-1" />
+          Markdown Below
+        </Button>
+      </div>
+    </div>
+  );
+});
+
 export function NotebookCellEditor({
   notebookId,
   contentValue,
@@ -239,10 +567,21 @@ export function NotebookCellEditor({
   const [searchValue, setSearchValue] = React.useState("");
   const [isOutlineCollapsed, setIsOutlineCollapsed] = React.useState(false);
   const [activeCellId, setActiveCellId] = React.useState<string | null>(null);
-  const parsedContent = React.useMemo(
-    () => parseNotebookContent(contentValue),
-    [contentValue],
+  const [editorContent, setEditorContent] = React.useState<NotebookContent | null>(() =>
+    parseNotebookContent(contentValue),
   );
+  const syncTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastSyncedContentValueRef = React.useRef(contentValue);
+  const pendingFocusCellIdRef = React.useRef<string | null>(null);
+
+  React.useEffect(() => {
+    if (contentValue === lastSyncedContentValueRef.current) {
+      return;
+    }
+
+    setEditorContent(parseNotebookContent(contentValue));
+    lastSyncedContentValueRef.current = contentValue;
+  }, [contentValue]);
 
   React.useEffect(() => {
     const savedState = readNotebookCellUiState(notebookId);
@@ -257,8 +596,8 @@ export function NotebookCellEditor({
   }, [notebookId]);
 
   const cells = React.useMemo<EditableNotebookCell[]>(
-    () => (Array.isArray(parsedContent?.cells) ? (parsedContent?.cells as EditableNotebookCell[]) : []),
-    [parsedContent],
+    () => (Array.isArray(editorContent?.cells) ? (editorContent.cells as EditableNotebookCell[]) : []),
+    [editorContent],
   );
   const normalizedSearchValue = searchValue.trim().toLowerCase();
   const matchedCellIndexes = React.useMemo(
@@ -296,13 +635,16 @@ export function NotebookCellEditor({
   const isMixedProfileNotebook = notebookExecutionMode === "mixed_profile";
 
   React.useEffect(() => {
-    if (!activeCellId || !cellUiIds.includes(activeCellId)) {
+    const nextFocusedCellId = pendingFocusCellIdRef.current;
+
+    if (!nextFocusedCellId || !cellUiIds.includes(nextFocusedCellId)) {
       return;
     }
 
+    pendingFocusCellIdRef.current = null;
     const timer = window.setTimeout(() => {
       const textarea = document.querySelector<HTMLTextAreaElement>(
-        `[data-cell-editor-id="${activeCellId}"] textarea`,
+        `[data-cell-editor-id="${nextFocusedCellId}"] textarea`,
       );
       textarea?.focus();
       const valueLength = textarea?.value.length || 0;
@@ -310,7 +652,7 @@ export function NotebookCellEditor({
     }, 0);
 
     return () => window.clearTimeout(timer);
-  }, [activeCellId, cellUiIds, contentValue]);
+  }, [cellUiIds]);
 
   React.useEffect(() => {
     if (!notebookId) {
@@ -331,20 +673,54 @@ export function NotebookCellEditor({
     isOutlineCollapsed,
   ]);
 
+  const syncEditorContentToParent = React.useCallback(
+    (nextContent: NotebookContent) => {
+      const nextContentValue = serializeNotebookContent(nextContent);
+      if (nextContentValue === lastSyncedContentValueRef.current) {
+        return;
+      }
+
+      lastSyncedContentValueRef.current = nextContentValue;
+      onChange(nextContentValue);
+    },
+    [onChange],
+  );
+
+  React.useEffect(() => {
+    if (!editorContent) {
+      return;
+    }
+
+    if (syncTimeoutRef.current) {
+      clearTimeout(syncTimeoutRef.current);
+    }
+
+    syncTimeoutRef.current = setTimeout(() => {
+      syncEditorContentToParent(editorContent);
+    }, 400);
+
+    return () => {
+      if (syncTimeoutRef.current) {
+        clearTimeout(syncTimeoutRef.current);
+        syncTimeoutRef.current = null;
+      }
+    };
+  }, [editorContent, syncEditorContentToParent]);
+
   const commitCells = React.useCallback(
     (nextCells: EditableNotebookCell[]) => {
-      if (!parsedContent) {
+      if (!editorContent) {
         return;
       }
 
       const nextContent: NotebookContent = {
-        ...parsedContent,
+        ...editorContent,
         cells: nextCells,
       };
 
-      onChange(JSON.stringify(nextContent, null, 2));
+      setEditorContent(nextContent);
     },
-    [onChange, parsedContent],
+    [editorContent],
   );
 
   const updateCell = React.useCallback(
@@ -355,6 +731,53 @@ export function NotebookCellEditor({
       commitCells(nextCells);
     },
     [cells, commitCells],
+  );
+
+  const updateCellType = React.useCallback(
+    (index: number, value: string) => {
+      updateCell(index, (currentCell) => ({
+        ...currentCell,
+        cell_type: value,
+        ...(value === "code"
+          ? {
+              execution_count:
+                currentCell.execution_count === undefined
+                  ? null
+                  : currentCell.execution_count,
+              outputs: Array.isArray(currentCell.outputs)
+                ? currentCell.outputs
+                : [],
+            }
+          : {
+              execution_count: undefined,
+              outputs: undefined,
+            }),
+      }));
+    },
+    [updateCell],
+  );
+
+  const updateCellExecutionProfile = React.useCallback(
+    (index: number, value: NotebookExecutionProfile) => {
+      updateCell(index, (currentCell) => ({
+        ...currentCell,
+        metadata: {
+          ...(currentCell.metadata || {}),
+          execution_profile: value,
+        },
+      }));
+    },
+    [updateCell],
+  );
+
+  const commitCellSource = React.useCallback(
+    (index: number, nextValue: string) => {
+      updateCell(index, (currentCell) => ({
+        ...currentCell,
+        source: toSourceLines(nextValue),
+      }));
+    },
+    [updateCell],
   );
 
   const moveCell = React.useCallback(
@@ -401,7 +824,9 @@ export function NotebookCellEditor({
         previous.map((item) => (item > index ? item + 1 : item)),
       );
       commitCells(nextCells);
-      setActiveCellId(getCellUiId(clonedCell, index + 1));
+      const nextCellUiId = getCellUiId(clonedCell, index + 1);
+      pendingFocusCellIdRef.current = nextCellUiId;
+      setActiveCellId(nextCellUiId);
     },
     [cells, commitCells],
   );
@@ -413,7 +838,9 @@ export function NotebookCellEditor({
         previous.filter((item) => item !== cells.length),
       );
       commitCells([...cells, nextCell]);
-      setActiveCellId(getCellUiId(nextCell, cells.length));
+      const nextCellUiId = getCellUiId(nextCell, cells.length);
+      pendingFocusCellIdRef.current = nextCellUiId;
+      setActiveCellId(nextCellUiId);
     },
     [cells, commitCells],
   );
@@ -433,7 +860,9 @@ export function NotebookCellEditor({
         previous.map((item) => (item >= insertIndex ? item + 1 : item)),
       );
       commitCells(nextCells);
-      setActiveCellId(getCellUiId(nextCell, insertIndex));
+      const nextCellUiId = getCellUiId(nextCell, insertIndex);
+      pendingFocusCellIdRef.current = nextCellUiId;
+      setActiveCellId(nextCellUiId);
     },
     [cells, commitCells],
   );
@@ -454,7 +883,7 @@ export function NotebookCellEditor({
     );
   }, []);
 
-  if (!parsedContent) {
+  if (!editorContent) {
     return (
       <Alert
         type="warning"
@@ -585,297 +1014,40 @@ export function NotebookCellEditor({
           </aside>
 
           <div className="space-y-4">
-          {cells.map((cell, index) => {
-            const isMarkdown = cell.cell_type === "markdown";
-            const hasOutputs = !isMarkdown && Array.isArray(cell.outputs) && cell.outputs.length > 0;
-            const isOutputCollapsed = collapsedOutputIndexes.includes(index);
-            const isInputCollapsed = collapsedInputIndexes.includes(index);
-            const isMatched =
-              normalizedSearchValue.length > 0 &&
-              normalizeSource(cell.source).toLowerCase().includes(normalizedSearchValue);
-
-            return (
-              <div
-                key={cellUiIds[index]}
-                id={`notebook-cell-${index}`}
-                data-cell-editor-id={cellUiIds[index]}
-                className={[
-                  "rounded-2xl border bg-white p-4 shadow-sm",
-                  isMatched
-                    ? "border-emerald-300 ring-2 ring-emerald-100"
-                    : activeCellId === cellUiIds[index]
-                      ? "border-blue-300 ring-2 ring-blue-100"
-                    : "border-slate-200",
-                ].join(" ")}
-                onClick={() => setActiveCellId(cellUiIds[index])}
-              >
-                <div className="mb-3 flex flex-wrap items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-7 border-blue-200 text-blue-700 hover:bg-blue-50"
-                    onClick={() => insertCell(index, "above", "code")}
-                    disabled={isBatchExecuting}
-                  >
-                    <Plus size={12} className="mr-1" />
-                    Code Above
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-7 border-slate-300 text-slate-700 hover:bg-slate-100"
-                    onClick={() => insertCell(index, "above", "markdown")}
-                    disabled={isBatchExecuting}
-                  >
-                    <Plus size={12} className="mr-1" />
-                    Markdown Above
-                  </Button>
-                </div>
-
-                <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
-                  <div className="flex min-w-0 items-center gap-2">
-                    <div
-                      className={[
-                        "flex h-8 w-8 items-center justify-center rounded-lg",
-                        isMarkdown
-                          ? "bg-slate-100 text-slate-700"
-                          : "bg-blue-50 text-blue-600",
-                      ].join(" ")}
-                    >
-                      {isMarkdown ? <FileText size={15} /> : <FileCode2 size={15} />}
-                    </div>
-                    <div>
-                      <div className="text-sm font-semibold text-slate-900">
-                        Cell {index + 1}
-                      </div>
-                      <div className="text-xs text-slate-500">
-                        {isMarkdown ? "Markdown" : "Code"}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex max-w-full flex-wrap items-center justify-end gap-2">
-                    <Select
-                      size="small"
-                      value={cell.cell_type || "code"}
-                      className="min-w-[120px] sm:min-w-[140px]"
-                      options={[
-                        { label: "Code", value: "code" },
-                        { label: "Markdown", value: "markdown" },
-                      ]}
-                      onChange={(value) =>
-                        updateCell(index, (currentCell) => ({
-                          ...currentCell,
-                          cell_type: value,
-                          ...(value === "code"
-                            ? {
-                                execution_count:
-                                  currentCell.execution_count === undefined
-                                    ? null
-                                    : currentCell.execution_count,
-                                outputs: Array.isArray(currentCell.outputs)
-                                  ? currentCell.outputs
-                                  : [],
-                              }
-                            : {
-                                execution_count: undefined,
-                                outputs: undefined,
-                              }),
-                        }))
-                      }
-                      disabled={isBatchExecuting}
-                    />
-                    {!isMarkdown ? (
-                      isMixedProfileNotebook ? (
-                        <Select
-                          size="small"
-                          value={getCellExecutionProfile(cell, notebookDefaultExecutionProfile)}
-                          className="min-w-[128px] sm:min-w-[150px]"
-                          options={NOTEBOOK_PROFILE_OPTIONS}
-                          onChange={(value) =>
-                            updateCell(index, (currentCell) => ({
-                              ...currentCell,
-                              metadata: {
-                                ...(currentCell.metadata || {}),
-                                execution_profile: value,
-                              },
-                            }))
-                          }
-                          disabled={isBatchExecuting}
-                        />
-                      ) : (
-                        <Tag className="m-0 max-w-full rounded-full border-violet-200 bg-violet-50 px-3 py-1 text-[11px] font-medium text-violet-700">
-                          {NOTEBOOK_PROFILE_OPTIONS.find(
-                            (option) => option.value === notebookDefaultExecutionProfile,
-                          )?.label || notebookDefaultExecutionProfile}
-                        </Tag>
-                      )
-                    ) : null}
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-8 border-slate-300 text-slate-700 hover:bg-slate-100"
-                      onClick={() => moveCell(index, -1)}
-                      disabled={index === 0 || isBatchExecuting}
-                    >
-                      <ArrowUp size={13} />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-8 border-slate-300 text-slate-700 hover:bg-slate-100"
-                      onClick={() => moveCell(index, 1)}
-                      disabled={index === cells.length - 1 || isBatchExecuting}
-                    >
-                      <ArrowDown size={13} />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-8 border-slate-300 text-slate-700 hover:bg-slate-100"
-                      onClick={() => toggleInputCollapse(index)}
-                      disabled={isBatchExecuting}
-                    >
-                      <EyeOff size={13} />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-8 border-slate-300 text-slate-700 hover:bg-slate-100"
-                      onClick={() => duplicateCell(index)}
-                      disabled={isBatchExecuting}
-                    >
-                      <Copy size={13} />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-8 border-red-200 text-red-600 hover:bg-red-50"
-                      onClick={() => removeCell(index)}
-                      disabled={isBatchExecuting}
-                    >
-                      <Trash2 size={13} />
-                    </Button>
-                    {!isMarkdown ? (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-8 border-blue-200 text-blue-700 hover:bg-blue-50"
-                        onClick={() =>
-                          onExecuteCell?.(
-                            index,
-                            normalizeSource(cell.source),
-                            cell.cell_type || "code",
-                            getCellExecutionProfile(cell, notebookDefaultExecutionProfile),
-                          )
-                        }
-                        disabled={
-                          !onExecuteCell ||
-                          isBatchExecuting ||
-                          executingCellIndex === index
-                        }
-                      >
-                        <Play size={13} className="mr-1" />
-                        {executingCellIndex === index ? "Running..." : "Run"}
-                      </Button>
-                    ) : null}
-                    {!isMarkdown ? (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-8 border-emerald-200 text-emerald-700 hover:bg-emerald-50"
-                        onClick={() => void onRunFromCell?.(index)}
-                        disabled={
-                          !onRunFromCell ||
-                          isBatchExecuting
-                        }
-                      >
-                        <Play size={13} className="mr-1" />
-                        {isBatchExecuting && batchExecutingCellIndex === index
-                          ? "Running From Here..."
-                          : "Run From Here"}
-                      </Button>
-                    ) : null}
-                  </div>
-                </div>
-
-                {!isInputCollapsed ? (
-                  <Input.TextArea
-                    value={normalizeSource(cell.source)}
-                    onChange={(event) =>
-                      updateCell(index, (currentCell) => ({
-                        ...currentCell,
-                        source: toSourceLines(event.target.value),
-                      }))
-                    }
-                    onFocus={() => setActiveCellId(cellUiIds[index])}
-                    autoSize={{ minRows: isMarkdown ? 5 : 8, maxRows: 18 }}
-                    className="font-mono text-xs"
-                    disabled={isBatchExecuting}
-                    placeholder={
-                      isMarkdown
-                        ? "Write markdown content for this cell"
-                        : "Write code for this cell"
-                    }
-                  />
-                ) : (
-                  <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-3 text-xs text-slate-500">
-                    Input hidden. Expand the cell to keep editing.
-                  </div>
-                )}
-                {isMarkdown ? (
-                  <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-4">
-                    <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
-                      Preview
-                    </div>
-                    <NotebookMarkdownPreview value={normalizeSource(cell.source)} />
-                  </div>
-                ) : null}
-                {hasOutputs ? (
-                  <div className="mt-4">
-                    <button
-                      type="button"
-                      className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-500"
-                      onClick={() => toggleOutputCollapse(index)}
-                    >
-                      {isOutputCollapsed ? (
-                        <ChevronRight size={14} className="text-slate-400" />
-                      ) : (
-                        <ChevronDown size={14} className="text-slate-400" />
-                      )}
-                      {isOutputCollapsed ? "Show Output" : "Hide Output"}
-                    </button>
-                    {!isOutputCollapsed ? <NotebookCellOutput outputs={cell.outputs} /> : null}
-                  </div>
-                ) : !isMarkdown ? (
-                  <NotebookCellOutput outputs={cell.outputs} />
-                ) : null}
-
-                <div className="mt-4 flex flex-wrap items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-7 border-blue-200 text-blue-700 hover:bg-blue-50"
-                    onClick={() => insertCell(index, "below", "code")}
-                    disabled={isBatchExecuting}
-                  >
-                    <Plus size={12} className="mr-1" />
-                    Code Below
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-7 border-slate-300 text-slate-700 hover:bg-slate-100"
-                    onClick={() => insertCell(index, "below", "markdown")}
-                    disabled={isBatchExecuting}
-                  >
-                    <Plus size={12} className="mr-1" />
-                    Markdown Below
-                  </Button>
-                </div>
-              </div>
-            );
-          })}
+          {cells.map((cell, index) => (
+            <NotebookCellCard
+              key={cellUiIds[index]}
+              cell={cell}
+              index={index}
+              totalCells={cells.length}
+              cellUiId={cellUiIds[index]}
+              isMatched={
+                normalizedSearchValue.length > 0 &&
+                normalizeSource(cell.source).toLowerCase().includes(normalizedSearchValue)
+              }
+              isActive={activeCellId === cellUiIds[index]}
+              isMarkdown={cell.cell_type === "markdown"}
+              isMixedProfileNotebook={isMixedProfileNotebook}
+              notebookDefaultExecutionProfile={notebookDefaultExecutionProfile}
+              executingCellIndex={executingCellIndex}
+              batchExecutingCellIndex={batchExecutingCellIndex}
+              isBatchExecuting={isBatchExecuting}
+              collapsedInput={collapsedInputIndexes.includes(index)}
+              collapsedOutput={collapsedOutputIndexes.includes(index)}
+              onSetActiveCellId={setActiveCellId}
+              onMoveCell={moveCell}
+              onToggleInputCollapse={toggleInputCollapse}
+              onToggleOutputCollapse={toggleOutputCollapse}
+              onDuplicateCell={duplicateCell}
+              onRemoveCell={removeCell}
+              onInsertCell={insertCell}
+              onUpdateCellType={updateCellType}
+              onUpdateCellProfile={updateCellExecutionProfile}
+              onCommitCellSource={commitCellSource}
+              onExecuteCell={onExecuteCell}
+              onRunFromCell={onRunFromCell}
+            />
+          ))}
           </div>
         </div>
       ) : (
