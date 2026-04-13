@@ -2,7 +2,7 @@
 
 import React from "react";
 import dayjs from "dayjs";
-import { Alert, Dropdown, Empty, Input, Spin, Table } from "antd";
+import { Alert, Dropdown, Empty, Input, Spin, Table, Tabs } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import {
   Bot,
@@ -20,10 +20,12 @@ import {
 import { Button } from "@/shared/components/ui/button";
 import { cn } from "@/shared/utils/cn";
 import { ClarificationChips } from "@/features/chatbot/components/ClarificationChips";
+import { ChatVisualizationPanel } from "@/features/chatbot/components/ChatVisualizationPanel";
 import type {
   AskChatResponse,
   ChatMessage,
   ChatResultPreview,
+  ChatVisualizationConfig,
   ChatSessionDetail,
 } from "@/features/chatbot/types";
 
@@ -40,6 +42,8 @@ export type ChatConversationMessage = ChatMessage & {
   isOptimistic?: boolean;
   isStreaming?: boolean;
   resultPreview?: ChatResultPreview | null;
+  chartOptions?: ChatVisualizationConfig[];
+  chartPrompt?: string | null;
 };
 
 function buildPreviewRows(preview: ChatResultPreview) {
@@ -79,6 +83,8 @@ export function ChatConversation({
   onToggleStreamingReplies,
   showDebugAction,
   onOpenDebug,
+  onSelectVisualization,
+  visualizingMessageId,
 }: {
   session: ChatSessionDetail | null;
   messages?: ChatConversationMessage[];
@@ -95,6 +101,17 @@ export function ChatConversation({
   onToggleStreamingReplies?: () => void;
   showDebugAction?: boolean;
   onOpenDebug?: () => void;
+  onSelectVisualization?: (
+    messageId: string,
+    config: {
+      type: string;
+      x?: string;
+      y?: string;
+      series?: string[];
+      columns?: string[];
+    },
+  ) => void;
+  visualizingMessageId?: string | null;
 }) {
   const latestAssistantMessage = React.useMemo(
     () => getLatestAssistantMessage(session?.messages || []),
@@ -107,6 +124,7 @@ export function ChatConversation({
     React.useState<ConversationActionPanel>(null);
   const [isSummaryExpanded, setIsSummaryExpanded] = React.useState(false);
   const messagesEndRef = React.useRef<HTMLDivElement | null>(null);
+  const previousMessageCountRef = React.useRef(0);
   const messageMetadata = latestAssistantMessage?.message_metadata || null;
 
   React.useEffect(() => {
@@ -172,8 +190,19 @@ export function ChatConversation({
   }, [deferredSearchValue, filterMode, messages, session?.messages]);
 
   React.useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
-  }, [filteredMessages, isSending, isStreamingReply, streamingAssistantText]);
+    const messageCount = filteredMessages.length;
+    const shouldScroll =
+      messageCount > previousMessageCountRef.current ||
+      isSending ||
+      isStreamingReply ||
+      Boolean(streamingAssistantText);
+
+    if (shouldScroll) {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+    }
+
+    previousMessageCountRef.current = messageCount;
+  }, [filteredMessages.length, isSending, isStreamingReply, streamingAssistantText]);
 
   if (isLoading) {
     return (
@@ -277,11 +306,10 @@ export function ChatConversation({
               >
                 <button
                   type="button"
-                  className="inline-flex h-8 items-center justify-center gap-1.5 rounded-full border border-slate-200 px-3 text-xs font-medium text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700"
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700"
                   aria-label="Conversation actions"
                 >
                   <MoreHorizontal size={16} />
-                  <span>More</span>
                 </button>
               </Dropdown>
             </div>
@@ -391,6 +419,11 @@ export function ChatConversation({
               const previewRows = message.resultPreview
                 ? buildPreviewRows(message.resultPreview)
                 : [];
+              const hasVisualizationTab = Boolean(
+                isAssistant &&
+                  (message.visualization ||
+                    (Array.isArray(message.chartOptions) && message.chartOptions.length)),
+              );
               const previewColumns: ColumnsType<Record<string, unknown>> =
                 message.resultPreview
                   ? message.resultPreview.columns.map((column) => ({
@@ -442,142 +475,292 @@ export function ChatConversation({
                       {isAssistant ? <Bot size={13} /> : <Sparkles size={13} />}
                       {isAssistant ? "Assistant" : "You"}
                     </div>
-                    <div className="whitespace-pre-wrap text-sm leading-6">
-                      {message.content}
-                    </div>
-                    {message.isLoading ? (
-                      <div className="flex items-center gap-1 text-slate-500">
-                        <span className="inline-block animate-bounce">.</span>
-                        <span className="inline-block animate-bounce [animation-delay:150ms]">
-                          .
-                        </span>
-                        <span className="inline-block animate-bounce [animation-delay:300ms]">
-                          .
-                        </span>
-                      </div>
-                    ) : null}
-                    {!message.isLoading && message.sql_generated ? (
-                      <div
-                        className={cn(
-                          "mt-4 min-w-0 rounded-2xl p-3 text-xs",
-                          isAssistant
-                            ? "bg-white text-slate-700"
-                            : "bg-blue-500/80 text-blue-50",
-                        )}
-                      >
-                        <div className="mb-2 flex items-center justify-between gap-3">
-                          <div className={cn("font-semibold", isAssistant ? "text-slate-500" : "text-blue-100")}>
-                            SQL
-                          </div>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className={cn(
-                              "h-7 rounded-full px-2.5 text-[11px]",
-                              isAssistant
-                                ? "border-slate-200 bg-white text-slate-600 hover:bg-slate-100"
-                                : "border-blue-300 bg-blue-500 text-blue-50 hover:bg-blue-400",
-                            )}
-                            onClick={() => {
-                              void globalThis.navigator?.clipboard?.writeText(
-                                message.sql_generated || "",
-                              );
-                            }}
-                          >
-                            <Copy size={12} className="mr-1.5" />
-                            Copy SQL
-                          </Button>
+                    {isAssistant && hasVisualizationTab ? (
+                      <Tabs
+                        size="small"
+                        defaultActiveKey="result"
+                        className="assistant-message-tabs"
+                        items={[
+                          {
+                            key: "result",
+                            label: "Result",
+                            children: (
+                              <div className="space-y-3">
+                                <div className="whitespace-pre-wrap text-sm leading-6">
+                                  {message.content}
+                                </div>
+                                {message.isLoading ? (
+                                  <div className="flex items-center gap-1 text-slate-500">
+                                    <span className="inline-block animate-bounce">.</span>
+                                    <span className="inline-block animate-bounce [animation-delay:150ms]">
+                                      .
+                                    </span>
+                                    <span className="inline-block animate-bounce [animation-delay:300ms]">
+                                      .
+                                    </span>
+                                  </div>
+                                ) : null}
+                                {!message.isLoading && message.sql_generated ? (
+                                  <div className="min-w-0 rounded-2xl bg-white p-3 text-xs text-slate-700">
+                                    <div className="mb-2 flex items-center justify-between gap-3">
+                                      <div className="font-semibold text-slate-500">SQL</div>
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="h-7 rounded-full border-slate-200 bg-white px-2.5 text-[11px] text-slate-600 hover:bg-slate-100"
+                                        onClick={() => {
+                                          void globalThis.navigator?.clipboard?.writeText(
+                                            message.sql_generated || "",
+                                          );
+                                        }}
+                                      >
+                                        <Copy size={12} className="mr-1.5" />
+                                        Copy SQL
+                                      </Button>
+                                    </div>
+                                    <pre className="overflow-x-auto whitespace-pre-wrap break-words font-mono">
+                                      {message.sql_generated}
+                                    </pre>
+                                  </div>
+                                ) : null}
+                                {!message.isLoading &&
+                                Array.isArray(message.source_assets) &&
+                                message.source_assets.length ? (
+                                  <div className="flex flex-wrap gap-2">
+                                    {message.source_assets.map((asset) => (
+                                      <span
+                                        key={asset}
+                                        className="inline-flex items-center rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[11px] text-slate-600"
+                                      >
+                                        <Database size={11} className="mr-1" />
+                                        {asset}
+                                      </span>
+                                    ))}
+                                  </div>
+                                ) : null}
+                                {!message.isLoading && message.resultPreview ? (
+                                  <div className="min-w-0 overflow-hidden rounded-2xl border border-slate-200 bg-white">
+                                    <div className="flex items-center justify-between gap-3 border-b border-slate-100 bg-slate-50 px-3 py-2">
+                                      <div className="text-xs font-semibold text-slate-600">
+                                        Result Preview
+                                      </div>
+                                      <div className="text-[11px] text-slate-400">
+                                        {typeof message.resultPreview.row_count === "number"
+                                          ? `${message.resultPreview.row_count} row${
+                                              message.resultPreview.row_count === 1 ? "" : "s"
+                                            }`
+                                          : `${previewRows.length} row${
+                                              previewRows.length === 1 ? "" : "s"
+                                            }`}
+                                      </div>
+                                    </div>
+                                    <div className="w-full overflow-x-auto">
+                                      <Table<Record<string, unknown>>
+                                        rowKey="__rowKey"
+                                        dataSource={previewRows}
+                                        columns={previewColumns}
+                                        tableLayout="fixed"
+                                        scroll={{
+                                          x: Math.max(
+                                            720,
+                                            (message.resultPreview.columns.length || 1) * 180,
+                                          ),
+                                        }}
+                                        pagination={
+                                          previewRows.length > 10
+                                            ? {
+                                                pageSize: 10,
+                                                size: "small",
+                                                hideOnSinglePage: true,
+                                              }
+                                            : false
+                                        }
+                                        size="small"
+                                        locale={{
+                                          emptyText: (
+                                            <Empty
+                                              image={Empty.PRESENTED_IMAGE_SIMPLE}
+                                              description="No preview rows returned"
+                                            />
+                                          ),
+                                        }}
+                                      />
+                                    </div>
+                                  </div>
+                                ) : null}
+                              </div>
+                            ),
+                          },
+                          {
+                            key: "visualization",
+                            label: "Visualization",
+                            children: (
+                              <ChatVisualizationPanel
+                                visualization={message.visualization}
+                                chartOptions={message.chartOptions}
+                                chartPrompt={message.chartPrompt}
+                                resultPreview={message.resultPreview}
+                                selectedChartType={message.visualization?.type || null}
+                                onSelectChartType={(type) =>
+                                  onSelectVisualization?.(message.id, type)
+                                }
+                                isSaving={visualizingMessageId === message.id}
+                                embedded
+                              />
+                            ),
+                          },
+                        ]}
+                      />
+                    ) : (
+                      <>
+                        <div className="whitespace-pre-wrap text-sm leading-6">
+                          {message.content}
                         </div>
-                        <pre className="overflow-x-auto whitespace-pre-wrap break-words font-mono">
-                          {message.sql_generated}
-                        </pre>
-                      </div>
-                    ) : null}
-                    {!message.isLoading &&
-                    Array.isArray(message.source_assets) &&
-                    message.source_assets.length ? (
-                      <div className="mt-3 flex flex-wrap gap-2">
-                        {message.source_assets.map((asset) => (
-                          <span
-                            key={asset}
+                        {message.isLoading ? (
+                          <div className="flex items-center gap-1 text-slate-500">
+                            <span className="inline-block animate-bounce">.</span>
+                            <span className="inline-block animate-bounce [animation-delay:150ms]">
+                              .
+                            </span>
+                            <span className="inline-block animate-bounce [animation-delay:300ms]">
+                              .
+                            </span>
+                          </div>
+                        ) : null}
+                        {!message.isLoading && message.sql_generated ? (
+                          <div
                             className={cn(
-                              "inline-flex items-center rounded-full px-2.5 py-1 text-[11px]",
+                              "mt-4 min-w-0 rounded-2xl p-3 text-xs",
                               isAssistant
-                                ? "border border-slate-200 bg-white text-slate-600"
+                                ? "bg-white text-slate-700"
                                 : "bg-blue-500/80 text-blue-50",
                             )}
                           >
-                            <Database size={11} className="mr-1" />
-                            {asset}
-                          </span>
-                        ))}
-                      </div>
-                    ) : null}
-                    {!message.isLoading && message.resultPreview ? (
-                      <div
-                        className={cn(
-                          "mt-4 min-w-0 overflow-hidden rounded-2xl",
-                          isAssistant
-                            ? "border border-slate-200 bg-white"
-                            : "bg-blue-500/80",
-                        )}
-                      >
-                        <div
-                          className={cn(
-                            "flex items-center justify-between gap-3 px-3 py-2",
-                            isAssistant
-                              ? "border-b border-slate-100 bg-slate-50"
-                              : "border-b border-blue-400/60 bg-blue-500/90",
-                          )}
-                        >
+                            <div className="mb-2 flex items-center justify-between gap-3">
+                              <div
+                                className={cn(
+                                  "font-semibold",
+                                  isAssistant ? "text-slate-500" : "text-blue-100",
+                                )}
+                              >
+                                SQL
+                              </div>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className={cn(
+                                  "h-7 rounded-full px-2.5 text-[11px]",
+                                  isAssistant
+                                    ? "border-slate-200 bg-white text-slate-600 hover:bg-slate-100"
+                                    : "border-blue-300 bg-blue-500 text-blue-50 hover:bg-blue-400",
+                                )}
+                                onClick={() => {
+                                  void globalThis.navigator?.clipboard?.writeText(
+                                    message.sql_generated || "",
+                                  );
+                                }}
+                              >
+                                <Copy size={12} className="mr-1.5" />
+                                Copy SQL
+                              </Button>
+                            </div>
+                            <pre className="overflow-x-auto whitespace-pre-wrap break-words font-mono">
+                              {message.sql_generated}
+                            </pre>
+                          </div>
+                        ) : null}
+                        {!message.isLoading &&
+                        Array.isArray(message.source_assets) &&
+                        message.source_assets.length ? (
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            {message.source_assets.map((asset) => (
+                              <span
+                                key={asset}
+                                className={cn(
+                                  "inline-flex items-center rounded-full px-2.5 py-1 text-[11px]",
+                                  isAssistant
+                                    ? "border border-slate-200 bg-white text-slate-600"
+                                    : "bg-blue-500/80 text-blue-50",
+                                )}
+                              >
+                                <Database size={11} className="mr-1" />
+                                {asset}
+                              </span>
+                            ))}
+                          </div>
+                        ) : null}
+                        {!message.isLoading && message.resultPreview ? (
                           <div
                             className={cn(
-                              "text-xs font-semibold",
-                              isAssistant ? "text-slate-600" : "text-blue-50",
+                              "mt-4 min-w-0 overflow-hidden rounded-2xl",
+                              isAssistant
+                                ? "border border-slate-200 bg-white"
+                                : "bg-blue-500/80",
                             )}
                           >
-                            Result Preview
+                            <div
+                              className={cn(
+                                "flex items-center justify-between gap-3 px-3 py-2",
+                                isAssistant
+                                  ? "border-b border-slate-100 bg-slate-50"
+                                  : "border-b border-blue-400/60 bg-blue-500/90",
+                              )}
+                            >
+                              <div
+                                className={cn(
+                                  "text-xs font-semibold",
+                                  isAssistant ? "text-slate-600" : "text-blue-50",
+                                )}
+                              >
+                                Result Preview
+                              </div>
+                              <div
+                                className={cn(
+                                  "text-[11px]",
+                                  isAssistant ? "text-slate-400" : "text-blue-100",
+                                )}
+                              >
+                                {typeof message.resultPreview.row_count === "number"
+                                  ? `${message.resultPreview.row_count} row${
+                                      message.resultPreview.row_count === 1 ? "" : "s"
+                                    }`
+                                  : `${previewRows.length} row${
+                                      previewRows.length === 1 ? "" : "s"
+                                    }`}
+                              </div>
+                            </div>
+                            <div className="w-full overflow-x-auto">
+                              <Table<Record<string, unknown>>
+                                rowKey="__rowKey"
+                                dataSource={previewRows}
+                                columns={previewColumns}
+                                tableLayout="fixed"
+                                scroll={{
+                                  x: Math.max(
+                                    720,
+                                    (message.resultPreview.columns.length || 1) * 180,
+                                  ),
+                                }}
+                                pagination={
+                                  previewRows.length > 10
+                                    ? { pageSize: 10, size: "small", hideOnSinglePage: true }
+                                    : false
+                                }
+                                size="small"
+                                locale={{
+                                  emptyText: (
+                                    <Empty
+                                      image={Empty.PRESENTED_IMAGE_SIMPLE}
+                                      description="No preview rows returned"
+                                    />
+                                  ),
+                                }}
+                              />
+                            </div>
                           </div>
-                          <div
-                            className={cn(
-                              "text-[11px]",
-                              isAssistant ? "text-slate-400" : "text-blue-100",
-                            )}
-                          >
-                            {typeof message.resultPreview.row_count === "number"
-                              ? `${message.resultPreview.row_count} row${
-                                  message.resultPreview.row_count === 1 ? "" : "s"
-                                }`
-                              : `${previewRows.length} row${previewRows.length === 1 ? "" : "s"}`}
-                          </div>
-                        </div>
-                        <div className="w-full overflow-x-auto">
-                          <Table<Record<string, unknown>>
-                            rowKey="__rowKey"
-                            dataSource={previewRows}
-                            columns={previewColumns}
-                            tableLayout="fixed"
-                            scroll={{
-                              x: Math.max(720, (message.resultPreview.columns.length || 1) * 180),
-                            }}
-                            pagination={
-                              previewRows.length > 10
-                                ? { pageSize: 10, size: "small", hideOnSinglePage: true }
-                                : false
-                            }
-                            size="small"
-                            locale={{
-                              emptyText: (
-                                <Empty
-                                  image={Empty.PRESENTED_IMAGE_SIMPLE}
-                                  description="No preview rows returned"
-                                />
-                              ),
-                            }}
-                          />
-                        </div>
-                      </div>
-                    ) : null}
+                        ) : null}
+                      </>
+                    )}
                     <div className={cn("mt-3 text-[11px]", isAssistant ? "text-slate-400" : "text-blue-100/80")}>
                       {dayjs(
                         message.updated_at ||
@@ -645,23 +828,21 @@ export function ChatConversation({
           onSelect={onSend}
         />
 
-        <div className="rounded-[28px] border border-slate-200 bg-white p-2 shadow-sm">
-          <div className="flex w-full min-w-0 items-end gap-2">
-            <Input.TextArea
-              value={composerValue}
-              onChange={(event) => onComposerChange(event.target.value)}
-              autoSize={{ minRows: 1, maxRows: 6 }}
-              placeholder="Ask anything..."
-              className="min-w-0 flex-1 border-0 shadow-none focus-within:shadow-none"
-            />
-            <Button
-              className="h-10 w-10 shrink-0 rounded-full border border-blue-600 bg-blue-600 px-0 text-white hover:border-blue-700 hover:bg-blue-700"
-              onClick={() => onSend(composerValue)}
-              disabled={isSending || !composerValue.trim()}
-            >
-              <Send size={15} />
-            </Button>
-          </div>
+        <div className="flex w-full min-w-0 items-end gap-2">
+          <Input.TextArea
+            value={composerValue}
+            onChange={(event) => onComposerChange(event.target.value)}
+            autoSize={{ minRows: 1, maxRows: 6 }}
+            placeholder="Ask anything..."
+            className="min-w-0 flex-1 rounded-[28px] border border-slate-200 bg-white px-4 py-2 shadow-none focus-within:shadow-none"
+          />
+          <Button
+            className="h-10 w-10 shrink-0 rounded-full border border-blue-600 bg-blue-600 px-0 text-white hover:border-blue-700 hover:bg-blue-700"
+            onClick={() => onSend(composerValue)}
+            disabled={isSending || !composerValue.trim()}
+          >
+            <Send size={15} />
+          </Button>
         </div>
       </div>
     </section>
